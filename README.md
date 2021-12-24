@@ -32,7 +32,7 @@ INS
 <br />
 <div align="center">
   <a href="https://github.com/othneildrew/Best-README-Template">
-    <img src="images/logo.png" alt="Logo" width="80" height="80">
+    <img src="./README/WebAPP%20logo.png" alt="Logo" width="80" height="80">
   </a>
 
   <h3 align="center">WebApp</h3>
@@ -84,8 +84,8 @@ INS
 <!-- ABOUT THE PROJECT -->
 ## About The Project
 
-[![Product Name Screen Shot][product-screenshot]](https://probatou.com/img/overseerr.png)
-[![Product Name Screen Shot][product-screenshot]](https://example.com)
+![Product Screen Shot](./README/WebAPP.png)
+
 There are many great README templates available on GitHub; however, I didn't find one that really suited my needs so I created this enhanced one. I want to create a README template so amazing that it'll be the last one you ever need -- I think this is it.
 
 Here's why:
@@ -141,11 +141,11 @@ _Below is an example of how you can instruct your audience on installing and set
    ```
 5. Go to you're favorite browser and configure WebApp
    ```html
-   https://<IPOFMACHINE>/install.php
+   https://<IPOFDEVICEE>/install.php
    ```
 6. Enjoy and add App in interface
   
-  [![Interface Screen Shot][product-screenshot]](./README/WebAPP%20interface.png))
+  ![Interface Screen Shot](./README/WebAPP%20interface.png)
 
 <p align="right">(<a href="#top">back to top</a>)</p>
 
