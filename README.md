@@ -84,7 +84,7 @@ INS
 <!-- ABOUT THE PROJECT -->
 ## About The Project
 
-[![Product Name Screen Shot][product-screenshot]](./Image%20PNG.png)
+[![Product Name Screen Shot][product-screenshot]](./README/WebAPP)
 
 There are many great README templates available on GitHub; however, I didn't find one that really suited my needs so I created this enhanced one. I want to create a README template so amazing that it'll be the last one you ever need -- I think this is it.
 
@@ -157,7 +157,7 @@ _Below is an example of how you can instruct your audience on installing and set
    ```
 6. Enjoy and add App in interface
   
-  [![Interface Screen Shot][product-screenshot]](./Image%20PNG2.png)
+  [![Interface Screen Shot][product-screenshot]](./README/WebAPP%20interface.png))
 
 <p align="right">(<a href="#top">back to top</a>)</p>
 
