@@ -1,42 +1,24 @@
-<!-- PROJECT LOGO -->
-<br />
-<div align="center">
-  <a href="https://github.com/othneildrew/Best-README-Template">
-    <img src="./README/WebAPP%20logo.png" alt="Logo" width="80" height="80">
-  </a>
-  
-  <a> **WebApp** is a free and open source software application for web-ui application concentration.</a>
-</div>
-
-
 <!-- CURRENT FEATURES -->
 ## Current Features
 
 ![Product Screen Shot](./README/WebAPP.png)
 
-There are many great README templates available on GitHub; however, I didn't find one that really suited my needs so I created this enhanced one. I want to create a README template so amazing that it'll be the last one you ever need -- I think this is it.
+You are tired of typing urls all the time to go to your apps, the solution is HERE. WebApp a simple solution that only needs to evolve with you
 
-Here's why:
-* Your time should be focused on creating something amazing. A project that solves a problem and helps others
-* You shouldn't be doing the same tasks over and over like creating a README from scratch
-* You should implement DRY principles to the rest of your life :smile:
+Features:
+* Adding app with iframe or not
+* Refresh a single application and not the entire site
+* Open in other tab without Webapp
+* Fast loading with lazy loading
+* A single file contains your personal information in clear `config.php`
+* No modification is to be made on the DB :smile:
 
-Of course, no one template will serve all projects since your needs may be different. So I'll be adding more in the near future. You may also suggest changes by forking this repo and creating a pull request or opening an issue. Thanks to all the people have contributed to expanding this template!
-
-Use the `BLANK_README.md` to get started.
-
-<p align="right">(<a href="#top">back to top</a>)</p>
 
 
 <!-- GETTING STARTED -->
 ## Getting Started
-
-This is an example of how you may give instructions on setting up your project locally.
-To get a local copy up and running follow these simple example steps.
-
 ### Prerequisites
 
-This is an example of how to list things you need to use the software and how to install them.
 * MariaDB
   ```sh
   apt install mariadb-server
@@ -47,9 +29,9 @@ This is an example of how to list things you need to use the software and how to
   apt install php7.4
   ```
 
-### Installation
 
-_Below is an example of how you can instruct your audience on installing and setting up your app. This template doesn't rely on any external dependencies or services._
+
+### Installation
 
 1. Clone the repo
    ```sh
@@ -75,23 +57,21 @@ _Below is an example of how you can instruct your audience on installing and set
   
   ![Interface Screen Shot](./README/WebAPP%20interface.png)
 
-<p align="right">(<a href="#top">back to top</a>)</p>
 
 
+### Update
 
-<!-- USAGE EXAMPLES -->
-## Usage
+Launch `update.sh`
+   ```sh
+   ./update.sh
+   ```
+or
 
-Use this space to show useful examples of how a project can be used. Additional screenshots, code examples and demos work well in this space. You may also link to more resources.
+Update with interface pop-up 
 
-_For more examples, please refer to the [Documentation](https://example.com)_
-
-<p align="right">(<a href="#top">back to top</a>)</p>
 
 
 <!-- CONTACT -->
 ## Contact
 
-Your Name - [@your_twitter](https://twitter.com/your_username) - webapp@probatou.com
-
-Project Link: [https://github.com/your_username/repo_name](https://github.com/ProBatou/WebApp)
+ webapp@probatou.com
