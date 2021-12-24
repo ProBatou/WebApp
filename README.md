@@ -84,8 +84,8 @@ INS
 <!-- ABOUT THE PROJECT -->
 ## About The Project
 
-[![Product Name Screen Shot][product-screenshot]](./Image%20PNG.png)
-
+[![Product Name Screen Shot][product-screenshot]](https://probatou.com/img/overseerr.png)
+[![Product Name Screen Shot][product-screenshot]](https://example.com)
 There are many great README templates available on GitHub; however, I didn't find one that really suited my needs so I created this enhanced one. I want to create a README template so amazing that it'll be the last one you ever need -- I think this is it.
 
 Here's why:
@@ -98,18 +98,6 @@ Of course, no one template will serve all projects since your needs may be diffe
 Use the `BLANK_README.md` to get started.
 
 <p align="right">(<a href="#top">back to top</a>)</p>
-
-
-
-### Built With
-
-This section should list any major frameworks/libraries used to bootstrap your project. Leave any add-ons/plugins for the acknowledgements section. Here are a few examples.
-
-* [MariaDB](https://mariadb.org/)
-* [PHP](https://www.php.net/)
-
-<p align="right">(<a href="#top">back to top</a>)</p>
-
 
 
 <!-- GETTING STARTED -->
@@ -157,7 +145,7 @@ _Below is an example of how you can instruct your audience on installing and set
    ```
 6. Enjoy and add App in interface
   
-  [![Interface Screen Shot][product-screenshot]](./Image%20PNG2.png)
+  [![Interface Screen Shot][product-screenshot]](./README/WebAPP%20interface.png))
 
 <p align="right">(<a href="#top">back to top</a>)</p>
 
