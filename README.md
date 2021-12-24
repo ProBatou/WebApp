@@ -122,12 +122,12 @@ To get a local copy up and running follow these simple example steps.
 
 This is an example of how to list things you need to use the software and how to install them.
 * MariaDB
-  ```
+  ```sh
   apt install mariadb-server
   ```
   
 * PHP
-  ```
+  ```sh
   apt install php7.4
   ```
 
@@ -139,14 +139,25 @@ _Below is an example of how you can instruct your audience on installing and set
    ```sh
    git clone https://github.com/ProBatou/WebApp.git
    ```
-3. Install NPM packages
+2. Go to directory
    ```sh
-   npm install
+   cd WebApp/html
    ```
-4. Enter your API in `config.js`
-   ```js
-   const API_KEY = 'ENTER YOUR API';
+3. Run installer
+   ```sh
+   ./installer.sh
    ```
+4. Remove github repo
+   ```sh
+   rm -r ../../WebApp
+   ```
+5. Go to you're favorite browser and configure WebApp
+   ```html
+   https://<IPOFMACHINE>/install.php
+   ```
+6. Enjoy and add App in interface
+  
+  [![Interface Screen Shot][product-screenshot]](./Image%20PNG2.png)
 
 <p align="right">(<a href="#top">back to top</a>)</p>
 
