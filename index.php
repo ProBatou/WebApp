@@ -1,6 +1,6 @@
 <?php
 
-    if(filesize($path_to_your_file)) {
+    if(filesize('config.php')) {
     	session_start();
 	if(!isset($_SESSION["username"])){
 	  header("Location: login.php");
@@ -27,28 +27,6 @@
 else{
     header("location:installer.php");
 }
-	session_start();
-	if(!isset($_SESSION["username"])){
-	  header("Location: login.php");
-	  exit();
-	}
-
-	session_start();
-	if(isset($_GET['deconnexion']))
-	{
-	   if($_GET['deconnexion']==true)
-	   {
-	      session_unset();
-	      header("location:login.php");
-	   }
-	}
-	else if($_SESSION['username'] !== ""){
-	    $user = $_SESSION['username'];
-	}
-	
-	require('script/fonctions.php');
-	require('config.php');
-	connexionDB();
 ?>
 
 
