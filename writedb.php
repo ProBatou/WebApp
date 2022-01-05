@@ -1,9 +1,8 @@
 <?php
 
 require('script/fonctions.php');
-require('config.php');
 
-chmod("config.php", 0744);
+//chmod("config.php", 0744);
 
 $file = 'config.php';
 
@@ -28,6 +27,8 @@ mysqli_query($link, $strSQL);
 
 $strSQL = "CREATE DATABASE ".$_POST['DBname'];
 mysqli_query($link, $strSQL);
+
+require('config.php');
 
 connexionDB();
 
