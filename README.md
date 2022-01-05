@@ -38,23 +38,15 @@ Features:
    ```sh
    git clone https://github.com/ProBatou/WebApp.git
    ```
-2. Go to directory
+2. Add permision
    ```sh
-   cd WebApp/html
+   chown www-data WebApp/
    ```
-3. Run installer
-   ```sh
-   ./installer.sh
-   ```
-4. Remove github repo
-   ```sh
-   rm -r ../../WebApp
-   ```
-5. Go to you're favorite browser and configure WebApp
+3. Go to you're favorite browser and configure WebApp
    ```html
-   https://[IPOFDEVICEE]/install.php
+   https://[IPOFDEVICEE]
    ```
-6. Enjoy and add App in interface
+4. Enjoy and add App in interface
   
   ![Interface Screen Shot](./README/WebAPP%20interface.png)
 
