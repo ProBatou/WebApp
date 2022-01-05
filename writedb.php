@@ -3,7 +3,7 @@
 require('script/fonctions.php');
 require('config.php');
 
-chmod("config.php", 0755);
+chmod("config.php", 0744);
 
 $file = 'config.php';
 
