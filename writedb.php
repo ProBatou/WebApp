@@ -1,7 +1,9 @@
 <?php
-/*
+
 require('script/fonctions.php');
 require('config.php');
+
+chmod("config.php", 0755);
 
 $file = 'config.php';
 
@@ -49,20 +51,8 @@ requeteSQL($sql);
 $sql = "INSERT INTO user (user, password) VALUES ('".$_POST['username']."', PASSWORD('".$_POST['password']."'))";
 requeteSQL($sql);
 
-*/
+header('Location: login.php');
 
-
-
-
-
-
-
-
-
-
-
-
-//header('Location: login.php');
 ?>
 
 
