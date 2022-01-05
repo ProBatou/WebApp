@@ -40,7 +40,7 @@ Features:
    ```
 2. Add permision
    ```sh
-   chmod -R www-data WebApp
+   chown www-data WebApp/
    ```
 3. Go to directory
    ```sh
