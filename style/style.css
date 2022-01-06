@@ -1,0 +1,492 @@
+html, body{
+background: black;
+font-family: Verdana;
+overflow: hidden;
+user-select: none;
+-webkit-user-select: none;
+-webkit-touch-callout: none;
+height: 100%;
+width: 100%;
+}
+
+.icon {
+width: 55px;
+height: 55px;
+transition: all .5s ease-out;
+
+}
+
+@keyframes gradient{ 
+    0%{background-position:0 0}
+    50%{background-position:93% 100%}
+    100%{background-position:0 0}
+}
+
+
+
+/* ------------------ MENU ------------------ */
+
+#menu::-webkit-scrollbar {
+display: none;
+}
+
+@media (any-pointer) and (orientation: landscape) {
+#menu:hover,
+#menu {
+width: 80px;
+}
+}
+
+#menu {
+z-index: 2;
+top: 0;
+background: linear-gradient(135deg, #000000, #6b6b6b);
+background-size: 400% 400%;
+animation: gradient 28s ease infinite;
+opacity: .9;
+user-select: none;
+position: fixed;
+text-align: center;
+}
+
+.logout_icon {
+content: url("../../img/logout.png");
+}
+
+@media (any-pointer) {
+#menu {
+border-right: 1px solid transparent;
+height: 100%;
+width: 0;
+transition: width 100ms linear;
+overflow-y: scroll;
+overflow-x: hidden;
+}
+}
+
+@media (any-hover: none) and (orientation: landscape) {
+#menu {
+height: 100%;
+width: 80px;
+}
+}
+
+@media (any-hover: none) and (orientation: portrait) {
+#menu {
+height: 80px;
+width: 100%;
+overflow-y: hidden;
+overflow-x: scroll;
+top: calc(100% - 80px);
+display: flex;
+flex-direction: row;
+align-items: center;
+}
+}
+
+
+
+/* ------------------ IFRAME ------------------ */
+
+.iframe {
+width: 100%;
+height: 100%;
+}
+
+@media (any-hover: none) and (orientation: landscape) {
+.iframe {
+width: calc(100% - 80px);
+transform: translateX(80px);
+}
+}
+
+@media (any-hover: none) and (orientation: portrait) {
+.iframe {
+height: calc(100% - 80px);
+}
+}
+
+.page {
+position: fixed;
+width: 100%;
+height: 100%;
+background-color: transparent;
+transition: all .6s cubic-bezier(.5, .2, .2, 1.1);
+}
+
+#virtual {
+z-index:1;
+width: 100%;
+height: 100%;
+position: fixed;
+transform: scale(0);
+backdrop-filter: blur(5px);
+-webkit-backdrop-filter: blur(5px);
+}
+
+#virtual.visible {
+transform: scale(1);
+}
+
+/* ------------------ CONTEXT-MENU ------------------ */
+
+#context-menu {
+position: fixed;
+z-index: 3;
+width: 20%;
+transform: scale(0);
+transform-origin: top left;
+opacity: .9;
+border-radius: 5px;
+transition: width 100ms linear;
+background: linear-gradient(135deg, #000000, #6b6b6b);
+background-size: 400% 400%;
+animation: gradient 28s ease infinite;
+}
+
+#context-menu.visible {
+transform: scale(1);
+transition: transform 200ms ease-in-out;
+}
+
+#context-menu .item {
+padding: 8px 10px;
+font-size: 15px;
+color: #eee;
+cursor: pointer;
+border-radius: inherit;
+}
+
+#context-menu .item:hover {
+background: #343434;
+}
+
+
+
+/* ------------------ CONTEXT-MENU-MANAGE ------------------ */
+
+.header-context-menu-manage{
+    display: flex;
+    color: white;
+    align-items: center;
+    margin: 5% 5% 5% 5%;
+}
+
+#context-menu-manage {
+position: fixed;
+z-index: 3;
+width: 50%;
+height: 80%;
+margin: 5% 0 5% 0;
+transition: width 100ms linear;
+background: linear-gradient(135deg, #000000, #6b6b6b);
+background-size: 400% 400%;
+animation: gradient 28s ease infinite;border-radius: 5px;
+transform: scale(0);
+transform-origin: top left;
+opacity: .9;
+overflow-y: scroll;
+}
+
+#context-menu-manage.visible {
+transform: scale(1);
+transition: transform 200ms ease-in-out;
+}
+
+#context-menu-manage .item {
+padding: 8px 10px;
+font-size: 15px;
+color: #eee;
+cursor: pointer;
+border-radius: inherit;
+}
+
+#context-menu-manage .item:hover {
+background: #343434;
+}
+
+#context-menu-manage::-webkit-scrollbar {
+display: none;
+}
+
+#CloseMenuManage{
+    position: absolute;
+    margin: 0 0 20px 0;
+    width: 20px;
+    height: 20px;
+    background: gray;
+    border-radius: 10px;
+    right: 5%;
+}
+
+#CloseMenuManage:hover{
+    background: #FF5146; 
+}
+
+
+
+/* ------------------ SORTABLE ------------------ */
+
+#AddMenu {
+display: block;   
+margin-left: auto;   
+margin-right: auto;
+}
+
+#sortable { 
+	list-style: none; 
+	text-align: center; 
+	margin: 0;
+	padding: 0;
+}
+
+#sortable li { 
+	margin: 3% 3% 3% 3%;
+	background: #1A1A1A;
+	height: 75px; 
+	border-radius: 5px;
+	color: #333333;
+    user-select: none;
+}
+
+#sortable li span{
+	height: 10%; 
+	cursor: grab;
+
+}
+
+#sortable li img{
+	display: inline-block;
+	float: left;
+
+}
+
+#sortable li div {
+	display: inline-block;
+	cursor: default;
+    text-align:center;
+    margin: 27.5px 0;
+    float: left;
+
+}
+
+#sortable .icondrag{
+    margin: 10px 7% 10px 0;
+    width: 55px;
+    height: 55px; 
+}
+
+#sortable .icon{
+    margin: 10px 0 10px 30px;
+    width: 55px;
+    height: 55px; 
+}
+
+#sortable .name{
+    position: absolute;
+    left: 36%;
+    width: 200px;
+    color:white;
+}
+
+#sortable .iconmodify{
+    position: absolute;
+    margin: 20px 0 20px 0;
+    right: 10%;
+    width: 35px;
+    height: 35px; 
+}
+
+
+
+/* ------------------ CONTEXT-MENU-MODIFY ------------------ */
+
+.header-context-menu-manage-modify{
+    display: flex;
+    color: white;
+    align-items: center;
+    margin: 2% 2% 5% 2%;
+}
+
+#context-menu-modify {
+top: 50%;
+left: 50%;
+position: fixed;
+z-index: 3;
+width: 30%;
+transition: width 100ms linear;
+background: linear-gradient(135deg, #000000, #6b6b6b);
+background-size: 400% 400%;
+animation: gradient 28s ease infinite;
+border-radius: 5px;
+transform: scale(0);
+transform-origin: top left;
+padding: 30px;
+box-shadow: 0 0 20px 0 rgba(0, 0, 0, 0.2), 0 5px 5px 0 rgba(0, 0, 0, 0.24);
+opacity: .9;
+}
+#context-menu-modify.visible {
+transform: scale(1);
+transition: transform 200ms ease-in-out;
+transform: translate(-50%, -50%);
+}
+#context-menu-modify .item {
+padding: 8px 10px;
+font-size: 15px;
+color: #eee;
+cursor: pointer;
+border-radius: inherit;
+}
+#context-menu-modify .item:hover {
+background: #343434;
+}
+#container{
+width:400px;
+margin-right: 62px;
+z-index: 3;
+}
+input[type=text] {
+width: 100%;
+padding: 12px 20px;
+margin: 10px 0;
+display: inline-block;
+border: 0;
+box-sizing: border-box;
+-webkit-appearance: none !important;
+}
+
+.input-lien {
+  width: 100%;
+  outline: none;
+}
+
+.delete {
+background-color: #ff5847;
+color: white;
+padding: 25px 20px;
+margin: 8px 2.5%;
+border: none;
+cursor: pointer;
+width: 45%;
+display: inline-block;
+float:left;
+-webkit-appearance: none !important;
+}
+
+.submit {
+background-color: #53af57;
+color: white;
+padding: 25px 20px;
+margin: 8px 2.5%;
+border: none;
+cursor: pointer;
+width: 45%;
+display: inline-block;
+float:left;
+-webkit-appearance: none !important;
+}
+
+
+.file-cont {
+  background: #EFF3F7;
+  position: relative;
+  height: 39px;
+  width: 80%;
+  left: 20%;
+  display: flex;
+  align-items: center;
+  border-radius: 0 5px 5px 0;
+  margin: 10px 0;
+}
+.file-cont .label-file {
+  position: absolute;
+  color: white;
+  top: 0;
+  left: -25%;
+  background-color: #696969;
+  height: 100%;
+  padding: 0 10px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  border-bottom-left-radius: 5px;
+  border-top-left-radius: 5px;
+  border: 0;
+  font-size: 15px;
+  cursor: pointer;
+}
+
+.http {
+width: 25%;
+}
+
+.file-cont .input-file {
+  width: 100%;
+  outline: none;
+  opacity: .9;
+}
+.input-file::-webkit-file-upload-button {
+  visibility: hidden;
+}
+
+
+.MenuManageAjout{
+    width: 55px;
+    height: 55px;
+    margin: 0;
+    padding: 0;
+}
+
+#CloseMenuAdd {
+    position: absolute;
+    margin: 0 0 20px 0;
+    width: 20px;
+    height: 20px;
+    background: gray;
+    border-radius: 10px;
+    right: 5%;
+    } 
+
+#CloseMenuAdd:hover{
+    background: #FF5146; 
+}
+input[type=checkbox]{
+  display: none;
+}
+#checkbox {
+border-radius: 5px;
+color: #000000;
+text-decoration: none;
+text-align: center;
+width: 100%;
+padding: 10px 0;
+cursor: pointer;
+display: block;
+margin: 10px 0;
+background-color: #6969FF;
+transition: background-color 150ms ease-in;
+}
+
+input[type=checkbox]:checked + #checkbox {
+background: rgb(83, 175, 87);
+}
+
+input:checked + #checkbox {
+  color: white;
+  content:rgrefe;
+}
+
+input[type="checkbox"]:checked {
+  box-shadow: 0 0 0 3px hotpink;
+}
+
+
+
+
+
+
+
+
+
+
+
