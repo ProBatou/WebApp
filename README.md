@@ -46,7 +46,7 @@ Features:
    ```
 4. Go to you're favorite browser and configure WebApp
    ```html
-   https://[IPOFDEVICE]
+   https://<IPOFDEVICE>
    ```
 5. Enjoy and add App in interface
   
