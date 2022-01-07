@@ -42,7 +42,7 @@ Features:
    ```
 3. Add permision
    ```sh
-   chown www-data WebApp/
+   chown -R www-data WebApp/
    ```
 4. Go to you're favorite browser and configure WebApp
    ```html
