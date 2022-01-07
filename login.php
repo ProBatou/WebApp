@@ -9,8 +9,10 @@
        <meta charset="utf-8">
         <link rel="stylesheet" href="style/login.css" media="screen" type="text/css" />
         <meta name="robots" content="noindex">
+        <meta name="apple-mobile-web-app-capable" content="yes">
+		<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
         <link rel="shortcut icon" href="img/faviconB.png">
-  			<link rel="apple-touch-icon" href="img/faviconW.png">
+  		<link rel="apple-touch-icon" href="img/faviconW.png">
         <title> WebApp </title>
     </head>
     <body>

@@ -26,7 +26,7 @@ var onlongtouch;
 var timer;
 var touchduration = 500;
 
-virtual
+
 
 // Close all menu after left click to menu bar
 scope.addEventListener("click", (e) => {

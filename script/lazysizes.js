@@ -410,7 +410,7 @@ function l(window, document, Date) { // Pass in the window Date function also fo
 
 					if (!defaultExpand) {
 						defaultExpand = (!lazySizesCfg.expand || lazySizesCfg.expand < 1) ?
-							docElem.clientHeight > 500 && docElem.clientWidth > 500 ? 500 : 370 :
+							docElem.clientHeight > 100 && docElem.clientWidth > 100 ? 100 : 370 :
 							lazySizesCfg.expand;
 
 						lazysizes._defEx = defaultExpand;
