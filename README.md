@@ -27,10 +27,8 @@ Features:
   
 * PHP
   ```sh
-  apt install php7.4
+  apt install php php-mysql 
   ```
-
-
 
 ### Installation
 
