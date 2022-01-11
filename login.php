@@ -11,8 +11,8 @@
         <meta name="robots" content="noindex">
         <meta name="apple-mobile-web-app-capable" content="yes">
 		<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-        <link rel="shortcut icon" href="img/faviconB.png">
-  		<link rel="apple-touch-icon" href="img/faviconW.png">
+        <link rel="shortcut icon" href="img/favicon.png">
+  		<link rel="apple-touch-icon" href="img/favicon.png">
         <title> WebApp </title>
     </head>
     <body>
