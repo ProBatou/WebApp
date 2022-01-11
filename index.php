@@ -40,8 +40,8 @@ else{
 		<meta name="viewport" content="width=device-width, initial-scale=1.0">
 		<meta name="apple-mobile-web-app-capable" content="yes">
 		<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-		<link rel="shortcut icon" href="../img/faviconB.png">
-		<link rel="apple-touch-icon" href="../img/faviconW.png">
+		<link rel="shortcut icon" href="img/favicon.png">
+		<link rel="apple-touch-icon" href="img/favicon.png">
 		<link rel="stylesheet" href="style/reset.css">
 		<link rel="stylesheet" href="style/style.css">
 		<link rel="stylesheet" href="style/style.php">
@@ -61,11 +61,25 @@ else{
 			<div class="item" onclick="fullscreen()"><?php language(Fullscreen, context-menu)?></div>
 			<div id="Manage" class="item"><?php language(ManageWebApp, context-menu)?></div>
 		</div>
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
                 <div id="context-menu-manage" class="draggable">
+                    
                     <div class="header-context-menu-manage">
                         <h5><?php language(ManageApp, context-menu)?></h5>
                         <a id="CloseMenuManage"></a>
                     </div>
+                    
                         <ul id="sortable">
                             <?php
                                 sortable();
@@ -81,8 +95,22 @@ else{
                                 }
                             ?>
                         </ul>
-                        <div><img id="AddMenu" class="MenuManageAjout" alt="" src="img/add.png"></div>
+                        
+                        <div class="footer-context-menu-manage">
+                            <img id="AddMenu" class="MenuManageAjout" alt="" src="img/add.png">
+                        </div>
                 </div>
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
                 <div id="context-menu-modify" class="draggable">
                     <div class="header-context-menu-manage-modify">
                         <h5><?php language(SetupApp, context-menu-modify)?></h5>
