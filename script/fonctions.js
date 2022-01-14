@@ -3,20 +3,17 @@ let modifyId = null;
 let modifyNom = null;
 let modifyLien = null;
 const contextMenu = document.getElementById("context-menu");
-const contextMenuManage = document.getElementById("context-menu-manage");
-const contextMenuManageManage = document.getElementById("Manage");
-const contextMenuManageModifyOpen = document.querySelectorAll(".iconmodify");
-const contextMenuManageModify = document.getElementById("context-menu-modify");
-const contextMenuManageModifyId = document.getElementById("idMenuAdd");
-const contextMenuManageModifyNom = document.getElementById("NomMenuAdd");
-const contextMenuManageModifyFrame = document.getElementById("FrameMenuAdd");
-const contextMenuManageModifySelectLien = document.getElementById("selecthttp");
-const contextMenuManageModifyLien = document.getElementById("LienMenuAdd");
-const contextMenuManageAdd = document.getElementById("AddMenu");
-const contextMenuManageModifySubmitAdd = document.getElementById("submitadd");
-const contextMenuManageModifySubmitModify = document.getElementById("submitmodify");
-const contextMenuManageModifyDelete = document.getElementById("delete");
-const contextMenuManageClose = document.getElementById("CloseMenuManage");
+const contextMenuModifyOpen = document.getElementById("Modify");
+const contextMenuModifyAdd = document.getElementById("Add");
+const contextMenuModify = document.getElementById("context-menu-modify");
+const contextMenuModifyId = document.getElementById("idMenuAdd");
+const contextMenuModifyNom = document.getElementById("NomMenuAdd");
+const contextMenuModifyFrame = document.getElementById("FrameMenuAdd");
+const contextMenuModifySelectLien = document.getElementById("selecthttp");
+const contextMenuModifyLien = document.getElementById("LienMenuAdd");
+const contextMenuModifySubmitAdd = document.getElementById("submitadd");
+const contextMenuModifySubmitModify = document.getElementById("submitmodify");
+const contextMenuModifyDelete = document.getElementById("delete");
 const contextMenuClose = document.getElementById("CloseMenuAdd");
 const scope = document.querySelector("div#t0 ul");
 const view = document.querySelector("body");
@@ -32,8 +29,7 @@ var touchduration = 500;
 scope.addEventListener("click", (e) => {
     if (e.target.offsetParent != contextMenu) {
         contextMenu.classList.remove("visible");
-        contextMenuManage.classList.remove("visible");
-        contextMenuManageModify.classList.remove("visible");
+        contextMenuModify.classList.remove("visible");
         Vframe.classList.remove("visible");
     }
 });
@@ -44,8 +40,7 @@ scope.addEventListener("click", (e) => {
 Vframe.addEventListener("click", (e) => {
     if (e.target.offsetParent != contextMenu) {
         contextMenu.classList.remove("visible");
-        contextMenuManage.classList.remove("visible");
-        contextMenuManageModify.classList.remove("visible");
+        contextMenuModify.classList.remove("visible");
         Vframe.classList.remove("visible");
     }
 });
@@ -56,27 +51,17 @@ Vframe.addEventListener("click", (e) => {
 contextMenu.addEventListener('click', (e) => {
     e.preventDefault();
     contextMenu.classList.remove("visible");
-    contextMenuManage.classList.remove("visible");
-    contextMenuManageModify.classList.remove("visible");
+    contextMenuModify.classList.remove("visible");
     Vframe.classList.remove("visible");
 });
 
 
 
-//After left click to close button close contextMenuManage
-contextMenuManageClose.addEventListener('click', (e) => {
-    e.preventDefault();
-    contextMenuManage.classList.remove("visible");
-    contextMenuManageModify.classList.remove("visible");
-    Vframe.classList.remove("visible");
-});
-
-
-
-//After left click to close button close contextMenuManageModify
+//After left click to close button close contextMenuModify
 contextMenuClose.addEventListener('click', (e) => {
     e.preventDefault();
-    contextMenuManageModify.classList.remove("visible");
+    contextMenuModify.classList.remove("visible");
+    Vframe.classList.remove("visible");
 });
 
 
@@ -137,97 +122,89 @@ scope.addEventListener("contextmenu", (e) => {
     contextMenu.style.left = `${normalizedX}px`;
     setTimeout(() => {
         contextMenu.classList.add("visible");
+        contextMenuModify.classList.remove("visible");
         Vframe.classList.add("visible");
+        
+        modifyId = (e.target.parentElement.getAttribute('data-id'));
+        modifyNom = (e.target.parentElement.getAttribute('data-nom'));
+        modifyLien = (e.target.parentElement.getAttribute('data-lien'));
+        modifyFrame = (e.target.parentElement.getAttribute('data-frame'));
+        modifyImage = (e.target.parentElement.getAttribute('data-Img'));
     });
 });
 
 
 
-// Open context menu manage after left click
-contextMenuManageManage.addEventListener("click", (e) => {
+// Open context menu add after left click Add button
+contextMenuModifyAdd.addEventListener("click", (e) => {
     e.preventDefault();
-    contextMenuManage.classList.remove("visible");
-    contextMenuManage.style.left = `25%`;
     setTimeout(() => {
-        contextMenuManage.classList.add("visible");
-        Vframe.classList.add("visible");
+        contextMenuModifySubmitAdd.type = "submit";
+    contextMenuModifySubmitAdd.style.width = `100%`;
+    contextMenuModifySubmitAdd.style.margin = `8px 0 0 0`;
+    
+    
+    contextMenuModifySubmitModify.type = "hidden";
+    
+    contextMenuModifyId.value = "0";
+    contextMenuModifyNom.value = "";
+    contextMenuModifyLien.value = "";
+    contextMenuModifyFrame.checked = true;
+    contextMenuModifyFrame.value = 1;
+    contextMenuModify.style.left = `25%`;
+    contextMenuModifyDelete.style.transform = `scale(0)`;
+    contextMenuModifyDelete.style.padding = `0`;
+    contextMenuModifyDelete.style.margin = `0`;
+    contextMenuModify.classList.add("visible");
+    Vframe.classList.add("visible");
     });
-
 });
 
 
 
-// Open context menu modify after left click
-contextMenuManageModifyOpen.forEach(e => {
-    e.addEventListener('click', (e) => {
+// Open context menu modify after left click Modify button
+contextMenuModifyOpen.addEventListener('click', (e) => {
+    setTimeout(() => {
+
+    contextMenuModifySubmitModify.type = "submit";
     
-    modifyId = (e.target.parentElement.getAttribute('data-id'));
-    modifyNom = (e.target.parentElement.getAttribute('data-nom'));
-    modifyLien = (e.target.parentElement.getAttribute('data-lien'));
-    modifyFrame = (e.target.parentElement.getAttribute('data-frame'));
-    modifyImage = (e.target.parentElement.getAttribute('data-Img'));
+    contextMenuModifySubmitAdd.type = "hidden";
     
-    contextMenuManageModifySubmitModify.type = "submit";
+    contextMenuModify.style.left = `25%`;
+    contextMenuModifyId.value = modifyId;
+    contextMenuModifyNom.value = modifyNom;
+    contextMenuModifyFrame.value = modifyFrame;
+    contextMenuModifyDelete.style.transform = ``;
+    contextMenuModifyDelete.style.padding = ``;
+    contextMenuModifyDelete.style.margin = ``;
     
-    contextMenuManageModifySubmitAdd.type = "hidden";
-    
-    contextMenuManageModify.style.left = `25%`;
-    contextMenuManageModify.style.right = `25%`;
-    contextMenuManageModifyId.value = modifyId;
-    contextMenuManageModifyNom.value = modifyNom;
-    contextMenuManageModifyFrame.value = modifyFrame;
-    contextMenuManageModifyDelete.style.transform = ``;
-    contextMenuManageModifyDelete.style.padding = ``;
-    contextMenuManageModifyDelete.style.margin = ``;
-    
-    contextMenuManageModify.classList.add("visible");
+    contextMenuModify.classList.add("visible");
     Vframe.classList.add("visible");
+
+    if (modifyLien === null) {
+        contextMenuModify.classList.remove("visible");
+        Vframe.classList.remove("visible");
+        modifyLien = "";
+    }
     
     if(modifyLien.substring(0,5) == "https"){
-        contextMenuManageModifySelectLien.value = "https://";
-        contextMenuManageModifyLien.value = modifyLien.substring(8);
+        contextMenuModifySelectLien.value = "https://";
+        contextMenuModifyLien.value = modifyLien.substring(8);
     }
     else {
-        contextMenuManageModifySelectLien.value = "http://";
-        contextMenuManageModifyLien.value = modifyLien.substring(7);
+        contextMenuModifySelectLien.value = "http://";
+        contextMenuModifyLien.value = modifyLien.substring(7);
     }
     
-    if(modifyFrame == "1"){
-        contextMenuManageModifyFrame.checked = true;
-        contextMenuManageModifyFrame.value = 1;
+    if(modifyFrame == "0"){
+        contextMenuModifyFrame.checked = false;
+        contextMenuModifyFrame.value = 0;
     }
     else {
-        contextMenuManageModifyFrame.checked = false;
-        contextMenuManageModifyFrame.value = 0;
+        contextMenuModifyFrame.checked = true;
+        contextMenuModifyFrame.value = 1;
     }
     });
-});
-
-
-
-// Open context menu add after left click button +
-contextMenuManageAdd.addEventListener("click", (e) => {
-    e.preventDefault();
-    
-    contextMenuManageModifySubmitAdd.type = "submit";
-    contextMenuManageModifySubmitAdd.style.width = `100%`;
-    contextMenuManageModifySubmitAdd.style.margin = `8px 0 0 0`;
-    
-    
-    contextMenuManageModifySubmitModify.type = "hidden";
-    
-    contextMenuManageModifyId.value = "0";
-    contextMenuManageModifyNom.value = "";
-    contextMenuManageModifyLien.value = "";
-    contextMenuManageModifyFrame.checked = true;
-    contextMenuManageModifyFrame.value = 1;
-    contextMenuManageModify.style.left = `25%`;
-    contextMenuManageModify.style.right = `25%`;
-    contextMenuManageModifyDelete.style.transform = `scale(0)`;
-    contextMenuManageModifyDelete.style.padding = `0`;
-    contextMenuManageModifyDelete.style.margin = `0`;
-    contextMenuManageModify.classList.add("visible");
-    Vframe.classList.add("visible");
 });
 
 
@@ -307,14 +284,6 @@ scope.addEventListener("touchstart", (e) => {
 
 
 
-scope.addEventListener("touchstart", (e) => {
-    if (e.target.offsetParent != contextMenuManage) {
-        contextMenuManage.classList.remove("visible");
-    }
-});
-
-
-
 scope.addEventListener('touchstart', (e) => {
     menu = (e.target.getAttribute('id'));
 });
@@ -348,10 +317,10 @@ document.addEventListener("DOMContentLoaded", function(event) {
 
 //sortabble drag 
 $(function() {
-    $('#sortable').sortable({
+    $('#menu').sortable({
         axis: 'y',
         opacity: 0.9,
-        handle: 'span',
+        handle: 'a',
         update: function(event, ui) {
             var list_sortable = $(this).sortable('toArray').toString();
     		// change order in the database using Ajax
