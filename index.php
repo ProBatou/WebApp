@@ -59,57 +59,10 @@ else{
 	    <div id="context-menu">
 			<div class="item" onclick="refresh()"><?php language(Refresh, context-menu)?></div>
 			<div class="item" onclick="fullscreen()"><?php language(Fullscreen, context-menu)?></div>
-			<div id="Manage" class="item"><?php language(ManageWebApp, context-menu)?></div>
+			<div id="Add" class="item"><?php language(Add, context-menu)?></div>
+			<div id="Modify" class="item"><?php language(Modify, context-menu)?></div>
 		</div>
 		
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		
-                <div id="context-menu-manage" class="draggable">
-                    
-                    <div class="header-context-menu-manage">
-                        <h5><?php language(ManageApp, context-menu)?></h5>
-                        <a id="CloseMenuManage"></a>
-                    </div>
-                    
-                        <ul id="sortable">
-                            <?php
-                                sortable();
-                                global $list;
-                                foreach ($list as $rs) {
-                            ?>
-                            <li id="<?php echo $rs['Id']; ?>" data-id="<?php echo $rs['Id']; ?>" data-nom="<?php echo $rs['Nom']; ?>" data-lien="<?php echo $rs['Lien']; ?>" data-frame="<?php echo $rs['frame']; ?>">
-                                <span><img class= "icon"  alt="" src="../img/<?php echo $rs['Nom'].'.png'; ?>"></span>
-                                <div class= "name"><?php echo $rs['Nom']; ?></div>
-                                <img class="iconmodify" alt="" src="img/iconmodify.png">
-                            </li>
-                            <?php
-                                }
-                            ?>
-                        </ul>
-                        
-                        <div class="footer-context-menu-manage">
-                            <img id="AddMenu" class="MenuManageAjout" alt="" src="img/add.png">
-                        </div>
-                </div>
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
                 
                 <div id="context-menu-modify" class="draggable">
                     <div class="header-context-menu-manage-modify">
@@ -132,7 +85,7 @@ else{
                         </div>
                         <label>
                             <input id="FrameMenuAdd" type="checkbox" name="frame" value="1" checked/>
-                            <label for="FrameMenuAdd" id="checkbox">ejgjrtijijgifjez</label>
+                            <label for="FrameMenuAdd" id="checkbox">Iframe or not</label>
                         </label>
 			            <input id="submitadd" type="submit" name="add" value=<?php language(Add, context-menu-modify)?> class="submit">
 			            <input id="submitmodify" type="hidden" name="modify" value=<?php language(Modify, context-menu-modify)?> class="submit">
