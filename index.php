@@ -1,32 +1,32 @@
 <?php
 
-    if(filesize('config.php')) {
-    	session_start();
-	if(!isset($_SESSION["username"])){
-	  header("Location: login.php");
-	  exit();
+if(filesize('config.php')) {
+    session_start();
+    
+    if(!isset($_COOKIE["user_id"])){
+        header("Location: login.php");
+	    exit();
 	}
 
-	session_start();
-	if(isset($_GET['deconnexion']))
-	{
-	   if($_GET['deconnexion']==true)
-	   {
-	      session_unset();
-	      header("location:login.php");
+	if(isset($_GET['deconnexion'])){
+	    
+	   if($_GET['deconnexion']==true){
+            setcookie("user_id", "", time()-3600, "/", $_SERVER['HTTP_HOST'], true, true);
+            session_unset();
+	        header("location:login.php");
 	   }
 	}
-	else if($_SESSION['username'] !== ""){
-	    $user = $_SESSION['username'];
+	else if($_COOKIE["user_id"] !== ""){
+	    $user = $_COOKIE["user_id"];
 	}
 	
 	require('script/fonctions.php');
 	require('config.php');
-	connexionDB();
 }
 else{
     header("location:installer.html");
 }
+
 ?>
 
 
@@ -110,7 +110,6 @@ else{
 
 			<script src="script/fonctions.js"></script>
 		</div>
-	<?php deconnexionDB(); ?>
 	
 <script>
     if ( window.history.replaceState ) {

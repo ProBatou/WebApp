@@ -1,7 +1,3 @@
 <?php 
 $language = "fr-fr";
-$host = "IP";
-$user = "USER";
-$password = "PASSWORD";
-$dbname = "NAME";
 ?> 

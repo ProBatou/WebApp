@@ -7,12 +7,12 @@
 <html lang="<?php echo $language ?>">
     <head>
        <meta charset="utf-8">
-        <link rel="stylesheet" href="style/login.css" media="screen" type="text/css" />
         <meta name="robots" content="noindex">
-        <meta name="apple-mobile-web-app-capable" content="yes">
+		<meta name="apple-mobile-web-app-capable" content="yes">
+		<link rel="stylesheet" href="style/login.css">
 		<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-        <link rel="shortcut icon" href="img/favicon.png">
-  		<link rel="apple-touch-icon" href="img/favicon.png">
+		<link rel="shortcut icon" href="img/favicon.png">
+		<link rel="apple-touch-icon" href="img/favicon.png">
         <title> WebApp </title>
     </head>
     <body>
@@ -22,6 +22,7 @@
                 <input type="text" placeholder="<?php language(Username, Login)?>" name="username" required>
                 <input type="password" placeholder="<?php language(Password, Login)?>" name="password" required>
                 <input type="submit" id='submit' value=<?php language(Connection, Login)?>>
+                <input type="checkbox" name="rememberme" value="YES" checked>
                 <?php
                     if (isset($_GET['erreur'])){
                         $err = $_GET['erreur'];

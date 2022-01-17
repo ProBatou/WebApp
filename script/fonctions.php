@@ -1,51 +1,49 @@
 <?php
 
-
-
-function connexionDB() {
-    require($_SERVER['DOCUMENT_ROOT']."/config.php");
-    global $link;
-	$link = mysqli_connect($host, $user, $password, $dbname);
-}
-
-
-
-function deconnexionDB() {
-    global $link;
-	mysqli_close($link);
-}
-
-
-
 function sortable(){
-    global $list;
-    $strSQL = 'SELECT * FROM WebApp ORDER BY Ordre ASC';
+    $strSQL = 'SELECT * FROM AppList ORDER BY Ordre ASC';
     $resultat = requeteSQL($strSQL);
-    $list = mysqli_fetch_all($resultat, MYSQLI_ASSOC);
+    $list = $resultat->fetchArray();
 }
 
 
 
 function requeteSQL($strSQL) {
-    global $link;
-	$result = mysqli_query($link, $strSQL);
+    
+    $db = new SQLite3($_SERVER['DOCUMENT_ROOT']."/db/WebApp.db");
+
+    $result = $db->query($strSQL);
+
 	if (!$result) {
-		$message  = 'Erreur SQL : ' . mysqli_error() . "<br>\n";
-		$message .= 'SQL string : ' . $strSQL . "<br>\n";
+		$message  = 'Erreur SQL : ' . $db->exec('PRAGMA journal_mode = wal;') . "<br>\n";
+		$message .= 'SQL string : "' . $strSQL . "<br>\n";
 		$message .= "Merci d'envoyer ce message au webmaster";
 		die($message);
 	}
 	return $result;
 }
 
+function requeteSQLrow($strSQL) {
+    
+    $db = new SQLite3($_SERVER['DOCUMENT_ROOT']."/db/WebApp.db");
 
+    $result = $db->querySingle($strSQL);
+
+	if (!$result) {
+		$message  = 'Erreur SQL : ' . $db->exec('PRAGMA journal_mode = wal;') . "<br>\n";
+		$message .= 'SQL string : "' . $strSQL . "<br>\n";
+		$message .= "Merci d'envoyer ce message au webmaster";
+		die($message);
+	}
+	return $result;
+}
 
 function afficheDiv() {
     $menu_retour = isset($menu_retour) ? $menu_retour : '';
 	// Sélectionne toutes les pages filles de la page en cours
-	$strSQL = 'SELECT `Id` FROM `WebApp` WHERE `Id` ORDER BY `Ordre`';
+	$strSQL = 'SELECT `Id` FROM `AppList` WHERE `Id` ORDER BY `Ordre`';
 	$resultat = requeteSQL($strSQL);
-	while ($tabl_result = mysqli_fetch_array($resultat)) {
+	while ($tabl_result = $resultat->fetchArray()) {
 		$menu_retour .= '<div id="t'.$tabl_result['Id'].'">'."\n";
 	}
 	return $menu_retour;
@@ -56,10 +54,11 @@ function afficheDiv() {
 function afficheUl() {
     $menu_retour = isset($menu_retour) ? $menu_retour : '';
 	// Sélectionne toutes les pages filles de la page en cours
-	$strSQL = 'SELECT `Id`, `Nom`,`frame`, `Lien` FROM `WebApp` WHERE `Id` ORDER BY `Ordre`';
+	$strSQL = 'SELECT `Id`, `Nom`,`frame`, `Lien` FROM `AppList` WHERE `Id` ORDER BY `Ordre`';
 	$resultat = requeteSQL($strSQL);
 	$menu_retour = '<ul id="menu">';
-	while ($tabl_result = mysqli_fetch_array($resultat)) {
+
+	while ($tabl_result = $resultat->fetchArray()) {
 	    if ($tabl_result['frame'] == '1'){
 		$menu_retour .= '<li id="'.$tabl_result['Id'].'" data-id="'.$tabl_result['Id'].'" data-nom="'.$tabl_result['Nom'].'" data-lien="'.$tabl_result['Lien'].'" data-frame="'.$tabl_result['frame'].'"><a href="#t'.$tabl_result['Id'].'" class="icon '.$tabl_result['Nom'].'_icon" id="m'.$tabl_result['Id'].'"></a></li>'."\n";
 	    }
@@ -75,9 +74,9 @@ function afficheUl() {
 function afficheIframe() {
     $menu_retour = isset($menu_retour) ? $menu_retour : '';
 	// Sélectionne toutes les pages filles de la page en cours
-	$strSQL = 'SELECT `Id`, `Lien` FROM `WebApp` WHERE `Id` ORDER BY `Ordre`';
+	$strSQL = 'SELECT `Id`, `Lien` FROM `AppList` WHERE `Id` ORDER BY `Ordre`';
 	$resultat = requeteSQL($strSQL);
-	while ($tabl_result = mysqli_fetch_array($resultat)) {
+	while ($tabl_result = $resultat->fetchArray()) {
 	    $menu_retour .= '<div class="page" id="p'.$tabl_result['Id'].'"><iframe name="m'.$tabl_result['Id'].'" class="iframe lazyload" loading="lazy" data-src="'.$tabl_result['Lien'].'"></iframe></div>'."\n";
 	}
 	return $menu_retour;
@@ -87,9 +86,9 @@ function afficheIframe() {
 
 function afficheIconCss() {
     $menu_retour = isset($menu_retour) ? $menu_retour : '';
-	$strSQL = 'SELECT `Id`, `Nom` FROM `WebApp` WHERE `Id` ORDER BY `Ordre`';
+	$strSQL = 'SELECT `Id`, `Nom` FROM `AppList` WHERE `Id` ORDER BY `Ordre`';
 	$resultat = requeteSQL($strSQL);
-	while ($tabl_result = mysqli_fetch_array($resultat)) {
+	while ($tabl_result = $resultat->fetchArray()) {
 	    $menu_retour .= '.'.$tabl_result['Nom'].'_icon {'."\n".'content: url("../img/'.$tabl_result['Nom'].'.png" )'."\n".'}'."\n";
 
 	}
@@ -100,12 +99,13 @@ function afficheIconCss() {
 
 function afficheTargetCss() {
     $menu_retour = isset($menu_retour) ? $menu_retour : '';
-	$strSQL = 'SELECT `Id` FROM `WebApp` WHERE `Id` ORDER BY `Ordre`';
+	$strSQL = 'SELECT `Id` FROM `AppList` WHERE `Id` ORDER BY `Ordre`';
 	$resultat = requeteSQL($strSQL);
-	$numResults = mysqli_num_rows($resultat);
+	$strSQL = 'SELECT COUNT(*) FROM `AppList` WHERE `Id` ORDER BY `Ordre`';
+    $numResults = requeteSQLrow($strSQL);
     $counter = 0;
     
-    while ($tabl_result = mysqli_fetch_array($resultat)) {
+    while ($tabl_result = $resultat->fetchArray()) {
     if ($numResults == ++$counter) {
         $menu_retour .= '#t'.$tabl_result['Id'].':target #m'.$tabl_result['Id'].' {'."\n".'transform: scale(1);'."\n".'}'."\n";
     } 
@@ -120,12 +120,13 @@ function afficheTargetCss() {
 
 function afficheTargetIconCss() {
     $menu_retour = isset($menu_retour) ? $menu_retour : '';
-	$strSQL = 'SELECT `Id` FROM `WebApp` WHERE `Id` ORDER BY `Ordre`';
+	$strSQL = 'SELECT `Id` FROM `AppList` WHERE `Id` ORDER BY `Ordre`';
 	$resultat = requeteSQL($strSQL);
-	$numResults = mysqli_num_rows($resultat);
+	$strSQL = 'SELECT COUNT(*) FROM `AppList` WHERE `Id` ORDER BY `Ordre`';
+    $numResults = requeteSQLrow($strSQL);
     $counter = 0;
     
-    while ($tabl_result = mysqli_fetch_array($resultat)) {
+    while ($tabl_result = $resultat->fetchArray()) {
     if ($numResults == ++$counter) {
         $menu_retour .= '#t'.$tabl_result['Id'].':target ul .icon {'."\n".'transform: scale(.6);'."\n".'}'."\n";
     } 
@@ -140,12 +141,13 @@ function afficheTargetIconCss() {
 
 function affichePCss() {
     $menu_retour = isset($menu_retour) ? $menu_retour : '';
-	$strSQL = 'SELECT `Id` FROM `WebApp` WHERE `Id` ORDER BY `Ordre`';
+	$strSQL = 'SELECT `Id` FROM `AppList` WHERE `Id` ORDER BY `Ordre`';
 	$resultat = requeteSQL($strSQL);
-	$numResults = mysqli_num_rows($resultat);
+	$strSQL = 'SELECT COUNT(*) FROM `AppList` WHERE `Id` ORDER BY `Ordre`';
+    $numResults = requeteSQLrow($strSQL);
     $counter = 0;
     
-    while ($tabl_result = mysqli_fetch_array($resultat)) {
+    while ($tabl_result = $resultat->fetchArray()) {
     if ($numResults == ++$counter) {
         $menu_retour .= '#p'.$tabl_result['Id'].' {'."\n".'left: 200%;'."\n".'}'."\n";
     } 
@@ -160,19 +162,21 @@ function affichePCss() {
 
 function afficheTTargetPP() {
     $menu_retour = isset($menu_retour) ? $menu_retour : '';
-	$strSQL = 'SELECT `Id` FROM `WebApp` WHERE `Id` ORDER BY `Ordre`';
+	$strSQL = 'SELECT `Id` FROM `AppList` WHERE `Id` ORDER BY `Ordre`';
 	$resultat = requeteSQL($strSQL);
-	$numResults = mysqli_num_rows($resultat);
+
+    $strSQL = 'SELECT COUNT(*) FROM `AppList` WHERE `Id` ORDER BY `Ordre`';
+    $numResults = requeteSQLrow($strSQL);
     $counter = 0;
     
-    while ($tabl_result = mysqli_fetch_array($resultat)) {
+while ($tabl_result = $resultat->fetchArray()) {
     if ($numResults == ++$counter) {
         $menu_retour .= '#t'.$tabl_result['Id'].':target #p'.$tabl_result['Id'].'{'."\n".'transform: translateX(-200%);'."\n".'transition-delay: .1s;'."\n".'}'."\n";
     } 
     else {
-	        $menu_retour .= '#t'.$tabl_result['Id'].':target #p'.$tabl_result['Id'].','."\n";
-        }
+	    $menu_retour .= '#t'.$tabl_result['Id'].':target #p'.$tabl_result['Id'].','."\n";
     }
+}
     return $menu_retour;
 }
 
@@ -180,10 +184,11 @@ function afficheTTargetPP() {
 
 function affichePageDeGarde() {
     $menu_retour = isset($menu_retour) ? $menu_retour : '';
-	$strSQL = 'SELECT `Id` FROM `WebApp` WHERE `Id` ORDER BY `Ordre`';
+	$strSQL = 'SELECT `Id` FROM `AppList` WHERE `Id` ORDER BY `Ordre`';
 	$resultat = requeteSQL($strSQL);
-	$numResults = mysqli_num_rows($resultat);
-	$tabl_result = mysqli_fetch_array($resultat);
+	$strSQL = 'SELECT COUNT(*) FROM `AppList` WHERE `Id` ORDER BY `Ordre`';
+    $numResults = requeteSQLrow($strSQL);
+	$tabl_result = $resultat->fetchArray();
     $menu_retour .= '<script> location.href = "#t'.$tabl_result['Id'].'" </script>';
     return $menu_retour;
 }
@@ -191,9 +196,9 @@ function affichePageDeGarde() {
 function endDiv() {
     $menu_retour = isset($menu_retour) ? $menu_retour : '';
 	// Sélectionne toutes les pages filles de la page en cours
-	$strSQL = 'SELECT `Id`, `Lien` FROM `WebApp` WHERE `Id` ORDER BY `Ordre`';
+	$strSQL = 'SELECT `Id`, `Lien` FROM `AppList` WHERE `Id` ORDER BY `Ordre`';
 	$resultat = requeteSQL($strSQL);
-	while ($tabl_result = mysqli_fetch_array($resultat)) {
+	while ($tabl_result = $resultat->fetchArray()) {
 	    $menu_retour .= '</div>'."\n";
 	}
 	return $menu_retour;
@@ -211,8 +216,7 @@ $target_file = $target_dir . basename($_FILES["file"]["name"]);
 $uploadOk = 1;
 $imageFileType = strtolower(pathinfo($target_file,PATHINFO_EXTENSION));
 
-require("config.php");
-$link = mysqli_connect($host, $user, $password, $dbname);
+$db = new SQLite3($_SERVER['DOCUMENT_ROOT']."/db/WebApp.db");
 
 // Check if image file is a actual image or fake image
 if(isset($_POST['add']) && isset($_POST['modify'])) {
@@ -226,15 +230,6 @@ if(isset($_POST['add']) && isset($_POST['modify'])) {
         $uploadOk = 0;
     }
 }
-
-
-
-// Check if file already exists
-if (file_exists($target_file)) {
-  echo("<script>console.log('Sorry, file already exists.');</script>");
-  $uploadOk = 0;
-}
-
 
 // Check file size
 if ($_FILES["file"]["size"] > 2097152) {
@@ -287,14 +282,12 @@ else
     $txtFrame = 0;
 }
 
-$strSQL = 'SELECT `Id` FROM `WebApp` WHERE `Id` ORDER BY `Ordre`';
-
-$result = mysqli_query($link, $strSQL);
-$numResults = mysqli_num_rows($result);
+$strSQL = 'SELECT COUNT(*) FROM `AppList` WHERE `Id` ORDER BY `Ordre`';
+$numResults = requeteSQLrow($strSQL);
 $numResults = ++$numResults;
 
 // database insert SQL code
-$strSQL = 'INSERT INTO `WebApp` VALUES ( NULL, "'.$txtName.'",  "'.$txtLien.'", "'.$numResults.'", "'.$txtFrame.'")';
+$strSQL = 'INSERT INTO `AppList` VALUES ( NULL, "'.$txtName.'",  "'.$txtLien.'", "'.$numResults.'", "'.$txtFrame.'")';
 // insert in database 
 requeteSQL($strSQL);
 
@@ -312,14 +305,12 @@ else {
     $txtFrame = 0;
 }
 
-$strSQL = 'SELECT `Id` FROM `WebApp` WHERE `Id` ORDER BY `Ordre`';
-
-$resultat = requeteSQL($strSQL);
-$numResults = mysqli_num_rows($resultat);
+$strSQL = 'SELECT COUNT(*) FROM `AppList` WHERE `Id` ORDER BY `Ordre`';
+$numResults = requeteSQLrow($strSQL);
 $numResults = ++$numResults;
 
 // database insert SQL code
-$strSQL = 'UPDATE `WebApp` SET  Nom="'.$txtName.'",  Lien="'.$txtLien.'",  frame="'.$txtFrame.'" WHERE Id= '.$txtId.'';
+$strSQL = 'UPDATE `AppList` SET  Nom="'.$txtName.'",  Lien="'.$txtLien.'",  frame="'.$txtFrame.'" WHERE Id= '.$txtId.'';
 // insert in database 
 requeteSQL($strSQL);
 }
@@ -328,25 +319,24 @@ requeteSQL($strSQL);
 
 
 if (isset($_POST['Delete'])) {
-require("config.php");
-$link = mysqli_connect($host, $user, $password, $dbname); 
+
+$db = new SQLite3($_SERVER['DOCUMENT_ROOT']."/db/WebApp.db");
 
 $txtId = $_POST['idMenuAdd'];
 $txtName = $_POST['Nom'];
 
-$strSQL = 'SELECT `Id` FROM `WebApp` WHERE `Id` ORDER BY `Ordre`';
-$resultat = requeteSQL($strSQL);
-$numResults = mysqli_num_rows($resultat);
+$strSQL = 'SELECT COUNT(*) FROM `AppList` WHERE `Id` ORDER BY `Ordre`';
+$numResults = requeteSQLrow($strSQL);
 $numResults = ++$numResults;
 
 // Delete Id SQL code
-$strSQL = 'DELETE FROM `WebApp` WHERE `Id` = '.$txtId.';';
+$strSQL = 'DELETE FROM `AppList` WHERE `Id` = '.$txtId.';';
 $strSQL.= 'SET  @num := 0;';
-$strSQL.= 'UPDATE WebApp SET Id = @num := (@num+1);';
-$strSQL.= 'ALTER TABLE WebApp AUTO_INCREMENT = 1';
+$strSQL.= 'UPDATE AppList SET Id = @num := (@num+1);';
+$strSQL.= 'ALTER TABLE AppList AUTO_INCREMENT = 1';
         
 // insert in database 
-mysqli_multi_query($link, $strSQL);
+requeteSQL($strSQL);
 
 $filename = ('img/'.$txtName . '.png');
 
@@ -378,6 +368,8 @@ if(file_exists($fichier) && $fichier_lecture=file($fichier))
    }
     echo $valeur;
 }
+
+
 ?>
 
 
