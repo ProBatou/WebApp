@@ -2,7 +2,6 @@
 require('script/fonctions.php');
 require('config.php');
 
-session_start();
 if(isset($_POST['username']) && isset($_POST['password']))
 {
 
@@ -21,7 +20,17 @@ if(isset($_POST['username']) && isset($_POST['password']))
         if($count!=0)
         {
             $_SESSION['username'] = $username;
+            
+            if ($_POST['rememberme'] == 'YES'){
+                setcookie("user_id", $sessionid, strtotime('+1 months'), "/", $_SERVER['HTTP_HOST'], true, true);
+            }
+            else{
+                setcookie("user_id", "jesuisuncookiemanuel", time()+3600, "/", $_SERVER['HTTP_HOST'], true, true);
+            }
+            
             header('Location: index.php');
+            
+            
         }
         else
         {
