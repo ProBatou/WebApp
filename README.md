@@ -19,7 +19,7 @@ Features:
 ## Getting Started
 ### Prerequisites
 
-* MariaDB
+* SQLite3
   ```sh
   apt install sqlite3
   ```
