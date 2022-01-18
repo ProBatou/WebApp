@@ -2,45 +2,62 @@
 require('script/fonctions.php');
 require('config.php');
 
-if(isset($_POST['username']) && isset($_POST['password']))
-{
-
-    $db = mysqli_connect($host, $user, $password,$dbname);
-
-    $username = mysqli_real_escape_string($db,htmlspecialchars($_POST['username']));
-    $password = mysqli_real_escape_string($db,htmlspecialchars($_POST['password']));
+if(isset($_POST['username']) && isset($_POST['password'])){
     
-    if($username !== "" && $password !== "")
-    {
-        $requete = "SELECT count(*) FROM user where User = '".$username."' and Password = PASSWORD('".$_POST['password']."') ";
-        $exec_requete = mysqli_query($db,$requete);
-        $reponse = mysqli_fetch_array($exec_requete);
-        $count = $reponse['count(*)'];
-
-        if($count!=0)
-        {
-            $_SESSION['username'] = $username;
+    $db = new SQLite3($_SERVER['DOCUMENT_ROOT']."/db/WebApp.db");
+    $username = $_POST['username'];
+    
+    $password = $_POST['password'];
+    $password_hash = password_hash($_POST['password'], PASSWORD_BCRYPT);
+    
+    if($username !== "" && $password !== ""){
+        
+        $strSQL = 'SELECT "password" FROM "user" WHERE user = '."'".$username."'";
+        $resultat = requeteSQLrow($strSQL);
+        
+        if(password_verify($password,$resultat)){
             
             if ($_POST['rememberme'] == 'YES'){
-                setcookie("user_id", $sessionid, strtotime('+1 months'), "/", $_SERVER['HTTP_HOST'], true, true);
+                
+                $randString = substr(md5(openssl_random_pseudo_bytes(20)),-50);/////////////////////////////// PAS sur de ca
+                
+                setcookie("user_id", $randString, strtotime('+1 months'), "/", $_SERVER['HTTP_HOST'], true, true);
+                $strSQL = "INSERT INTO `sessions` VALUES ('".$randString."', '".strtotime('+1 months')."')";
+                $resultat = requeteSQL($strSQL);
+                
             }
             else{
-                setcookie("user_id", "jesuisuncookiemanuel", time()+3600, "/", $_SERVER['HTTP_HOST'], true, true);
+                
+                $randString = substr(md5(openssl_random_pseudo_bytes(20)),-50);/////////////////////////////// PAS sur de ca
+                
+                setcookie("user_id", $randString, strtotime('+1 days'), "/", $_SERVER['HTTP_HOST'], true, true);
+                $strSQL = "INSERT INTO `sessions` VALUES ('".$randString."', '".strtotime('+1 days')."')";
+                $resultat = requeteSQL($strSQL);
+                
             }
-            
+
             header('Location: index.php');
             
-            
         }
-        else
-        {
-           header('Location: login.php?erreur=LoginFailed');
+        else{
+            
+            $strSQL = 'SELECT COUNT(*) FROM `user`';
+            $resultat = requeteSQLrow($strSQL);
+            if($resultat == 0){
+                $strSQL = "INSERT INTO user VALUES ('".$username."', '".$password_hash."')";
+                $resultat = requeteSQL($strSQL);
+                header('Location: index.php');
+            }
+            else{
+                header('Location: login.php?erreur=LoginFailed');
+            }
+            
+               
+            
         }
     }
 }
-else
-{
+else{
    header('Location: login.php');
 }
-mysqli_close($db);
 ?>

@@ -1,12 +1,36 @@
 <?php
 
-function sortable(){
+function sortable() {
     $strSQL = 'SELECT * FROM AppList ORDER BY Ordre ASC';
     $resultat = requeteSQL($strSQL);
     $list = $resultat->fetchArray();
 }
 
+function createDB() {
+    
+    $db = new SQLite3($_SERVER['DOCUMENT_ROOT']."/db/WebApp.db");
+    
+    $strSQL =  "CREATE TABLE IF NOT EXISTS `sessions` (";
+    $strSQL.=  "`session_id` int(11) NOT NULL,";
+    $strSQL.=  "`session_expire` varchar(20) NOT NULL);";
 
+    $db->query($strSQL);
+    
+    $strSQL =  "CREATE TABLE IF NOT EXISTS `user` (";
+    $strSQL.=  "user varchar(64) NOT NULL,";
+    $strSQL.=  "password varchar(255) NOT NULL,";
+    $strSQL.=  "PRIMARY KEY (user));";
+    
+    $db->query($strSQL);
+    
+    $strSQL =  "CREATE TABLE IF NOT EXISTS `AppList` (";
+    $strSQL.=  "`Id` integer primary key autoincrement,";
+    $strSQL.=  "`Nom` varchar(32) NOT NULL,";
+    $strSQL.=  "`Lien` varchar(255) NOT NULL,'Ordre' NUMERIC NOT NULL DEFAULT 99,";
+    $strSQL.=  "`frame` tinyint(1) NOT NULL DEFAULT 1);";
+
+    $db->query($strSQL);
+}
 
 function requeteSQL($strSQL) {
     
@@ -14,27 +38,13 @@ function requeteSQL($strSQL) {
 
     $result = $db->query($strSQL);
 
-	if (!$result) {
-		$message  = 'Erreur SQL : ' . $db->exec('PRAGMA journal_mode = wal;') . "<br>\n";
-		$message .= 'SQL string : "' . $strSQL . "<br>\n";
-		$message .= "Merci d'envoyer ce message au webmaster";
-		die($message);
-	}
 	return $result;
 }
 
 function requeteSQLrow($strSQL) {
     
     $db = new SQLite3($_SERVER['DOCUMENT_ROOT']."/db/WebApp.db");
-
     $result = $db->querySingle($strSQL);
-
-	if (!$result) {
-		$message  = 'Erreur SQL : ' . $db->exec('PRAGMA journal_mode = wal;') . "<br>\n";
-		$message .= 'SQL string : "' . $strSQL . "<br>\n";
-		$message .= "Merci d'envoyer ce message au webmaster";
-		die($message);
-	}
 	return $result;
 }
 
