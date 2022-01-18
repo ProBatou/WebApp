@@ -1,31 +1,36 @@
 <?php
 
-if(filesize('config.php')) {
     session_start();
+    require('script/fonctions.php');
+	require('config.php');
     
     if(!isset($_COOKIE["user_id"])){
         header("Location: login.php");
 	    exit();
 	}
-
+	else{
+	    
+	    $strSQL = 'SELECT "session_id" FROM "sessions" WHERE session_id ='."'".$_COOKIE["user_id"]."'";
+        $resultat = requeteSQLrow($strSQL);
+        
+	    if($_COOKIE["user_id"] !== $resultat){
+	        header("Location: login.php");
+	    }
+	}
+	
 	if(isset($_GET['deconnexion'])){
 	    
 	   if($_GET['deconnexion']==true){
             setcookie("user_id", "", time()-3600, "/", $_SERVER['HTTP_HOST'], true, true);
+            $strSQL = 'DELETE FROM "sessions" WHERE session_id ='."'".$_COOKIE["user_id"]."'";
+            requeteSQLrow($strSQL);
             session_unset();
 	        header("location:login.php");
 	   }
 	}
-	else if($_COOKIE["user_id"] !== ""){
-	    $user = $_COOKIE["user_id"];
-	}
 	
-	require('script/fonctions.php');
-	require('config.php');
-}
-else{
-    header("location:installer.html");
-}
+	$strSQL = 'DELETE FROM "sessions" WHERE session_expire < '.strtotime("now");
+	requeteSQL($strSQL);
 
 ?>
 

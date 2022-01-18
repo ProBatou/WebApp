@@ -1,6 +1,22 @@
 <?php
 	require('script/fonctions.php');
-	require('config.php')
+	require('config.php');
+	
+	$filename = $_SERVER['DOCUMENT_ROOT']."/db/WebApp.db";
+
+    if (!file_exists($filename)) {
+        createDB();
+    } 
+    
+    $strSQL = 'SELECT "session_id" FROM "sessions" WHERE session_id ='."'".$_COOKIE["user_id"]."'";
+    $resultat = requeteSQLrow($strSQL);
+    
+    
+    if(isset($_COOKIE["user_id"])){
+        if($_COOKIE["user_id"] == $resultat){
+            header("Location: index.php");
+        }
+	}
 ?>
 
 <!DOCTYPE html>
