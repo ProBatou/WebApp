@@ -21,13 +21,12 @@ Features:
 
 * MariaDB
   ```sh
-  apt install mariadb-server
-  mysql_secure_installation
+  apt install sqlite3
   ```
   
 * PHP
   ```sh
-  apt install php php-mysql 
+  apt install php php-sqlite3 
   ```
 
 ### Installation
@@ -42,7 +41,7 @@ Features:
    ```
 3. Add permision
    ```sh
-   chown -R www-data WebApp/
+   chown -R www-data:www-data WebApp/
    ```
 4. Go to you're favorite browser and configure WebApp
    ```html
