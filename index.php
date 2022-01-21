@@ -140,11 +140,6 @@ if ("<?php check_update(); ?>" == "NEED_UPDATE"){
 		</script>
 
 
-
-
-
-
-
 		</div>
 	
 <script>
