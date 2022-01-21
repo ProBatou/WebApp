@@ -8,7 +8,6 @@ function run_update() {
 
     exec('wget https://github.com/ProBatou/WebApp/archive/refs/tags/v'.$versiongithub.'.tar.gz');
     exec('tar -xvf *'.$versiongithub.'.tar.gz --strip 1 && rm *'.$versiongithub.'.tar.gz');
-    exec("sed -i 's/" . $version . "/" . $versiongithub . "/g' " . $file); 
 
     file_put_contents($file, $versiongithub);
 }
