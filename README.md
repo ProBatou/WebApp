@@ -69,10 +69,9 @@ Update with interface pop-up
 <!-- prettier-ignore-start -->
 <!-- markdownlint-disable -->
 <table>
-  <tr>
-    <td align="center"><a href="https://lafouffe.fr"><img src="https://avatars.githubusercontent.com/u/58776368?v=4" width="100px;" alt=""/><br /><sub><b>Lafouffe</b></sub></a><br /><a href="#question-kentcdodds" title="Answering Questions">💬</a> <a href="https://github.com/all-contributors/all-contributors/commits?author=lafouffe" title="Documentation">📖</a> <a href="https://github.com/all-contributors/all-contributors/pulls?q=is%3Apr+reviewed-by%3lafouffe" title="Reviewed Pull Requests">👀</a> <a href="#talk-lafouffe" title="Talks">📢</a></td>
-    <td align="center"><a href="https://ProBatou.com"><img src="https://avatars.githubusercontent.com/u/27163397?v=4" width="100px;" alt=""/><br /><sub><b>ProBatou</b></sub></a><br /><a href="#question-ProBatou" title="Answering Questions">💬</a> <a href="https://github.com/all-contributors/all-contributors/commits?author=ProBatou" title="Documentation">📖</a> <a href="https://github.com/all-contributors/all-contributors/pulls?q=is%3Apr+reviewed-by%3ProBatou" title="Reviewed Pull Requests">👀</a> <a href="#talk-ProBatou" title="Talks">📢</a></td>
-  </tr>
+<tr><td align="center"><a href="https://lafouffe.fr"><img src="https://avatars.githubusercontent.com/u/58776368?v=4" width="100px;" alt=""/><br /><sub><b>Lafouffe</b></sub></a><br/></td>
+    
+<td align="center"><a href="https://ProBatou.com"><img src="https://avatars.githubusercontent.com/u/27163397?v=4" width="100px;" alt=""/><br /><sub><b>ProBatou</b></sub></a><br/></td></tr>
 </table>
 
 <!-- markdownlint-restore -->
