@@ -1,5 +1,18 @@
 <?php
 
+
+function check_update() {
+
+    $version = file_get_contents('version.txt');
+    $versiongithub = exec('curl --silent -H "Accept: application/vnd.github.v3+json" https://api.github.com/repos/ProBatou/WebApp/releases/latest | grep -oP '. "'(?<=".'"tag_name": ")[^"]*'."' | sed 's/^v//'");
+     
+    if (version_compare($version, $versiongithub) < 0) {
+        echo "NEED_UPDATE";
+    }
+}
+
+
+
 function sortable() {
     $strSQL = 'SELECT * FROM AppList ORDER BY Ordre ASC';
     $resultat = requeteSQL($strSQL);

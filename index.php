@@ -67,6 +67,13 @@
 			<div id="Add" class="item"><?php language(Add, context-menu)?></div>
 			<div id="Modify" class="item"><?php language(Modify, context-menu)?></div>
 		</div>
+
+
+		<div id="popup">
+			<button onclick="update()"> Run update </button>
+			<button onclick="hidepopup()"> Hide </button>
+		</div>
+
 		
                 
                 <div id="context-menu-modify" class="draggable">
@@ -114,6 +121,30 @@
 
 
 			<script src="script/fonctions.js"></script>
+
+
+
+
+
+			<script>
+
+if ("<?php check_update(); ?>" == "NEED_UPDATE"){
+    if(getCookie("popup_update") == "HIDE"){
+        document.getElementById("popup").classList.remove("visible");
+    }
+    else{
+        document.getElementById("popup").classList.add("visible");
+    }   
+}
+
+		</script>
+
+
+
+
+
+
+
 		</div>
 	
 <script>

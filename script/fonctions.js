@@ -390,6 +390,32 @@ document.ontouchstart = filter;
 
 
 
+function getCookie(cname) {
+    let name = cname + "=";
+    let ca = document.cookie.split(';');
+    for(let i = 0; i < ca.length; i++) {
+      let c = ca[i];
+      while (c.charAt(0) == ' ') {
+        c = c.substring(1);
+      }
+      if (c.indexOf(name) == 0) {
+        return c.substring(name.length, c.length);
+      }
+    }
+    return "";
+  }
+
+
+function hidepopup(){
+    document.cookie = "popup_update" + "="  + "HIDE" + "; path=/" + ";secure";
+    popup.classList.remove("visible");
+}
+
+function update(){
+  document.getElementById("popup").classList.remove("visible");
+  $.ajax({url:"update.php", success:function(result){}})
+}
+
 
 
 
