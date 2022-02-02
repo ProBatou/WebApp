@@ -233,7 +233,6 @@ border: none;
 cursor: pointer;
 width: 45%;
 display: inline-block;
-float:left;
 -webkit-appearance: none !important;
 }
 
@@ -246,7 +245,6 @@ border: none;
 cursor: pointer;
 width: 45%;
 display: inline-block;
-float:left;
 -webkit-appearance: none !important;
 }
 
@@ -352,8 +350,8 @@ input[type="checkbox"]:checked {
   position: fixed;
   z-index: 3;
   width: 20%;
-  transform: scale(0);
-  transform-origin: top left;
+
+  transform-origin: top right;
   opacity: .9;
   border-radius: 5px;
   transition: width 100ms linear;
@@ -361,12 +359,10 @@ input[type="checkbox"]:checked {
   background-size: 400% 400%;
   animation: gradient 28s ease infinite;
   }
-  
-  #popup.visible {
-  transform: scale(1);
-  transition: transform 200ms ease-in-out;
-  }
 
+#popup-header{
+  
+}
 
 
 
