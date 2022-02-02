@@ -55,12 +55,6 @@ Features:
 
 ### Update
 
-Launch `update.sh`
-   ```sh
-   ./update.sh
-   ```
-or
-
 Update with interface pop-up 
 
 
