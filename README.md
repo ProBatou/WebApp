@@ -63,19 +63,7 @@ or
 
 Update with interface pop-up 
 
-## Contributors ✨
 
-<!-- ALL-CONTRIBUTORS-LIST:START - Do not remove or modify this section -->
-<!-- prettier-ignore-start -->
-<!-- markdownlint-disable -->
-<table>
-<tr><td align="center"><a href="https://lafouffe.fr"><img src="https://avatars.githubusercontent.com/u/58776368?v=4" width="100px;" alt=""/><br /><sub><b>Lafouffe</b></sub></a><br/></td>
-    
-<td align="center"><a href="https://ProBatou.com"><img src="https://avatars.githubusercontent.com/u/27163397?v=4" width="100px;" alt=""/><br /><sub><b>ProBatou</b></sub></a><br/></td></tr>
-</table>
-
-<!-- markdownlint-restore -->
-<!-- prettier-ignore-end -->
 
 <!-- CONTACT -->
 ## Contact
