@@ -70,9 +70,14 @@
 
 
 		<div id="popup">
-			<button onclick="update()"> Run update </button>
-			<button onclick="hidepopup()"> Hide </button>
-		</div>
+ 			<button onclick="update()"> Run update </button>
+ 			<button onclick="hidepopup()"> Hide </button>
+ 			<a id="popup-header"><?php language(updateavailable, popup)?></a>
+ 			<div id="popup-button">
+ 				<button id="popup-updtae" onclick="update()"><?php language(run, popup)?></button>
+ 				<button id="popup-later" onclick="hidepopup()"><?php language(later, popup)?></button>
+ 			</div>
+ 		</div>
 
 		
                 
