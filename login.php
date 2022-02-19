@@ -37,9 +37,8 @@
             <form action="verification.php" method="POST">
                 <input type="text" placeholder="<?php language(Username, Login)?>" name="username" required>
                 <input type="password" placeholder="<?php language(Password, Login)?>" name="password" required>
-                <input type="checkbox" name="rememberme" value="YES" checked>
-                <label for="rememberme"><?php language(rememberme, Login)?></label>
                 <input type="submit" id='submit' value=<?php language(Connection, Login)?>>
+                <input type="checkbox" name="rememberme" value="YES" checked>
                 <?php
                     if (isset($_GET['erreur'])){
                         $err = $_GET['erreur'];

@@ -347,22 +347,50 @@ input[type="checkbox"]:checked {
 /* ------------------ POPUP ------------------ */
 
 #popup {
-  position: fixed;
   z-index: 3;
+  position: fixed;
+  top: 5px;
+  left: 80%;
+  transform-origin: bottom right;
   width: 20%;
-
-  transform-origin: top right;
+  height: 15%;
   opacity: .9;
-  border-radius: 5px;
   transition: width 100ms linear;
   background: linear-gradient(135deg, #000000, #6b6b6b);
   background-size: 400% 400%;
   animation: gradient 28s ease infinite;
+  display: flex;
+  flex-direction: column;
   }
 
 #popup-header{
-  
+  background-color: red;
+  color: #eee;
+  display: flex;
+  flex-grow: 2;
+  justify-content: center;
+  align-items: center;
+  margin: 0;
+  border: none;
 }
 
+#popup-button{
+  display: flex;
+  flex-grow: 1;
+}
 
+#popup-update{
+background-color: blue;
+color: #eee;
+flex-grow: 1;
+border: none;
+margin: 0;
+}
 
+#popup-later{
+background-color: green;
+color: #eee;
+flex-grow: 1;
+border: none;
+margin: 0;
+}

@@ -10,7 +10,7 @@ Features:
 * Refresh a single application and not the entire site
 * Open in other tab without Webapp
 * Fast loading with lazy loading
-* Simple interface and fully transparent in desktop
+* A single file contains your personal information in clear `config.php`
 * No modification is to be made on the DB :smile:
 
 
@@ -54,6 +54,12 @@ Features:
 
 
 ### Update
+
+Launch `update.sh`
+   ```sh
+   ./update.sh
+   ```
+or
 
 Update with interface pop-up 
 
