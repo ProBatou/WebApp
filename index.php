@@ -69,10 +69,17 @@
 		</div>
 
 
+
+
+
+
 		<div id="popup">
-			<button onclick="update()"> Run update </button>
-			<button onclick="hidepopup()"> Hide </button>
-		</div>
+ 			<a id="popup-header"><?php language(updateavailable, popup)?></a>
+ 			<div id="popup-button">
+ 				<button id="popup-update" onclick="update()"><?php language(run, popup)?></button>
+ 				<button id="popup-later" onclick="hidepopup()"><?php language(later, popup)?></button>
+ 			</div>
+ 		</div>
 
 		
                 
@@ -111,7 +118,7 @@
 				echo afficheUl();
 			?>
 			    <li class="disconnect">
-				    <a href="index.php?deconnexion=true" class="icon fa logout_icon"></a>
+				    <a href="index.php?deconnexion=true" class="icon logout_icon"></a>
 				</li>
 				</ul>
 			<?php
