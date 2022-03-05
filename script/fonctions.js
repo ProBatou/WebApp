@@ -408,12 +408,12 @@ function getCookie(cname) {
 
 function hidepopup(){
     document.cookie = "popup_update" + "="  + "HIDE" + "; path=/" + ";secure";
-    popup.classList.remove("visible");
+    popup.style.transitionDelay = "0s";
+    popup.style.transform = "translateX(100%)";
 }
 
 function update(){
-  document.getElementById("popup").classList.remove("visible");
-  $.ajax({url:"update.php", success:function(result){}})
+  //$.ajax({url:"update.php", success:function(result){}})
 }
 
 
