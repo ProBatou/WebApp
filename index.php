@@ -137,10 +137,10 @@
 
 if ("<?php check_update(); ?>" == "NEED_UPDATE"){
     if(getCookie("popup_update") == "HIDE"){
-        document.getElementById("popup").classList.remove("visible");
+        hidepopup();
     }
     else{
-        document.getElementById("popup").classList.add("visible");
+        popup.style.transform = "translateX(-100%)";
     }   
 }
 
