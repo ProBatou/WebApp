@@ -349,12 +349,13 @@ input[type="checkbox"]:checked {
 /* ------------------ POPUP ------------------ */
 
 #popup {
-  position: absolute;
+  position: fixed;
   display: flex;
   flex-direction: column;
   z-index: 3;
   width: 20%;
-  height: 50%;
+  height: 15%;
+  top: 2%;
   left: 100%;
   opacity: .9;
   border-radius: 5px 0 0 5px;
@@ -367,13 +368,19 @@ input[type="checkbox"]:checked {
 
 @media (any-hover: none) and (orientation: landscape) {
   #popup {
+    top: 0;
     width: 40%;
+    border-radius: 0;
+    transition-delay: 500ms;
   }
 }
   
 @media (any-hover: none) and (orientation: portrait) {
   #popup {
+    top: 0;
     width: 100%;
+    border-radius: 0;
+    transition-delay: 500ms;
   }
 }
 

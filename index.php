@@ -2,7 +2,6 @@
 
     session_start();
     require('script/fonctions.php');
-	require('config.php');
     
     if(!isset($_COOKIE["user_id"])){
         header("Location: login.php");
@@ -68,11 +67,6 @@
 			<div id="Modify" class="item"><?php language(Modify, context-menu)?></div>
 		</div>
 
-
-
-
-
-
 		<div id="popup">
  			<a id="popup-header"><?php language(updateavailable, popup)?></a>
  			<div id="popup-button">
@@ -80,8 +74,6 @@
  				<button id="popup-later" onclick="hidepopup()"><?php language(later, popup)?></button>
  			</div>
  		</div>
-
-		
                 
                 <div id="context-menu-modify" class="draggable">
                     <div class="header-context-menu-manage-modify">

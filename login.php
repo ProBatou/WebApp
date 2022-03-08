@@ -1,6 +1,5 @@
 <?php
 	require('script/fonctions.php');
-	require('config.php');
 	
 	$filename = $_SERVER['DOCUMENT_ROOT']."/db/WebApp.db";
 
@@ -37,9 +36,15 @@
             <form action="verification.php" method="POST">
                 <input type="text" placeholder="<?php language(Username, Login)?>" name="username" required>
                 <input type="password" placeholder="<?php language(Password, Login)?>" name="password" required>
+                <select name="language" required>
+                    <option value="fr-fr">Français</option>
+                    <option value="en-en">English</option>
+                </select>
+                <div id="rememberme">
+                    <input type="checkbox" name="rememberme" value="YES" checked>
+                    <label for="rememberme"><?php language(rememberme, Login)?></label>
+                </div>
                 <input type="submit" id='submit' value=<?php language(Connection, Login)?>>
-                <input type="checkbox" name="rememberme" value="YES" checked>
-                <label for="rememberme"><?php language(rememberme, Login)?></label>
                 <?php
                     if (isset($_GET['erreur'])){
                         $err = $_GET['erreur'];

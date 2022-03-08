@@ -364,16 +364,22 @@ requeteSQL($strSQL);
 $filename = ('img/'.$txtName . '.png');
 
 unlink($filename);
+}
 
+
+function language($item_recherche, $groupe_recherche){
+
+if(!isset($_COOKIE["user_id"])){
+    $resultat = "fr-fr";
+}
+else{
+    $strSQL = 'SELECT "language" FROM "sessions" WHERE session_id ='."'".$_COOKIE["user_id"]."'";
+    $resultat = requeteSQLrow($strSQL);
 }
 
 
 
-function language($item_recherche, $groupe_recherche){
-    
-require('config.php');
-
-$fichier="language/".$language.".ini";
+$fichier="language/".$resultat.".ini";
 
 if(file_exists($fichier) && $fichier_lecture=file($fichier))
    foreach($fichier_lecture as $ligne)
