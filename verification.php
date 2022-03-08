@@ -1,6 +1,5 @@
 <?php
 require('script/fonctions.php');
-require('config.php');
 
 if(isset($_POST['username']) && isset($_POST['password'])){
     
@@ -22,7 +21,7 @@ if(isset($_POST['username']) && isset($_POST['password'])){
                 $randString = substr(md5(openssl_random_pseudo_bytes(20)),-50);/////////////////////////////// PAS sur de ca
                 
                 setcookie("user_id", $randString, strtotime('+1 months'), "/", $_SERVER['HTTP_HOST'], true, true);
-                $strSQL = "INSERT INTO `sessions` VALUES ('".$randString."', '".strtotime('+1 months')."')";
+                $strSQL = "INSERT INTO `sessions` VALUES ('".$randString."', '".strtotime('+1 months')."', '".$_POST['language']."')";
                 $resultat = requeteSQL($strSQL);
                 
             }

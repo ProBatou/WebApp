@@ -10,7 +10,6 @@ Features:
 * Refresh a single application and not the entire site
 * Open in other tab without Webapp
 * Fast loading with lazy loading
-* A single file contains your personal information in clear `config.php`
 * No modification is to be made on the DB :smile:
 
 

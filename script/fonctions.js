@@ -18,6 +18,7 @@ const contextMenuClose = document.getElementById("CloseMenuAdd");
 const scope = document.querySelector("div#t0 ul");
 const view = document.querySelector("body");
 const Vframe = document.getElementById("virtual");
+const popup = document.getElementById("popup");
 const d = document.getElementsByClassName("draggable");
 var onlongtouch;
 var timer;
@@ -417,16 +418,6 @@ function update(){
     popup.style.transitionDelay = "0s";
     popup.style.transform = "translateX(100%)";
 }
-
-
-
-
-
-
-
-
-
-
 
 
 
