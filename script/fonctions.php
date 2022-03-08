@@ -25,7 +25,8 @@ function createDB() {
     
     $strSQL =  "CREATE TABLE IF NOT EXISTS `sessions` (";
     $strSQL.=  "`session_id` int(11) NOT NULL,";
-    $strSQL.=  "`session_expire` varchar(20) NOT NULL);";
+    $strSQL.=  "`session_expire` varchar(20) NOT NULL,";
+    $strSQL.=  "`language` TEXT);";
 
     $db->query($strSQL);
     
