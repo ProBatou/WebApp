@@ -1,3 +1,4 @@
-img/custom
+img/custom/*
+!img/custom/.gitkeep
 db/WebApp.db
 version.txt
