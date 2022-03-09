@@ -17,9 +17,9 @@
         }
 	}
 ?>
-
+<script></script>
 <!DOCTYPE html>
-<html lang="<?php echo $language ?>">
+<html lang="<?php lang()?>">
     <head>
        <meta charset="utf-8">
         <meta name="robots" content="noindex">
@@ -37,8 +37,8 @@
                 <input type="text" placeholder="<?php language(Username, Login)?>" name="username" required>
                 <input type="password" placeholder="<?php language(Password, Login)?>" name="password" required>
                 <select name="language" required>
-                    <option value="fr-fr">Français</option>
-                    <option value="en-en">English</option>
+                    <option value="fr">Français</option>
+                    <option value="en">English</option>
                 </select>
                 <div id="rememberme">
                     <input type="checkbox" name="rememberme" value="YES" checked>

@@ -369,14 +369,19 @@ unlink($filename);
 function language($item_recherche, $groupe_recherche){
 
 if(!isset($_COOKIE["user_id"])){
-    $resultat = "fr-fr";
+
+    $resultat = substr($_SERVER['HTTP_ACCEPT_LANGUAGE'], 0, 2);
+    $fichier="language/".$resultat.".ini";
+
+    if(!file_exists($fichier)){
+        $resultat = "en";
+    }
+
 }
 else{
     $strSQL = 'SELECT "language" FROM "sessions" WHERE session_id ='."'".$_COOKIE["user_id"]."'";
     $resultat = requeteSQLrow($strSQL);
 }
-
-
 
 $fichier="language/".$resultat.".ini";
 
@@ -396,6 +401,20 @@ if(file_exists($fichier) && $fichier_lecture=file($fichier))
    }
     echo $valeur;
 }
+
+
+function lang(){
+
+    if(isset($_COOKIE["user_id"])){
+        $strSQL = 'SELECT "language" FROM "sessions" WHERE session_id ='."'".$_COOKIE["user_id"]."'";
+        $resultat = requeteSQLrow($strSQL);
+    }
+    else{
+        $resultat = substr($_SERVER['HTTP_ACCEPT_LANGUAGE'], 0, 2);
+    }
+    echo $resultat;
+}
+
 
 
 ?>
