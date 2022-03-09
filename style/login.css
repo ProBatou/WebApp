@@ -38,7 +38,7 @@ html, body, .page {
 
 form {
   width:100%;
-  padding: 30px;
+  padding: 30px 30px 15px 30px;
   border: 1px solid #f1f1f1;
   background: #fff;
   box-shadow: 0 0 20px 0 rgba(0, 0, 0, 0.2), 0 5px 5px 0 rgba(0, 0, 0, 0.24);
@@ -81,6 +81,18 @@ input[type=submit] {
 #rememberme {
   flex-direction: row;
   color: rgb(87, 85, 85);
+  padding: 10px;
 }
     
-    
+select {
+  width: 100%;
+  padding: 12px 20px;
+  margin: 8px 0;
+  display: inline-block;
+  border: 1px solid #ccc;
+  background: #fff;
+  color: rgb(87, 85, 85);;
+  box-sizing: border-box;
+  border-radius: 10px;
+  -webkit-appearance: none !important;
+}
