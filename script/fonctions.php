@@ -113,8 +113,15 @@ function afficheIconCss() {
 	$strSQL = 'SELECT `Id`, `Nom` FROM `AppList` WHERE `Id` ORDER BY `Ordre`';
 	$resultat = requeteSQL($strSQL);
 	while ($tabl_result = $resultat->fetchArray()) {
-	    $menu_retour .= '.'.$tabl_result['Nom'].'_icon {'."\n".'content: url("../img/'.$tabl_result['Nom'].'.png" )'."\n".'}'."\n";
 
+    $filename = "../img/custom/".$tabl_result['Nom'].".png";
+
+    if (file_exists($filename)) {
+        $menu_retour .= '.'.$tabl_result['Nom'].'_icon {'."\n".'content: url("../img/custom/'.$tabl_result['Nom'].'.png" )'."\n".'}'."\n";
+    } 
+    else {
+        $menu_retour .= '.'.$tabl_result['Nom'].'_icon {'."\n".'content: url("../img/default/'.$tabl_result['Nom'].'.png" )'."\n".'}'."\n";
+    }
 	}
 	return $menu_retour;
 }
@@ -234,7 +241,8 @@ if (isset($_POST['add']) && isset($_POST['modify'])) {
     
 $txtName = $_POST['Nom'];
 
-$target_dir = $_SERVER['DOCUMENT_ROOT']."/img/";
+$default_dir = $_SERVER['DOCUMENT_ROOT']."/img/system/";
+$target_dir = $_SERVER['DOCUMENT_ROOT']."/img/custom/";
 $target_file = $target_dir . basename($_FILES["file"]["name"]);
 
 $uploadOk = 1;
@@ -246,18 +254,15 @@ $db = new SQLite3($_SERVER['DOCUMENT_ROOT']."/db/WebApp.db");
 if(isset($_POST['add']) && isset($_POST['modify'])) {
   $check = getimagesize($_FILES["file"]["tmp_name"]);
     if($check !== false) {
-        echo("<script>console.log('File is an image - ". $check["mime"] ."');</script>");
         $uploadOk = 1;
     } 
     else {
-        echo("<script>console.log('File is not an image.');</script>");
         $uploadOk = 0;
     }
 }
 
 // Check file size
 if ($_FILES["file"]["size"] > 2097152) {
-  echo("<script>console.log('Sorry, your file is too large.');</script>");
   $uploadOk = 0;
 }
 
@@ -265,30 +270,23 @@ if ($_FILES["file"]["size"] > 2097152) {
 if ($_FILES["file"]["size"] == 0) {
     
     if (file_exists($target_dir . $txtName . ".png")) {
-  $uploadOk = 0;
-}
-else {
-    copy($target_dir . "default.png", $target_dir . $txtName . ".png");
-    $uploadOk = 0;
-}
+        $uploadOk = 0;
+    }
+    else {
+        copy($default_dir . "default.png", $target_dir . $txtName . ".png");
+        $uploadOk = 0;
+    }
 }
 
 // Allow certain file formats
 if($imageFileType != "jpg" && $imageFileType != "png" && $imageFileType != "jpeg" ) {
-  echo("<script>console.log('Sorry, only JPG, JPEG, PNG files are allowed.');</script>");
   $uploadOk = 0;
 }
 
-
-
 // Check if $uploadOk is set to 0 by an error
-if ($uploadOk == 0) {
-  echo("<script>console.log('Sorry, your file was not uploaded.');</script>");
-// if everything is ok, try to upload file
-} else {
+if (!$uploadOk == 0) {
     move_uploaded_file($_FILES["file"]["tmp_name"], $target_dir.$txtName.".png");
 }
-
 
 
 if ($_POST['idMenuAdd'] == "0"){
@@ -362,7 +360,7 @@ $strSQL.= 'ALTER TABLE AppList AUTO_INCREMENT = 1';
 // insert in database 
 requeteSQL($strSQL);
 
-$filename = ('img/'.$txtName . '.png');
+$filename = ('img/custom/'.$txtName . '.png');
 
 unlink($filename);
 }

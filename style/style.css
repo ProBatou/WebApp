@@ -50,7 +50,7 @@ text-align: center;
 }
 
 .logout_icon {
-content: url("../../img/logout.png");
+content: url("../../img/system/logout.png");
 }
 
 @media (any-pointer) {
