@@ -36,7 +36,7 @@
 
 
 <!DOCTYPE html>
-<html lang="<?php echo $language ?>">
+<html lang="<?php lang()?>">
 	<head>
 		<title>WebApp</title>
 		<meta charset="UTF-8">
@@ -121,22 +121,17 @@
 
 			<script src="script/fonctions.js"></script>
 
-
-
-
-
 			<script>
 
-if ("<?php check_update(); ?>" == "NEED_UPDATE"){
-    if(getCookie("popup_update") == "HIDE"){
-        hidepopup();
-    }
-    else{
-        popup.style.transform = "translateX(-100%)";
-    }   
-}
-
-		</script>
+				if ("<?php check_update(); ?>" == "NEED_UPDATE"){
+    				if(getCookie("popup_update") == "HIDE"){
+        				hidepopup();
+    				}
+   					 else{
+        				popup.style.transform = "translateX(-100%)";
+    				}   
+				}
+			</script>
 
 
 		</div>
