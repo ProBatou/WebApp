@@ -387,10 +387,6 @@ document.ontouchstart = filter;
 
 
 
-
-
-
-
 function getCookie(cname) {
     let name = cname + "=";
     let ca = document.cookie.split(';');
@@ -407,17 +403,17 @@ function getCookie(cname) {
   }
 
 
+
 function hidepopup(){
     document.cookie = "popup_update" + "="  + "HIDE" + "; path=/" + ";secure";
     popup.style.transitionDelay = "0s";
     popup.style.transform = "translateX(100%)";
 }
 
+
+
 function update(){
     $.ajax({url:"update.php", success:function(result){}})
     popup.style.transitionDelay = "0s";
     popup.style.transform = "translateX(100%)";
 }
-
-
-
