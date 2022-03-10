@@ -1,15 +1,8 @@
 <?php
 	require('script/fonctions.php');
-	
-	$filename = $_SERVER['DOCUMENT_ROOT']."/db/WebApp.db";
 
-    if (!file_exists($filename)) {
-        createDB();
-    } 
-    
     $strSQL = 'SELECT "session_id" FROM "sessions" WHERE session_id ='."'".$_COOKIE["user_id"]."'";
     $resultat = requeteSQLrow($strSQL);
-    
     
     if(isset($_COOKIE["user_id"])){
         if($_COOKIE["user_id"] == $resultat){
@@ -17,7 +10,6 @@
         }
 	}
 ?>
-<script></script>
 <!DOCTYPE html>
 <html lang="<?php lang()?>">
     <head>
@@ -36,7 +28,7 @@
             <form action="verification.php" method="POST">
                 <input type="text" placeholder="<?php language(Username, Login)?>" name="username" required>
                 <input type="password" placeholder="<?php language(Password, Login)?>" name="password" required>
-                <select name="language" required>
+                <select id="language" required>
                     <option value="fr">Français</option>
                     <option value="en">English</option>
                 </select>
@@ -50,11 +42,29 @@
                         $err = $_GET['erreur'];
                         if ($err == "LoginFailed") echo "<p style='color:red; text-align: center';>" ?><?php language(Error, Login) ?><?php "</p>";
                     }
+
+                    $strSQL = 'SELECT "user" FROM "user"';
+                    $resultat = requeteSQLrow($strSQL);
+
+                    if (empty($resultat)) {
+                        echo "<p style='color:black; text-align: center';>" ?><?php language(firstconnect, Login) ?><?php "</p>";
+                        createDB();
+                    } 
                 ?>
             </form>
         </div>
       </div>
       <script src="script/particles.js"></script>
       <script src="script/app.js"></script>
+      <script>
+        var userlang = navigator.language.substring(0, 2);
+        var mySelect = document.getElementById('language');
+        for(var i, j = 0; i = mySelect.options[j]; j++) {
+            if(i.value == userlang) {
+                mySelect.selectedIndex = j;
+            break;
+            }
+        }
+      </script>
     </body>
 </html>
