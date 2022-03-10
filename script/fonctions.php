@@ -241,9 +241,10 @@ if (isset($_POST['add']) && isset($_POST['modify'])) {
     
 $txtName = $_POST['Nom'];
 
-$default_dir = $_SERVER['DOCUMENT_ROOT']."/img/system/";
-$target_dir = $_SERVER['DOCUMENT_ROOT']."/img/custom/";
-$target_file = $target_dir . basename($_FILES["file"]["name"]);
+$system_dir = $_SERVER['DOCUMENT_ROOT']."/img/system/";
+$default_dir = $_SERVER['DOCUMENT_ROOT']."/img/default/";
+$custom_dir = $_SERVER['DOCUMENT_ROOT']."/img/custom/";
+$target_file = $custom_dir . basename($_FILES["file"]["name"]);
 
 $uploadOk = 1;
 $imageFileType = strtolower(pathinfo($target_file,PATHINFO_EXTENSION));
@@ -269,11 +270,11 @@ if ($_FILES["file"]["size"] > 2097152) {
 // Check file empty
 if ($_FILES["file"]["size"] == 0) {
     
-    if (file_exists($target_dir . $txtName . ".png")) {
+    if (file_exists($custom_dir . $txtName . ".png") or file_exists($default_dir . $txtName . ".png")) {
         $uploadOk = 0;
     }
     else {
-        copy($default_dir . "default.png", $target_dir . $txtName . ".png");
+        copy($system_dir . "default.png", $custom_dir . $txtName . ".png");
         $uploadOk = 0;
     }
 }
@@ -285,7 +286,7 @@ if($imageFileType != "jpg" && $imageFileType != "png" && $imageFileType != "jpeg
 
 // Check if $uploadOk is set to 0 by an error
 if (!$uploadOk == 0) {
-    move_uploaded_file($_FILES["file"]["tmp_name"], $target_dir.$txtName.".png");
+    move_uploaded_file($_FILES["file"]["tmp_name"], $custom_dir.$txtName.".png");
 }
 
 
