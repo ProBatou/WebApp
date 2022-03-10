@@ -28,7 +28,7 @@
             <form action="verification.php" method="POST">
                 <input type="text" placeholder="<?php language(Username, Login)?>" name="username" required>
                 <input type="password" placeholder="<?php language(Password, Login)?>" name="password" required>
-                <select id="language" required>
+                <select id="language" name="language" required>
                     <option value="fr">Français</option>
                     <option value="en">English</option>
                 </select>
