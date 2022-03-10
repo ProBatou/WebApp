@@ -61,8 +61,8 @@
 	    <div id="virtual"></div>
 	    
 	    <div id="context-menu">
-			<div class="item" onclick="refresh()"><?php language(Refresh, context-menu)?></div>
-			<div class="item" onclick="fullscreen()"><?php language(Fullscreen, context-menu)?></div>
+			<div id="Refresh" class="item" onclick="refresh()"><?php language(Refresh, context-menu)?></div>
+			<div id="Fullscreen" class="item" onclick="fullscreen()"><?php language(Fullscreen, context-menu)?></div>
 			<div id="Add" class="item"><?php language(Add, context-menu)?></div>
 			<div id="Modify" class="item"><?php language(Modify, context-menu)?></div>
 		</div>
@@ -110,7 +110,7 @@
 				echo afficheUl();
 			?>
 			    <li class="disconnect">
-				    <a href="index.php?deconnexion=true" class="icon logout_icon"></a>
+				    <a id="disconnect" href="index.php?deconnexion=true" class="icon logout_icon"></a>
 				</li>
 				</ul>
 			<?php

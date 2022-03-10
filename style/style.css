@@ -132,8 +132,9 @@ transform: scale(1);
 
 #context-menu {
 position: fixed;
+display: flex;
+flex-direction: column;
 z-index: 3;
-width: 20%;
 transform: scale(0);
 transform-origin: top left;
 opacity: .9;
