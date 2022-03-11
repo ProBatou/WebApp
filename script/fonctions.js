@@ -329,6 +329,12 @@ onlongtouch = function () {
         onlongtouch = function () {
             timer = null;
             contextMenu.classList.add("visible");
+
+            modifyId = (event.target.parentElement.getAttribute('data-id'));
+            modifyNom = (event.target.parentElement.getAttribute('data-nom'));
+            modifyLien = (event.target.parentElement.getAttribute('data-lien'));
+            modifyFrame = (event.target.parentElement.getAttribute('data-frame'));
+            modifyImage = (event.target.parentElement.getAttribute('data-Img'));
         };
     });
 };
