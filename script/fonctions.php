@@ -80,14 +80,15 @@ function afficheUl() {
 	// Sélectionne toutes les pages filles de la page en cours
 	$strSQL = 'SELECT `Id`, `Nom`,`frame`, `Lien` FROM `AppList` WHERE `Id` ORDER BY `Ordre`';
 	$resultat = requeteSQL($strSQL);
+
 	$menu_retour = '<ul id="menu">';
 
 	while ($tabl_result = $resultat->fetchArray()) {
 	    if ($tabl_result['frame'] == '1'){
-		$menu_retour .= '<li id="'.$tabl_result['Id'].'" data-id="'.$tabl_result['Id'].'" data-nom="'.$tabl_result['Nom'].'" data-lien="'.$tabl_result['Lien'].'" data-frame="'.$tabl_result['frame'].'"><a href="#t'.$tabl_result['Id'].'" class="icon '.$tabl_result['Nom'].'_icon" id="m'.$tabl_result['Id'].'"></a></li>'."\n";
+		    $menu_retour .= '<li id="'.$tabl_result['Id'].'" data-id="'.$tabl_result['Id'].'" data-nom="'.$tabl_result['Nom'].'" data-lien="'.$tabl_result['Lien'].'" data-frame="'.$tabl_result['frame'].'"><a href="#t'.$tabl_result['Id'].'" class="icon '.$tabl_result['Nom'].'_icon" id="m'.$tabl_result['Id'].'"></a></li>'."\n";
 	    }
 	    else {
-	        $menu_retour .= '<li id="'.$tabl_result['Id'].'" data-id="'.$tabl_result['Id'].'" data-nom="'.$tabl_result['Nom'].'" data-lien="'.$tabl_result['Lien'].'" data-frame="'.$tabl_result['frame'].'"><a href="#t1" onclick= window.open(\''.$tabl_result['Lien'].'\') class="icon '.$tabl_result['Nom'].'_icon" id="m'.$tabl_result['Id'].'"></a></li>'."\n";
+	        $menu_retour .= '<li id="'.$tabl_result['Id'].'" data-id="'.$tabl_result['Id'].'" data-nom="'.$tabl_result['Nom'].'" data-lien="'.$tabl_result['Lien'].'" data-frame="'.$tabl_result['frame'].'"><a onclick= window.open(\''.$tabl_result['Lien'].'\') class="icon '.$tabl_result['Nom'].'_icon" id="m'.$tabl_result['Id'].'"></a></li>'."\n";
 	    }
 	}
 	return $menu_retour;
