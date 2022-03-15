@@ -326,6 +326,12 @@ onlongtouch = function () {
         contextMenu.style.top = `${normalizedY}px`;
         contextMenu.style.left = `${normalizedX}px`;
 
+        //prevent move
+        scope.addEventListener("touchmove", (event) =>{
+            clearTimeout(timer);
+            timer = null;
+        });
+
         onlongtouch = function () {
             timer = null;
             contextMenu.classList.add("visible");
