@@ -16,23 +16,48 @@ if(isset($_POST['username']) && isset($_POST['password'])){
         
         if(password_verify($password,$resultat)){
             
-            if ($_POST['rememberme'] == 'YES'){
+            //Setcookie if current location in https
+            if (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] == 'on') {
+
+                if ($_POST['rememberme'] == 'YES'){
                 
-                $randString = substr(md5(openssl_random_pseudo_bytes(20)),-50);/////////////////////////////// PAS sur de ca
+                    $randString = substr(md5(openssl_random_pseudo_bytes(20)),-50);
                 
-                setcookie("user_id", $randString, strtotime('+1 months'), "/", $_SERVER['HTTP_HOST'], true, true);
-                $strSQL = "INSERT INTO `sessions` VALUES ('".$randString."', '".strtotime('+1 months')."', '".$_POST['language']."')";
-                $resultat = requeteSQL($strSQL);
+                    setcookie("user_id", $randString, strtotime('+1 months'), "/", $_SERVER['HTTP_HOST'], true, true);
+                    $strSQL = "INSERT INTO `sessions` VALUES ('".$randString."', '".strtotime('+1 months')."', '".$_POST['language']."')";
+                    $resultat = requeteSQL($strSQL);
                 
+                }
+                else{
+                
+                    $randString = substr(md5(openssl_random_pseudo_bytes(20)),-50);
+                
+                    setcookie("user_id", $randString, strtotime('+1 days'), "/", $_SERVER['HTTP_HOST'], true, true);
+                    $strSQL = "INSERT INTO `sessions` VALUES ('".$randString."', '".strtotime('+1 days')."')";
+                    $resultat = requeteSQL($strSQL);
+                
+                }
             }
+            //Setcookie if current location in http
             else{
+                if ($_POST['rememberme'] == 'YES'){
                 
-                $randString = substr(md5(openssl_random_pseudo_bytes(20)),-50);/////////////////////////////// PAS sur de ca
+                    $randString = substr(md5(openssl_random_pseudo_bytes(20)),-50);
                 
-                setcookie("user_id", $randString, strtotime('+1 days'), "/", $_SERVER['HTTP_HOST'], true, true);
-                $strSQL = "INSERT INTO `sessions` VALUES ('".$randString."', '".strtotime('+1 days')."')";
-                $resultat = requeteSQL($strSQL);
+                    setcookie("user_id", $randString, strtotime('+1 months'), "/", $_SERVER['HTTP_HOST'], false, true);
+                    $strSQL = "INSERT INTO `sessions` VALUES ('".$randString."', '".strtotime('+1 months')."', '".$_POST['language']."')";
+                    $resultat = requeteSQL($strSQL);
                 
+                }
+                else{
+                
+                    $randString = substr(md5(openssl_random_pseudo_bytes(20)),-50);
+                
+                    setcookie("user_id", $randString, strtotime('+1 days'), "/", $_SERVER['HTTP_HOST'], false, true);
+                    $strSQL = "INSERT INTO `sessions` VALUES ('".$randString."', '".strtotime('+1 days')."')";
+                    $resultat = requeteSQL($strSQL);
+                
+                }
             }
 
             header('Location: index.php');
