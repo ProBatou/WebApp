@@ -483,7 +483,11 @@ function hidepopup() {
 
 
 function update() {
-    $.ajax({ url: "update.php", success: function (result) { } })
+    $.ajax({
+        url: "update.php", success: function (result) {
+            window.location.reload();
+         } 
+    })
     popup.style.transitionDelay = "0s";
     popup.style.transform = "translateX(100%)";
 }
