@@ -137,7 +137,12 @@
 		</div>
 	
 <script>
-    if ( window.history.replaceState ) {
+    //Redirect to https for used cookie validation
+    if (location.protocol !== 'https:') {
+        location.replace(`https:${location.href.substring(location.protocol.length)}`);
+    }
+    
+	if ( window.history.replaceState ) {
         window.history.replaceState( null, null, window.location.href);
     }
 </script>
