@@ -57,11 +57,6 @@
       <script src="script/particles.js"></script>
       <script src="script/app.js"></script>
       <script>
-        //Redirect to https for used cookie validation
-        if (location.protocol !== 'https:') {
-            location.replace(`https:${location.href.substring(location.protocol.length)}`);
-        }
-
         var userlang = navigator.language.substring(0, 2);
         var mySelect = document.getElementById('language');
         for(var i, j = 0; i = mySelect.options[j]; j++) {
