@@ -18,14 +18,25 @@
 	}
 	
 	if(isset($_GET['deconnexion'])){
-	    
-	   if($_GET['deconnexion']==true){
-            setcookie("user_id", "", time()-3600, "/", $_SERVER['HTTP_HOST'], true, true);
-            $strSQL = 'DELETE FROM "sessions" WHERE session_id ='."'".$_COOKIE["user_id"]."'";
-            requeteSQLrow($strSQL);
-            session_unset();
-	        header("location:login.php");
-	   }
+		if (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] == 'on') {
+			if($_GET['deconnexion']==true){
+				setcookie("user_id", "", time()-3600, "/", $_SERVER['HTTP_HOST'], true, true);
+				$strSQL = 'DELETE FROM "sessions" WHERE session_id ='."'".$_COOKIE["user_id"]."'";
+				requeteSQLrow($strSQL);
+				session_unset();
+				header("location:login.php");
+		   }
+		}
+		else{
+			if($_GET['deconnexion']==true){
+				setcookie("user_id", "", time()-3600, "/", $_SERVER['HTTP_HOST'], false, true);
+				$strSQL = 'DELETE FROM "sessions" WHERE session_id ='."'".$_COOKIE["user_id"]."'";
+				requeteSQLrow($strSQL);
+				session_unset();
+				header("location:login.php");
+		   }
+		}
+	   
 	}
 	
 	$strSQL = 'DELETE FROM "sessions" WHERE session_expire < '.strtotime("now");
