@@ -32,18 +32,19 @@ html, body, .page {
 
 #container{
   width: 30%;
-  margin: auto auto;
+  margin: auto;
+  /*padding: 30px 30px 15px 30px;*/
+  border: 30px solid #f1f1f1;
+  background: #f1f1f1;
+  box-shadow: 0 0 20px 0 rgba(0, 0, 0, 0.2), 0 5px 5px 0 rgba(0, 0, 0, 0.24);
+  opacity: .9;
+  border-radius: 10px;
   z-index: 2;
 }
 
 form {
   width:100%;
-  padding: 30px 30px 15px 30px;
-  border: 1px solid #f1f1f1;
-  background: #fff;
-  box-shadow: 0 0 20px 0 rgba(0, 0, 0, 0.2), 0 5px 5px 0 rgba(0, 0, 0, 0.24);
-  opacity: .9;
-  border-radius: 10px;
+  margin: auto;
   -webkit-overflow-scrolling: none;
   display: flex;
   flex-direction: column;
