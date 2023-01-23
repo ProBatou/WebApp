@@ -83,8 +83,9 @@ input[type=submit] {
   color: #ffffff;
   flex-direction: row;
   padding: 10px;
+  font-size: 10px;
 }
-    
+ 
 select {
   width: 100%;
   padding: 12px 20px;
