@@ -7,7 +7,7 @@ html, body, .page {
   -webkit-transition: all .6s cubic-bezier(.5, .2, .2, 1.1);
   -moz-transition: all .6s cubic-bezier(.5, .2, .2, 1.1);
   -o-transition: all .6s cubic-bezier(.5, .2, .2, 1.1);
-  background: black;
+  background: rgb(0, 0, 0);
   font-family: Verdana;
   overflow: hidden;
 }
@@ -33,11 +33,9 @@ html, body, .page {
 #container{
   width: 30%;
   margin: auto;
-  /*padding: 30px 30px 15px 30px;*/
-  border: 30px solid #f1f1f1;
-  background: #f1f1f1;
+  border: 30px solid transparent;
+  background-color: rgba(0, 0, 0, 0.8);
   box-shadow: 0 0 20px 0 rgba(0, 0, 0, 0.2), 0 5px 5px 0 rgba(0, 0, 0, 0.24);
-  opacity: .9;
   border-radius: 10px;
   z-index: 2;
 }
@@ -57,22 +55,24 @@ form {
 }
 
 input[type=text], input[type=password] {
+  color: #ffffff;
   width: 100%;
   padding: 12px 20px;
   margin: 8px 0;
+  background: #3f3f3f;
   display: inline-block;
-  border: 1px solid #ccc;
+  border: 1px solid #000000;
   box-sizing: border-box;
   border-radius: 10px;
   -webkit-appearance: none !important;
 }
 
 input[type=submit] {
+  color: #ffffff;
   background-color: #53af57;
-  color: white;
   padding: 14px 20px;
   margin: 8px 0;
-  border: none;
+  border: 1px solid #000000;
   cursor: pointer;
   width: 100%;
   border-radius: 10px;
@@ -80,8 +80,8 @@ input[type=submit] {
 }
 
 #rememberme {
+  color: #ffffff;
   flex-direction: row;
-  color: rgb(87, 85, 85);
   padding: 10px;
 }
     
@@ -89,10 +89,10 @@ select {
   width: 100%;
   padding: 12px 20px;
   margin: 8px 0;
+  background: #3f3f3f;
+  color: #ffffff;
   display: inline-block;
-  border: 1px solid #ccc;
-  background: #fff;
-  color: rgb(87, 85, 85);;
+  border: 1px solid #000000;
   box-sizing: border-box;
   border-radius: 10px;
   -webkit-appearance: none !important;
