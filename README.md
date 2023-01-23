@@ -27,6 +27,11 @@ Features:
   ```sh
   apt install php php-sqlite3 
   ```
+  
+* Curl
+  ```sh
+  apt install curl 
+  ```
 
 ### Installation
 
