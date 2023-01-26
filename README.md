@@ -28,15 +28,9 @@ Features:
   apt install php php-sqlite3 
   ```
   
-<<<<<<< HEAD
 * cURL
   ```sh
   apt install curl
-=======
-* Curl
-  ```sh
-  apt install curl 
->>>>>>> aa735a7b152ca57804d611aeb2d4803e19b58349
   ```
 
 ### Installation
