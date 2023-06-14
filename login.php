@@ -26,28 +26,28 @@
       <div id=particles-js>
         <div id="container">
             <form action="verification.php" method="POST">
-                <input type="text" placeholder="<?php language(Username, Login)?>" name="username" required>
-                <input type="password" placeholder="<?php language(Password, Login)?>" name="password" required>
+                <input type="text" placeholder="<?php language('Username', 'Login')?>" name="username" required>
+                <input type="password" placeholder="<?php language('Password', 'Login')?>" name="password" required>
                 <select id="language" name="language" required>
                     <option value="fr">Français</option>
                     <option value="en">English</option>
                 </select>
                 <div id="rememberme">
                     <input type="checkbox" name="rememberme" value="YES" checked>
-                    <label for="rememberme"><?php language(rememberme, Login)?></label>
+                    <label for="rememberme"><?php language('rememberme', 'Login')?></label>
                 </div>
-                <input type="submit" id='submit' value=<?php language(Connection, Login)?>>
+                <input type="submit" id='submit' value=<?php language('Connection', 'Login')?>>
                 <?php
                     if (isset($_GET['erreur'])){
                         $err = $_GET['erreur'];
-                        if ($err == "LoginFailed") echo "<p style='color:red; text-align: center';>" ?><?php language(Error, Login) ?><?php "</p>";
+                        if ($err == "LoginFailed") echo "<p style='color:red; text-align: center';>" ?><?php language('Error', 'Login') ?><?php "</p>";
                     }
 
                     $strSQL = 'SELECT "user" FROM "user"';
                     $resultat = requeteSQLrow($strSQL);
 
                     if (empty($resultat)) {
-                        echo "<p style='color:black; text-align: center';>" ?><?php language(firstconnect, Login) ?><?php "</p>";
+                        echo "<p style='color:black; text-align: center';>" ?><?php language('firstconnect', 'Login') ?><?php "</p>";
                         createDB();
                     } 
                 ?>
