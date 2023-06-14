@@ -72,46 +72,46 @@
 	    <div id="virtual"></div>
 	    
 	    <div id="context-menu">
-			<div id="Refresh" class="item" onclick="refresh()"><?php language(Refresh, context-menu)?></div>
-			<div id="Fullscreen" class="item" onclick="fullscreen()"><?php language(Fullscreen, context-menu)?></div>
-			<div id="Add" class="item"><?php language(Add, context-menu)?></div>
-			<div id="Modify" class="item"><?php language(Modify, context-menu)?></div>
+			<div id="Refresh" class="item" onclick="refresh()"><?php language('Refresh', 'context-menu')?></div>
+			<div id="Fullscreen" class="item" onclick="fullscreen()"><?php language('Fullscreen', 'context-menu')?></div>
+			<div id="Add" class="item"><?php language('Add', 'context-menu')?></div>
+			<div id="Modify" class="item"><?php language('Modify', 'context-menu')?></div>
 		</div>
 
 		<div id="popup">
- 			<a id="popup-header"><?php language(updateavailable, popup)?></a>
+ 			<a id="popup-header"><?php language('updateavailable', 'popup')?></a>
  			<div id="popup-button">
- 				<button id="popup-update" onclick="update()"><?php language(run, popup)?></button>
- 				<button id="popup-later" onclick="hidepopup()"><?php language(later, popup)?></button>
+ 				<button id="popup-update" onclick="update()"><?php language('run', 'popup')?></button>
+ 				<button id="popup-later" onclick="hidepopup()"><?php language('later', 'popup')?></button>
  			</div>
  		</div>
                 
                 <div id="context-menu-modify" class="draggable">
                     <div class="header-context-menu-manage-modify">
-                        <h5><?php language(SetupApp, context-menu-modify)?></h5>
+                        <h5><?php language('SetupApp', 'context-menu-modify')?></h5>
                         <a class="circle" id="CloseMenuAdd"></a>
                     </div>
 		            <form method="post" enctype="multipart/form-data">
 		                <input type="hidden" id="idMenuAdd" name="idMenuAdd" value="0">
-			            <input id="NomMenuAdd" type="text" name="Nom" placeholder="<?php language(Name, context-menu-modify)?>">
+			            <input id="NomMenuAdd" type="text" name="Nom" placeholder="<?php language('Name', 'context-menu-modify')?>">
 			            <div class="file-cont">
 			                <select id="selecthttp" class="label-file http" name="LienS">
                                 <option value="https://">https://</option>
                                 <option value="http://">http://</option>
                             </select>
-                            <input id="LienMenuAdd" class="input-lien" type="text" name="Lien"  placeholder="<?php language(Link, context-menu-modify)?>">
+                            <input id="LienMenuAdd" class="input-lien" type="text" name="Lien"  placeholder="<?php language('Link', 'context-menu-modify')?>">
                         </div>
 			            <div class="file-cont">
                             <input type="file" name="file" id="file" class="input-file"/>
-                            <label for="file" class="label-file"><?php language(ModifyIcon, context-menu-modify)?></label>
+                            <label for="file" class="label-file"><?php language('ModifyIcon', 'context-menu-modify')?></label>
                         </div>
                         <label>
                             <input id="FrameMenuAdd" type="checkbox" name="frame" value="1" checked/>
                             <label for="FrameMenuAdd" id="checkbox">Iframe or not</label>
                         </label>
-			            <input id="submitadd" type="submit" name="add" value=<?php language(Add, context-menu-modify)?> class="submit">
-			            <input id="submitmodify" type="hidden" name="modify" value=<?php language(Modify, context-menu-modify)?> class="submit">
-			            <input id="delete" type="submit" name="Delete" value="<?php language(Delete, context-menu-modify)?>" class="delete">
+			            <input id="submitadd" type="submit" name="add" value=<?php language('Add', 'context-menu-modify')?> class="submit">
+			            <input id="submitmodify" type="hidden" name="modify" value=<?php language('Modify', 'context-menu-modify')?> class="submit">
+			            <input id="delete" type="submit" name="Delete" value="<?php language('Delete', 'context-menu-modify')?>" class="delete">
 		            </form>
 		        </div>
 
