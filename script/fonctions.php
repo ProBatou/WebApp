@@ -27,6 +27,7 @@ function createDB() {
     $strSQL.=  "`session_id` int(11) NOT NULL,";
     $strSQL.=  "`session_expire` varchar(20) NOT NULL,";
     $strSQL.=  "`language` TEXT);";
+    $strSQL.=  "`enable` tinyint(1) NOT NULL DEFAULT 1)";
 
     $db->query($strSQL);
     
