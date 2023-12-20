@@ -2,7 +2,7 @@
 
     session_start();
     require('script/fonctions.php');
-    require('config.php'); // Inclure le fichier de configuration
+    require('config/config.php'); // Inclure le fichier de configuration
 
 if ($enablelogin === false) {
     // La connexion est désactivée, afficher la page normalement
