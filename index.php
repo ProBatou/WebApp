@@ -2,7 +2,12 @@
 
     session_start();
     require('script/fonctions.php');
-    
+    require('config.php'); // Inclure le fichier de configuration
+
+if ($enablelogin === false) {
+    // La connexion est désactivée, afficher la page normalement
+} else {
+	
     if(!isset($_COOKIE["user_id"])){
         header("Location: login.php");
 	    exit();
@@ -41,7 +46,7 @@
 	
 	$strSQL = 'DELETE FROM "sessions" WHERE session_expire < '.strtotime("now");
 	requeteSQL($strSQL);
-
+}
 ?>
 
 
