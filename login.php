@@ -1,6 +1,10 @@
 <?php
 	require('script/fonctions.php');
+	require('config/config.php'); // Inclure le fichier de configuration
 
+if ($enablelogin === false) {
+    header("Location: index.php");
+} else {
     $strSQL = 'SELECT "session_id" FROM "sessions" WHERE session_id ='."'".$_COOKIE["user_id"]."'";
     $resultat = requeteSQLrow($strSQL);
     
@@ -9,6 +13,7 @@
             header("Location: index.php");
         }
 	}
+}
 ?>
 <!DOCTYPE html>
 <html lang="<?php lang()?>">
