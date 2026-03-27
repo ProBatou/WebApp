@@ -87,6 +87,56 @@ export async function registerAppRoutes(server: FastifyInstance) {
     }
   });
 
+  server.post("/api/apps/:id/default", writeRouteConfig, async (request, reply) => {
+    if (blockDemoWrites(reply)) {
+      return reply;
+    }
+
+    const user = requireSession(request, reply);
+    if (!user) {
+      return reply;
+    }
+
+    const id = Number((request.params as { id: string }).id);
+    if (!Number.isInteger(id)) {
+      return reply.code(400).send({ message: "Identifiant invalide." });
+    }
+
+    const app = db.prepare("SELECT id FROM apps WHERE id = ?").get(id) as Pick<AppRecord, "id"> | undefined;
+    if (!app) {
+      return reply.code(404).send({ message: "Application introuvable." });
+    }
+
+    return {
+      items: appRepository.setDefaultApp(id),
+    };
+  });
+
+  server.delete("/api/apps/:id/default", writeRouteConfig, async (request, reply) => {
+    if (blockDemoWrites(reply)) {
+      return reply;
+    }
+
+    const user = requireSession(request, reply);
+    if (!user) {
+      return reply;
+    }
+
+    const id = Number((request.params as { id: string }).id);
+    if (!Number.isInteger(id)) {
+      return reply.code(400).send({ message: "Identifiant invalide." });
+    }
+
+    const app = db.prepare("SELECT id FROM apps WHERE id = ?").get(id) as Pick<AppRecord, "id"> | undefined;
+    if (!app) {
+      return reply.code(404).send({ message: "Application introuvable." });
+    }
+
+    return {
+      items: appRepository.setDefaultApp(null),
+    };
+  });
+
   server.post("/api/apps", writeRouteConfig, async (request, reply) => {
     if (blockDemoWrites(reply)) {
       return reply;

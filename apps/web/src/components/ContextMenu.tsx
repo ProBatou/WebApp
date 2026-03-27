@@ -8,6 +8,7 @@ export function ContextMenu({
   onRefresh,
   onEdit,
   onDelete,
+  onToggleDefault,
   onCreate,
   onImport,
   onExport,
@@ -19,6 +20,7 @@ export function ContextMenu({
   onRefresh: () => void;
   onEdit: () => void;
   onDelete: () => void;
+  onToggleDefault: () => void;
   onCreate: () => void;
   onImport: () => void;
   onExport: () => void;
@@ -94,6 +96,9 @@ export function ContextMenu({
           ) : null}
           <button type="button" className="sidebar-context-item" role="menuitem" onClick={onEdit}>
             Editer
+          </button>
+          <button type="button" className="sidebar-context-item" role="menuitem" onClick={onToggleDefault}>
+            {contextMenu.app.is_default ? "Retirer des favoris" : "Definir par defaut"}
           </button>
           <button type="button" className="sidebar-context-item" role="menuitem" onClick={onDelete}>
             Supprimer

@@ -16,6 +16,7 @@ export type WebAppEntry = {
   icon_variant_inverted: boolean;
   accent: string;
   open_mode: AppMode;
+  is_default: boolean;
   sort_order: number;
   created_at: string;
   updated_at: string;

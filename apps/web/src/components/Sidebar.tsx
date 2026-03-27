@@ -70,6 +70,7 @@ function SortableAppTile({
           <span className="app-meta">
             <strong>
               {app.name}
+              {app.is_default ? <span className="default-app-badge" title="App par defaut">★</span> : null}
               <span
                 className={appStatus?.status === "online"
                   ? "app-status-dot online"

@@ -52,6 +52,7 @@ const migrations: Migration[] = [
           icon TEXT NOT NULL,
           accent TEXT NOT NULL,
           open_mode TEXT NOT NULL CHECK(open_mode IN ('iframe', 'external')),
+          is_default INTEGER NOT NULL DEFAULT 0 CHECK(is_default IN (0, 1)),
           sort_order INTEGER NOT NULL,
           created_at TEXT NOT NULL,
           updated_at TEXT NOT NULL
@@ -72,6 +73,14 @@ const migrations: Migration[] = [
     up: (database) => {
       if (!hasColumn(database, "apps", "icon_variant_inverted")) {
         database.exec("ALTER TABLE apps ADD COLUMN icon_variant_inverted INTEGER NOT NULL DEFAULT 0 CHECK(icon_variant_inverted IN (0, 1))");
+      }
+    },
+  },
+  {
+    id: "004_add_is_default",
+    up: (database) => {
+      if (!hasColumn(database, "apps", "is_default")) {
+        database.exec("ALTER TABLE apps ADD COLUMN is_default INTEGER NOT NULL DEFAULT 0 CHECK(is_default IN (0, 1))");
       }
     },
   },

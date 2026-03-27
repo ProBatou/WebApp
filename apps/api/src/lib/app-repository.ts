@@ -1,4 +1,3 @@
-import type { z } from "zod";
 import { serializeAppRecord, type SerializedAppRecord } from "./apps.js";
 import type { SqliteDatabase } from "./db.js";
 import type { AppRecord } from "./types.js";
@@ -44,8 +43,8 @@ export function createAppRepository(database: SqliteDatabase) {
     const sortRow = database.prepare("SELECT COALESCE(MAX(sort_order), 0) as maxOrder FROM apps").get() as { maxOrder: number };
     const result = database
       .prepare(
-        `INSERT INTO apps (name, description, url, icon, icon_variant_mode, icon_variant_inverted, accent, open_mode, sort_order, created_at, updated_at)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+        `INSERT INTO apps (name, description, url, icon, icon_variant_mode, icon_variant_inverted, accent, open_mode, is_default, sort_order, created_at, updated_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0, ?, ?, ?)`
       )
       .run(
         payload.name,
@@ -80,6 +79,19 @@ export function createAppRepository(database: SqliteDatabase) {
     return listApps();
   }
 
+  function setDefaultApp(appId: number | null) {
+    const setDefaultTransaction = database.transaction((nextDefaultAppId: number | null) => {
+      database.prepare("UPDATE apps SET is_default = 0").run();
+
+      if (nextDefaultAppId !== null) {
+        database.prepare("UPDATE apps SET is_default = 1 WHERE id = ?").run(nextDefaultAppId);
+      }
+    });
+
+    setDefaultTransaction(appId);
+    return listApps();
+  }
+
   function deleteAppAndReindex(appId: number) {
     database.prepare("DELETE FROM apps WHERE id = ?").run(appId);
 
@@ -104,8 +116,8 @@ export function createAppRepository(database: SqliteDatabase) {
 
       const sortRow = database.prepare("SELECT COALESCE(MAX(sort_order), 0) as maxOrder FROM apps").get() as { maxOrder: number };
       const insertStatement = database.prepare(
-        `INSERT INTO apps (name, description, url, icon, icon_variant_mode, icon_variant_inverted, accent, open_mode, sort_order, created_at, updated_at)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+        `INSERT INTO apps (name, description, url, icon, icon_variant_mode, icon_variant_inverted, accent, open_mode, is_default, sort_order, created_at, updated_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0, ?, ?, ?)`
       );
 
       items.forEach((item, index) => {
@@ -141,6 +153,7 @@ export function createAppRepository(database: SqliteDatabase) {
     hasExactOrderedIds,
     insertApp,
     reorderApps,
+    setDefaultApp,
     deleteAppAndReindex,
     importApps,
   };
