@@ -33,6 +33,7 @@ export const emptyEditorState: AppEditorState = {
   iconVariantInverted: false,
   accent: "#cf5c36",
   openMode: "iframe",
+  groupId: null,
 };
 
 export function isDashboardIconSlug(value: string) {
@@ -240,6 +241,7 @@ export function exportAppsToJson(apps: WebAppEntry[]) {
       iconVariantInverted: app.icon_variant_inverted,
       accent: app.accent,
       openMode: app.open_mode,
+      groupId: app.group_id,
     })),
     null,
     2
@@ -283,6 +285,7 @@ export function parseImportedApps(rawValue: string) {
     const iconVariantInverted = typeof item.iconVariantInverted === "boolean" ? item.iconVariantInverted : false;
     const accent = typeof item.accent === "string" && isAccentColor(item.accent) ? item.accent : emptyEditorState.accent;
     const openMode = isAppMode(item.openMode) ? item.openMode : emptyEditorState.openMode;
+    const groupId = typeof item.groupId === "number" && Number.isInteger(item.groupId) && item.groupId > 0 ? item.groupId : null;
 
     if (name.length < 2) {
       throw new Error(`Entree ${index + 1}: nom invalide.`);
@@ -312,6 +315,7 @@ export function parseImportedApps(rawValue: string) {
       iconVariantInverted,
       accent,
       openMode,
+      groupId,
     };
   });
 }

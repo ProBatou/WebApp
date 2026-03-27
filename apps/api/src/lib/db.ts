@@ -18,6 +18,7 @@ mkdirSync(dirname(databasePath), { recursive: true });
 
 export const db = new Database(databasePath);
 db.pragma("journal_mode = WAL");
+db.pragma("foreign_keys = ON");
 
 function hasColumn(database: SqliteDatabase, tableName: string, columnName: string) {
   const columns = database.prepare(`PRAGMA table_info(${tableName})`).all() as Array<{ name: string }>;
@@ -29,6 +30,13 @@ const migrations: Migration[] = [
     id: "001_initial_schema",
     up: (database) => {
       database.exec(`
+        CREATE TABLE IF NOT EXISTS groups (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          name TEXT NOT NULL,
+          sort_order INTEGER NOT NULL,
+          created_at TEXT NOT NULL
+        );
+
         CREATE TABLE IF NOT EXISTS users (
           id INTEGER PRIMARY KEY AUTOINCREMENT,
           username TEXT NOT NULL UNIQUE,
@@ -53,6 +61,7 @@ const migrations: Migration[] = [
           accent TEXT NOT NULL,
           open_mode TEXT NOT NULL CHECK(open_mode IN ('iframe', 'external')),
           is_default INTEGER NOT NULL DEFAULT 0 CHECK(is_default IN (0, 1)),
+          group_id INTEGER REFERENCES groups(id) ON DELETE SET NULL,
           sort_order INTEGER NOT NULL,
           created_at TEXT NOT NULL,
           updated_at TEXT NOT NULL
@@ -81,6 +90,27 @@ const migrations: Migration[] = [
     up: (database) => {
       if (!hasColumn(database, "apps", "is_default")) {
         database.exec("ALTER TABLE apps ADD COLUMN is_default INTEGER NOT NULL DEFAULT 0 CHECK(is_default IN (0, 1))");
+      }
+    },
+  },
+  {
+    id: "005_create_groups",
+    up: (database) => {
+      database.exec(`
+        CREATE TABLE IF NOT EXISTS groups (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          name TEXT NOT NULL,
+          sort_order INTEGER NOT NULL,
+          created_at TEXT NOT NULL
+        );
+      `);
+    },
+  },
+  {
+    id: "006_add_group_id",
+    up: (database) => {
+      if (!hasColumn(database, "apps", "group_id")) {
+        database.exec("ALTER TABLE apps ADD COLUMN group_id INTEGER REFERENCES groups(id) ON DELETE SET NULL");
       }
     },
   },

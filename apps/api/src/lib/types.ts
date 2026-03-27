@@ -12,9 +12,17 @@ export type AppRecord = {
   accent: string;
   open_mode: AppMode;
   is_default: number;
+  group_id: number | null;
   sort_order: number;
   created_at: string;
   updated_at: string;
+};
+
+export type GroupRecord = {
+  id: number;
+  name: string;
+  sort_order: number;
+  created_at: string;
 };
 
 export type SessionUser = {

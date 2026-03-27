@@ -32,6 +32,7 @@ test("parseImportedApps parses a plain array payload", () => {
       iconVariantInverted: true,
       accent: "#123456",
       openMode: "external",
+      groupId: null,
     },
   ]);
 });
@@ -62,6 +63,7 @@ test("parseImportedApps supports object payloads with items and defaults invalid
       iconVariantInverted: false,
       accent: "#cf5c36",
       openMode: "iframe",
+      groupId: null,
     },
   ]);
 });
