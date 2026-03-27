@@ -1,0 +1,31 @@
+{
+  "name": "WebApp V2",
+  "short_name": "WebApp",
+  "description": "Dashboard homelab installable",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#f7efe2",
+  "theme_color": "#c65c31",
+  "lang": "fr",
+  "icons": [
+    {
+      "src": "/icons/pwa-192.svg",
+      "sizes": "192x192",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/pwa-512.svg",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/pwa-maskable.svg",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "maskable"
+    }
+  ]
+}
