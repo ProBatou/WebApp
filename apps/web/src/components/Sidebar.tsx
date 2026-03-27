@@ -108,6 +108,80 @@ function SortableAppTile({
   );
 }
 
+function RecentAppTile({
+  app,
+  active,
+  onSelect,
+  onEdit,
+  onContextMenu,
+  themeMode,
+  dashboardIconsMetadata,
+  appStatus,
+}: {
+  app: WebAppEntry;
+  active: boolean;
+  onSelect: (app: WebAppEntry) => void;
+  onEdit: (app: WebAppEntry) => void;
+  onContextMenu: (event: MouseEvent<HTMLDivElement>, app: WebAppEntry) => void;
+  themeMode: ThemeMode;
+  dashboardIconsMetadata: DashboardIconsMetadataMap;
+  appStatus?: AppStatusEntry;
+}) {
+  return (
+    <div
+      className={active ? "app-tile active recent-app-tile" : "app-tile recent-app-tile"}
+      onContextMenu={(event) => {
+        event.stopPropagation();
+        onContextMenu(event, app);
+      }}
+      onMouseDown={(event) => {
+        if (event.button === 2) {
+          event.preventDefault();
+        }
+      }}
+    >
+      <button className="app-main-hitbox" type="button" onClick={() => onSelect(app)} title={app.name} aria-label={`Ouvrir ${app.name}`}>
+        <AppIcon
+          icon={app.icon}
+          name={app.name}
+          url={app.url}
+          accent={app.accent}
+          themeMode={themeMode}
+          dashboardIconsMetadata={dashboardIconsMetadata}
+          iconVariantMode={app.icon_variant_mode}
+          iconVariantInverted={app.icon_variant_inverted}
+        />
+        <span className="app-meta">
+          <strong>
+            {app.name}
+            {app.is_default ? <span className="default-app-badge" title="App par defaut">★</span> : null}
+            <span
+              className={appStatus?.status === "online"
+                ? "app-status-dot online"
+                : appStatus?.status === "offline"
+                  ? "app-status-dot offline"
+                  : "app-status-dot unknown"}
+              title={
+                appStatus?.status === "online"
+                  ? "En ligne"
+                  : appStatus?.status === "offline"
+                    ? "Hors ligne"
+                    : "Statut inconnu"
+              }
+            />
+          </strong>
+          <small>{app.open_mode === "iframe" ? "Integree" : "Externe"}</small>
+        </span>
+      </button>
+      <div className="app-tile-actions">
+        <button className="ghost-icon-button" type="button" onClick={() => onEdit(app)} aria-label={`Modifier ${app.name}`}>
+          Edit
+        </button>
+      </div>
+    </div>
+  );
+}
+
 export function DragOverlayTile({
   app,
   compact,
@@ -162,6 +236,7 @@ export function Sidebar({
   sidebarMode,
   setSidebarMode,
   userName,
+  recentApps,
   apps,
   selectedAppId,
   draggingAppId,
@@ -186,6 +261,7 @@ export function Sidebar({
   sidebarMode: SidebarMode;
   setSidebarMode: Dispatch<SetStateAction<SidebarMode>>;
   userName: string;
+  recentApps: WebAppEntry[];
   apps: WebAppEntry[];
   selectedAppId: number | null;
   draggingAppId: number | null;
@@ -280,6 +356,26 @@ export function Sidebar({
         </div>
 
         <div className="sidebar-section">
+          {sidebarMode === "expanded" && recentApps.length > 0 ? (
+            <>
+              <p className="section-title">Recents</p>
+              <div className="app-list recent-app-list">
+                {recentApps.map((app) => (
+                  <RecentAppTile
+                    key={`recent-${app.id}`}
+                    app={app}
+                    active={app.id === selectedAppId}
+                    onSelect={onSelectApp}
+                    onEdit={onEditApp}
+                    onContextMenu={onOpenContextMenu}
+                    themeMode={themeMode}
+                    dashboardIconsMetadata={dashboardIconsMetadata}
+                    appStatus={appStatuses[app.id]}
+                  />
+                ))}
+              </div>
+            </>
+          ) : null}
           {sidebarMode === "expanded" ? <p className="section-title">Applications</p> : null}
           {sidebarMode === "expanded" ? (
             <label className="sidebar-search">

@@ -690,6 +690,14 @@ textarea {
   font-size: 0.92rem;
 }
 
+.recent-app-list {
+  margin-bottom: 18px;
+}
+
+.recent-app-tile {
+  background: var(--panel-muted);
+}
+
 .app-list::-webkit-scrollbar {
   display: none;
 }

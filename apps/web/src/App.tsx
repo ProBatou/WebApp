@@ -74,8 +74,9 @@ export default function App() {
   const {
     apps,
     setApps,
+    recentApps,
     selectedAppId,
-    setSelectedAppId,
+    selectApp,
     reloadApps,
     deleteApp,
     handleReorder,
@@ -266,10 +267,7 @@ export default function App() {
   const handleSelectApp = (app: WebAppEntry) => {
     setContextMenu(null);
     setSidebarOpen(false);
-
-    startTransition(() => {
-      setSelectedAppId(app.id);
-    });
+    selectApp(app.id);
 
     if (app.open_mode === "external") {
       window.open(app.url, "_blank", "noopener,noreferrer");
@@ -297,9 +295,7 @@ export default function App() {
       setApps(result.items);
 
       if (!app.is_default) {
-        startTransition(() => {
-          setSelectedAppId(app.id);
-        });
+        selectApp(app.id);
       }
 
       pushToast(app.is_default ? "App par defaut retiree." : `${app.name} definie comme app par defaut.`);
@@ -395,9 +391,7 @@ export default function App() {
 
       setApps(result.items);
       const preferredId = result.importedIds.length > 0 ? result.importedIds[result.importedIds.length - 1] : result.items[0]?.id ?? null;
-      startTransition(() => {
-        setSelectedAppId(preferredId);
-      });
+      selectApp(preferredId);
       closeJsonModal();
       pushToast(
         `${result.importedIds.length} application${result.importedIds.length > 1 ? "s" : ""} importee${result.importedIds.length > 1 ? "s" : ""}.`
@@ -564,6 +558,7 @@ export default function App() {
           sidebarMode={sidebarMode}
           setSidebarMode={setSidebarMode}
           userName={user.username}
+          recentApps={recentApps}
           apps={apps}
           selectedAppId={selectedAppId}
           draggingAppId={draggingAppId}
