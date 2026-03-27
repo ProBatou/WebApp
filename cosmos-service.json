@@ -29,6 +29,7 @@
       "restart": "unless-stopped",
       "devices": null,
       "expose": [],
+      "user": "0:0",
       "runtime": "runc",
       "hostname": "webapp-v2",
       "network_mode": "bridge"
