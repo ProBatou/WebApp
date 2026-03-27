@@ -80,10 +80,10 @@ export function useApps({
     }
   }, [apps, deleteApp, reloadApps, selectedAppId, setError]);
 
-  const resetAppsState = () => {
+  const resetAppsState = useCallback(() => {
     setApps([]);
     setSelectedAppId(null);
-  };
+  }, []);
 
   return {
     apps,

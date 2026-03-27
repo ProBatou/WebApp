@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import type { WebAppEntry } from "../types";
 
 export function useIframes({
@@ -30,7 +30,7 @@ export function useIframes({
     });
   }, [apps]);
 
-  const refreshIframeApp = (app: WebAppEntry) => {
+  const refreshIframeApp = useCallback((app: WebAppEntry) => {
     if (app.open_mode !== "iframe") {
       return;
     }
@@ -40,12 +40,12 @@ export function useIframes({
       ...current,
       [app.id]: (current[app.id] ?? 0) + 1,
     }));
-  };
+  }, []);
 
-  const resetIframes = () => {
+  const resetIframes = useCallback(() => {
     setMountedIframeIds([]);
     setIframeReloadTokens({});
-  };
+  }, []);
 
   return {
     mountedIframeIds,
