@@ -1,4 +1,5 @@
 import type { Dispatch, FormEvent, SetStateAction } from "react";
+import { useTranslation } from "../lib/i18n";
 import type { ThemeMode } from "../types";
 
 export function AuthScreen({
@@ -26,22 +27,23 @@ export function AuthScreen({
   onSubmit: (event: FormEvent<HTMLFormElement>) => Promise<void>;
   onToggleTheme: () => void;
 }) {
+  const { t } = useTranslation();
   const inviteMode = Boolean(inviteToken);
-  const eyebrow = inviteMode ? "Invitation" : needsSetup ? "Initialisation" : "Connexion";
+  const eyebrow = inviteMode ? t("auth.invitation") : needsSetup ? t("auth.setup") : t("auth.signIn");
   const title = inviteMode
-    ? "Finaliser votre compte"
+    ? t("auth.finishAccount")
     : needsSetup
-      ? "Creer le premier compte"
+      ? t("auth.createFirstAccount")
       : demoMode
-        ? "Entrer dans la demo"
-        : "Entrer dans le dashboard";
+        ? t("auth.enterDemoMode")
+        : t("auth.enterDashboard");
   const subtitle = inviteMode
-    ? `Definis ton username et ton mot de passe pour activer ton acces (${inviteRole ?? "viewer"}).`
+    ? t("auth.inviteSubtitle", { role: inviteRole ?? "viewer" })
     : needsSetup
-      ? "Configure l'acces initial a ton portail personnel."
+      ? t("auth.setupSubtitle")
       : demoMode
-        ? "Utilise le compte demo fourni. Les modifications sont desactivees sur cette instance."
-        : "Connecte-toi pour retrouver tes applications dans une interface epuree.";
+        ? t("auth.demoSubtitle")
+        : t("auth.signInSubtitle");
 
   return (
     <div className="auth-shell">
@@ -52,7 +54,7 @@ export function AuthScreen({
             <h1 className="auth-title">WebApp</h1>
           </div>
           <div className="auth-header-actions">
-            <button className="ghost-icon-button theme-toggle" type="button" onClick={onToggleTheme} aria-label="Basculer le theme">
+            <button className="ghost-icon-button theme-toggle" type="button" onClick={onToggleTheme} aria-label={t("app.themeToggleAria")}>
               {themeMode === "light" ? "◐" : "◑"}
             </button>
             <div className="auth-mark" aria-hidden="true">
@@ -71,13 +73,13 @@ export function AuthScreen({
         {demoMode && !inviteMode ? (
           <div className="auth-footer-note">
             <span className="auth-footer-dot" />
-            <p>Compte demo : `demo` / `demo`</p>
+            <p>{t("auth.demoAccount")}</p>
           </div>
         ) : null}
 
         <form className="auth-form" onSubmit={(event) => void onSubmit(event)}>
           <label>
-            <span>Nom d'utilisateur</span>
+            <span>{t("auth.username")}</span>
             <input
               type="text"
               value={credentials.username}
@@ -88,7 +90,7 @@ export function AuthScreen({
             />
           </label>
           <label>
-            <span>Mot de passe</span>
+            <span>{t("auth.password")}</span>
             <input
               type="password"
               value={credentials.password}
@@ -98,15 +100,15 @@ export function AuthScreen({
               required
             />
           </label>
-          {authError ? <p className="form-error">{authError}</p> : null}
+          {authError ? <p className="form-error">{t(authError)}</p> : null}
           <button className="primary-button auth-submit" type="submit" disabled={busy}>
-            {inviteMode ? "Activer mon compte" : needsSetup ? "Creer le compte" : "Se connecter"}
+            {inviteMode ? t("auth.activateAccount") : needsSetup ? t("auth.createAccount") : t("auth.signIn")}
           </button>
         </form>
 
         <div className="auth-footer-note">
           <span className="auth-footer-dot" />
-          <p>{needsSetup ? "Configuration initiale unique." : "Session securisee."}</p>
+          <p>{needsSetup ? t("auth.initialSetup") : t("auth.sessionSecure")}</p>
         </div>
       </section>
     </div>

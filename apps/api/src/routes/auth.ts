@@ -71,18 +71,18 @@ export async function registerAuthRoutes(server: FastifyInstance) {
     },
     async (request, reply) => {
     if (isDemoMode) {
-      return reply.code(403).send({ message: "Mode demo: creation de compte desactivee." });
+      return reply.code(403).send({ message: "errors.setupDisabledInDemo" });
     }
 
     const parsed = setupPayloadSchema.safeParse(request.body);
     if (!parsed.success) {
-      return reply.code(400).send({ message: "Identifiants invalides." });
+      return reply.code(400).send({ message: "errors.invalidCredentials" });
     }
 
     const passwordHash = await hashPassword(parsed.data.password);
     const user = createInitialUser(parsed.data.username, passwordHash);
     if (!user) {
-      return reply.code(409).send({ message: "L'application est deja initialisee." });
+      return reply.code(409).send({ message: "errors.appAlreadyInitialized" });
     }
 
     createSession(request, reply, user.id);
@@ -99,17 +99,17 @@ export async function registerAuthRoutes(server: FastifyInstance) {
     async (request, reply) => {
     const parsed = loginPayloadSchema.safeParse(request.body);
     if (!parsed.success) {
-      return reply.code(400).send({ message: "Identifiants invalides." });
+      return reply.code(400).send({ message: "errors.invalidCredentials" });
     }
 
     const user = findUserByUsername(parsed.data.username);
     if (!user) {
-      return reply.code(401).send({ message: "Utilisateur ou mot de passe incorrect." });
+      return reply.code(401).send({ message: "errors.invalidUsernamePassword" });
     }
 
     const isValid = await verifyPassword(parsed.data.password, user.password_hash);
     if (!isValid) {
-      return reply.code(401).send({ message: "Utilisateur ou mot de passe incorrect." });
+      return reply.code(401).send({ message: "errors.invalidUsernamePassword" });
     }
 
     clearSession(request, reply, request.cookies[sessionCookieName]);
@@ -150,7 +150,7 @@ export async function registerAuthRoutes(server: FastifyInstance) {
     },
     async (request, reply) => {
       if (isDemoMode) {
-        return reply.code(403).send({ message: "Mode demo: modifications desactivees." });
+        return reply.code(403).send({ message: "errors.demoMode" });
       }
 
       const user = requireSession(request, reply);
@@ -164,7 +164,7 @@ export async function registerAuthRoutes(server: FastifyInstance) {
 
       const parsed = createUserPayloadSchema.safeParse(request.body);
       if (!parsed.success) {
-        return reply.code(400).send({ message: "Donnees invalides." });
+        return reply.code(400).send({ message: "errors.invalidData" });
       }
 
       const invitation = createInvitation(parsed.data.role, user.id);
@@ -183,7 +183,7 @@ export async function registerAuthRoutes(server: FastifyInstance) {
     const token = (request.params as { token: string }).token;
     const invitation = getInvitation(token);
     if (!invitation) {
-      return reply.code(404).send({ message: "Invitation invalide ou expiree." });
+      return reply.code(404).send({ message: "errors.invalidInvite" });
     }
 
     return {
@@ -199,27 +199,27 @@ export async function registerAuthRoutes(server: FastifyInstance) {
     },
     async (request, reply) => {
       if (isDemoMode) {
-        return reply.code(403).send({ message: "Mode demo: modifications desactivees." });
+        return reply.code(403).send({ message: "errors.demoMode" });
       }
 
       const token = (request.params as { token: string }).token;
       const parsed = acceptInvitationPayloadSchema.safeParse(request.body);
       if (!parsed.success) {
-        return reply.code(400).send({ message: "Donnees invalides." });
+        return reply.code(400).send({ message: "errors.invalidData" });
       }
 
       const passwordHash = await hashPassword(parsed.data.password);
       const result = consumeInvitation(token, parsed.data.username, passwordHash);
       if ("error" in result) {
         if (result.error === "invalid_invitation") {
-          return reply.code(404).send({ message: "Invitation invalide ou expiree." });
+          return reply.code(404).send({ message: "errors.invalidInvite" });
         }
 
         if (result.error === "username_taken") {
-          return reply.code(409).send({ message: "Nom d'utilisateur deja utilise." });
+          return reply.code(409).send({ message: "errors.usernameTaken" });
         }
 
-        return reply.code(400).send({ message: "Invitation invalide." });
+        return reply.code(400).send({ message: "errors.invalidInvitation" });
       }
 
       clearSession(request, reply, request.cookies[sessionCookieName]);
@@ -238,7 +238,7 @@ export async function registerAuthRoutes(server: FastifyInstance) {
     },
     async (request, reply) => {
       if (isDemoMode) {
-        return reply.code(403).send({ message: "Mode demo: modifications desactivees." });
+        return reply.code(403).send({ message: "errors.demoMode" });
       }
 
       const user = requireSession(request, reply);
@@ -252,26 +252,26 @@ export async function registerAuthRoutes(server: FastifyInstance) {
 
       const id = Number((request.params as { id: string }).id);
       if (!Number.isInteger(id)) {
-        return reply.code(400).send({ message: "Identifiant invalide." });
+        return reply.code(400).send({ message: "errors.invalidId" });
       }
 
       const parsed = updateUserRolePayloadSchema.safeParse(request.body);
       if (!parsed.success) {
-        return reply.code(400).send({ message: "Donnees invalides." });
+        return reply.code(400).send({ message: "errors.invalidData" });
       }
 
       const result = updateUserRole(id, parsed.data.role, user.id);
       if ("error" in result) {
         if (result.error === "not_found") {
-          return reply.code(404).send({ message: "Utilisateur introuvable." });
+          return reply.code(404).send({ message: "errors.notFound" });
         }
 
         if (result.error === "self_change_forbidden") {
-          return reply.code(400).send({ message: "Impossible de modifier votre propre role." });
+          return reply.code(400).send({ message: "errors.selfRoleChange" });
         }
 
         if (result.error === "last_admin") {
-          return reply.code(400).send({ message: "Impossible de retirer le dernier administrateur." });
+          return reply.code(400).send({ message: "errors.lastAdmin" });
         }
       }
 
@@ -286,7 +286,7 @@ export async function registerAuthRoutes(server: FastifyInstance) {
     },
     async (request, reply) => {
       if (isDemoMode) {
-        return reply.code(403).send({ message: "Mode demo: modifications desactivees." });
+        return reply.code(403).send({ message: "errors.demoMode" });
       }
 
       const user = requireSession(request, reply);
@@ -300,21 +300,21 @@ export async function registerAuthRoutes(server: FastifyInstance) {
 
       const id = Number((request.params as { id: string }).id);
       if (!Number.isInteger(id)) {
-        return reply.code(400).send({ message: "Identifiant invalide." });
+        return reply.code(400).send({ message: "errors.invalidId" });
       }
 
       const result = deleteUser(id, user.id);
       if ("error" in result) {
         if (result.error === "not_found") {
-          return reply.code(404).send({ message: "Utilisateur introuvable." });
+          return reply.code(404).send({ message: "errors.notFound" });
         }
 
         if (result.error === "self_delete_forbidden") {
-          return reply.code(400).send({ message: "Impossible de supprimer votre propre compte." });
+          return reply.code(400).send({ message: "errors.selfDelete" });
         }
 
         if (result.error === "last_admin") {
-          return reply.code(400).send({ message: "Impossible de supprimer le dernier administrateur." });
+          return reply.code(400).send({ message: "errors.lastAdmin" });
         }
       }
 

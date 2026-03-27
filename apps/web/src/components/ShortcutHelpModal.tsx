@@ -1,4 +1,5 @@
 import { useEffect } from "react";
+import { useTranslation } from "../lib/i18n";
 
 export function ShortcutHelpModal({
   open,
@@ -7,6 +8,8 @@ export function ShortcutHelpModal({
   open: boolean;
   onClose: () => void;
 }) {
+  const { t } = useTranslation();
+
   useEffect(() => {
     if (!open) {
       return;
@@ -31,8 +34,8 @@ export function ShortcutHelpModal({
       <aside className="editor-modal shortcut-modal" onClick={(event) => event.stopPropagation()} aria-modal="true" role="dialog">
         <div className="editor-header">
           <div>
-            <p className="eyebrow">Navigation</p>
-            <h3>Raccourcis clavier</h3>
+            <p className="eyebrow">{t("modal.navigation")}</p>
+            <h3>{t("modal.keyboardShortcuts")}</h3>
           </div>
         </div>
 
@@ -40,21 +43,21 @@ export function ShortcutHelpModal({
           <div className="shortcut-list">
             <div className="shortcut-item">
               <kbd>N</kbd>
-              <span>Ouvrir la creation d'application</span>
+              <span>{t("modal.shortcutOpenCreate")}</span>
             </div>
             <div className="shortcut-item">
               <kbd>?</kbd>
-              <span>Afficher cette aide</span>
+              <span>{t("modal.shortcutShowHelp")}</span>
             </div>
             <div className="shortcut-item">
               <kbd>Escape</kbd>
-              <span>Fermer le menu contextuel ou la fenetre ouverte</span>
+              <span>{t("modal.shortcutClose")}</span>
             </div>
           </div>
 
           <div className="editor-actions">
             <button className="secondary-button json-close-action" type="button" onClick={onClose}>
-              Fermer
+              {t("common.close")}
             </button>
           </div>
         </div>

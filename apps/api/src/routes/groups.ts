@@ -16,7 +16,7 @@ function blockDemoWrites(reply: FastifyReply) {
     return false;
   }
 
-  reply.code(403).send({ message: "Mode demo: modifications desactivees." });
+  reply.code(403).send({ message: "errors.demoMode" });
   return true;
 }
 
@@ -52,7 +52,7 @@ export async function registerGroupRoutes(server: FastifyInstance) {
 
     const parsed = groupSchema.safeParse(request.body);
     if (!parsed.success) {
-      return reply.code(400).send({ message: "Donnees invalides." });
+      return reply.code(400).send({ message: "errors.invalidData" });
     }
 
     const group = groupRepository.createGroup(parsed.data.name);
@@ -76,17 +76,17 @@ export async function registerGroupRoutes(server: FastifyInstance) {
 
     const id = Number((request.params as { id: string }).id);
     if (!Number.isInteger(id)) {
-      return reply.code(400).send({ message: "Identifiant invalide." });
+      return reply.code(400).send({ message: "errors.invalidId" });
     }
 
     const parsed = groupSchema.safeParse(request.body);
     if (!parsed.success) {
-      return reply.code(400).send({ message: "Donnees invalides." });
+      return reply.code(400).send({ message: "errors.invalidData" });
     }
 
     const group = groupRepository.updateGroup(id, parsed.data.name);
     if (!group) {
-      return reply.code(404).send({ message: "Groupe introuvable." });
+      return reply.code(404).send({ message: "errors.notFound" });
     }
 
     return { item: group, items: groupRepository.listGroups() };
@@ -108,11 +108,11 @@ export async function registerGroupRoutes(server: FastifyInstance) {
 
     const id = Number((request.params as { id: string }).id);
     if (!Number.isInteger(id)) {
-      return reply.code(400).send({ message: "Identifiant invalide." });
+      return reply.code(400).send({ message: "errors.invalidId" });
     }
 
     if (!groupRepository.hasGroup(id)) {
-      return reply.code(404).send({ message: "Groupe introuvable." });
+      return reply.code(404).send({ message: "errors.notFound" });
     }
 
     groupRepository.deleteGroup(id);

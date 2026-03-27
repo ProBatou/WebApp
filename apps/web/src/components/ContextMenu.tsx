@@ -1,4 +1,5 @@
 import { useEffect, useRef } from "react";
+import { useTranslation } from "../lib/i18n";
 import type { ContextMenuState, SidebarMode } from "../types";
 
 export function ContextMenu({
@@ -28,6 +29,7 @@ export function ContextMenu({
   onExport: () => void;
   onToggleSidebarMode: () => void;
 }) {
+  const { t } = useTranslation();
   const menuRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
@@ -93,19 +95,19 @@ export function ContextMenu({
         <>
           {contextMenu.app.open_mode === "iframe" ? (
             <button type="button" className="sidebar-context-item" role="menuitem" onClick={onRefresh}>
-              Rafraichir
+              {t("app.refresh")}
             </button>
           ) : null}
           {canManageApps ? (
             <>
               <button type="button" className="sidebar-context-item" role="menuitem" onClick={onEdit}>
-                Editer
+                {t("common.edit")}
               </button>
               <button type="button" className="sidebar-context-item" role="menuitem" onClick={onToggleDefault}>
-                {contextMenu.app.is_default ? "Retirer des favoris" : "Definir par defaut"}
+                {contextMenu.app.is_default ? t("app.removeDefault") : t("app.setDefault")}
               </button>
               <button type="button" className="sidebar-context-item" role="menuitem" onClick={onDelete}>
-                Supprimer
+                {t("common.delete")}
               </button>
             </>
           ) : null}
@@ -114,16 +116,16 @@ export function ContextMenu({
       {!contextMenu.app && canManageApps ? (
         <>
           <button type="button" className="sidebar-context-item" role="menuitem" onClick={onCreate}>
-            Nouvelle app
+            {t("app.new")}
           </button>
           <button type="button" className="sidebar-context-item" role="menuitem" onClick={onImport}>
-            Importer JSON
+            {t("app.importJson")}
           </button>
           <button type="button" className="sidebar-context-item" role="menuitem" onClick={onExport}>
-            Exporter JSON
+            {t("app.exportJson")}
           </button>
           <button type="button" className="sidebar-context-item" role="menuitem" onClick={onToggleSidebarMode}>
-            {sidebarMode === "expanded" ? "Passer en compact" : "Passer en etendu"}
+            {sidebarMode === "expanded" ? t("app.switchCompact") : t("app.switchExpanded")}
           </button>
         </>
       ) : null}

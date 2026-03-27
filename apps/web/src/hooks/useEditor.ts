@@ -89,7 +89,7 @@ export function useEditor({
       await reloadApps(result.item.id);
       setEditorOpen(false);
     } catch (saveError) {
-      setError(saveError instanceof Error ? saveError.message : "Erreur d'enregistrement.");
+      setError(saveError instanceof Error ? saveError.message : "errors.save");
     } finally {
       setBusy(false);
     }

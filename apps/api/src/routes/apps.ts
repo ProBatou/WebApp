@@ -11,10 +11,10 @@ const appSchema = z.object({
   name: z.string().trim().min(2).max(64),
   description: z.string().trim().max(180).default(""),
   url: z.string().url(),
-  icon: z.string().trim().min(1).max(80).regex(/^[A-Za-z0-9-]+$/, "Icone invalide."),
+  icon: z.string().trim().min(1).max(80).regex(/^[A-Za-z0-9-]+$/, "errors.invalidIcon"),
   iconVariantMode: z.enum(["auto", "base"]).default("auto"),
   iconVariantInverted: z.boolean().default(false),
-  accent: z.string().regex(/^#([0-9a-fA-F]{6})$/, "Couleur invalide."),
+  accent: z.string().regex(/^#([0-9a-fA-F]{6})$/, "errors.invalidData"),
   openMode: z.enum(["iframe", "external"]),
   isShared: z.boolean().default(true),
   groupId: z.number().int().positive().nullable().optional(),
@@ -42,7 +42,7 @@ function blockDemoWrites(reply: FastifyReply) {
     return false;
   }
 
-  reply.code(403).send({ message: "Mode demo: modifications desactivees." });
+  reply.code(403).send({ message: "errors.demoMode" });
   return true;
 }
 
@@ -70,18 +70,18 @@ export async function registerAppRoutes(server: FastifyInstance) {
 
     const id = Number((request.params as { id: string }).id);
     if (!Number.isInteger(id)) {
-      return reply.code(400).send({ message: "Identifiant invalide." });
+      return reply.code(400).send({ message: "errors.invalidId" });
     }
 
     const app = db.prepare("SELECT id, url, is_shared FROM apps WHERE id = ?").get(id) as
       | Pick<AppRecord, "id" | "url" | "is_shared">
       | undefined;
     if (!app) {
-      return reply.code(404).send({ message: "Application introuvable." });
+      return reply.code(404).send({ message: "errors.invalidApp" });
     }
 
     if (user.role !== "admin" && app.is_shared !== 1) {
-      return reply.code(404).send({ message: "Application introuvable." });
+      return reply.code(404).send({ message: "errors.invalidApp" });
     }
 
     const checkUrl = async (method: "HEAD" | "GET") => {
@@ -135,12 +135,12 @@ export async function registerAppRoutes(server: FastifyInstance) {
 
     const id = Number((request.params as { id: string }).id);
     if (!Number.isInteger(id)) {
-      return reply.code(400).send({ message: "Identifiant invalide." });
+      return reply.code(400).send({ message: "errors.invalidId" });
     }
 
     const app = db.prepare("SELECT id FROM apps WHERE id = ?").get(id) as Pick<AppRecord, "id"> | undefined;
     if (!app) {
-      return reply.code(404).send({ message: "Application introuvable." });
+      return reply.code(404).send({ message: "errors.invalidApp" });
     }
 
     return {
@@ -164,12 +164,12 @@ export async function registerAppRoutes(server: FastifyInstance) {
 
     const id = Number((request.params as { id: string }).id);
     if (!Number.isInteger(id)) {
-      return reply.code(400).send({ message: "Identifiant invalide." });
+      return reply.code(400).send({ message: "errors.invalidId" });
     }
 
     const app = db.prepare("SELECT id FROM apps WHERE id = ?").get(id) as Pick<AppRecord, "id"> | undefined;
     if (!app) {
-      return reply.code(404).send({ message: "Application introuvable." });
+      return reply.code(404).send({ message: "errors.invalidApp" });
     }
 
     return {
@@ -193,11 +193,11 @@ export async function registerAppRoutes(server: FastifyInstance) {
 
     const parsed = appSchema.safeParse(request.body);
     if (!parsed.success) {
-      return reply.code(400).send({ message: "Donnees invalides.", issues: parsed.error.flatten() });
+      return reply.code(400).send({ message: "errors.invalidData", issues: parsed.error.flatten() });
     }
 
     if (parsed.data.groupId !== undefined && parsed.data.groupId !== null && !groupRepository.hasGroup(parsed.data.groupId)) {
-      return reply.code(400).send({ message: "Groupe invalide." });
+      return reply.code(400).send({ message: "errors.invalidGroup" });
     }
 
     const app = appRepository.insertApp(parsed.data);
@@ -220,16 +220,16 @@ export async function registerAppRoutes(server: FastifyInstance) {
 
     const id = Number((request.params as { id: string }).id);
     if (!Number.isInteger(id)) {
-      return reply.code(400).send({ message: "Identifiant invalide." });
+      return reply.code(400).send({ message: "errors.invalidId" });
     }
 
     const parsed = appSchema.safeParse(request.body);
     if (!parsed.success) {
-      return reply.code(400).send({ message: "Donnees invalides.", issues: parsed.error.flatten() });
+      return reply.code(400).send({ message: "errors.invalidData", issues: parsed.error.flatten() });
     }
 
     if (parsed.data.groupId !== undefined && parsed.data.groupId !== null && !groupRepository.hasGroup(parsed.data.groupId)) {
-      return reply.code(400).send({ message: "Groupe invalide." });
+      return reply.code(400).send({ message: "errors.invalidGroup" });
     }
 
     const now = new Date().toISOString();
@@ -254,7 +254,7 @@ export async function registerAppRoutes(server: FastifyInstance) {
 
     const app = db.prepare("SELECT * FROM apps WHERE id = ?").get(id) as AppRecord | undefined;
     if (!app) {
-      return reply.code(404).send({ message: "Application introuvable." });
+      return reply.code(404).send({ message: "errors.invalidApp" });
     }
 
     return { item: appRepository.listApps().find((item) => item.id === app.id) };
@@ -276,7 +276,7 @@ export async function registerAppRoutes(server: FastifyInstance) {
 
     const id = Number((request.params as { id: string }).id);
     if (!Number.isInteger(id)) {
-      return reply.code(400).send({ message: "Identifiant invalide." });
+      return reply.code(400).send({ message: "errors.invalidId" });
     }
 
     appRepository.deleteAppAndReindex(id);
@@ -300,11 +300,11 @@ export async function registerAppRoutes(server: FastifyInstance) {
 
     const parsed = reorderSchema.safeParse(request.body);
     if (!parsed.success) {
-      return reply.code(400).send({ message: "Ordre invalide." });
+      return reply.code(400).send({ message: "errors.invalidOrder" });
     }
 
     if (!appRepository.hasExactOrderedIds(parsed.data.items.map((item) => item.id))) {
-      return reply.code(400).send({ message: "Ordre invalide: la liste doit contenir chaque application une seule fois." });
+      return reply.code(400).send({ message: "errors.invalidOrderDuplicate" });
     }
 
     return {
@@ -328,14 +328,14 @@ export async function registerAppRoutes(server: FastifyInstance) {
 
     const parsed = importAppsSchema.safeParse(request.body);
     if (!parsed.success) {
-      return reply.code(400).send({ message: "Import JSON invalide.", issues: parsed.error.flatten() });
+      return reply.code(400).send({ message: "errors.invalidJsonImport", issues: parsed.error.flatten() });
     }
 
     const invalidGroupReference = parsed.data.items.some(
       (item) => item.groupId !== undefined && item.groupId !== null && !groupRepository.hasGroup(item.groupId)
     );
     if (invalidGroupReference) {
-      return reply.code(400).send({ message: "Import JSON invalide." });
+      return reply.code(400).send({ message: "errors.invalidJsonImport" });
     }
 
     return appRepository.importApps(parsed.data.mode, parsed.data.items);

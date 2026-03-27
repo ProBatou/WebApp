@@ -29,7 +29,7 @@ export async function registerIconRoutes(server: FastifyInstance) {
     const rawSlug = (request.params as { slug: string }).slug;
     const slug = rawSlug.trim().toLowerCase();
     if (!iconSlugPattern.test(slug)) {
-      return reply.code(400).send({ message: "Icone invalide." });
+      return reply.code(400).send({ message: "errors.invalidIcon" });
     }
 
     const cachePath = getIconCachePath(slug);

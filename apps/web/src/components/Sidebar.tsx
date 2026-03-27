@@ -3,6 +3,7 @@ import { useDroppable } from "@dnd-kit/core";
 import { SortableContext, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { AppIcon } from "./AppIcon";
+import { useTranslation, type SupportedLanguage } from "../lib/i18n";
 import type { AppStatusEntry, ContextMenuState, DashboardIconsMetadataMap, GroupEntry, SidebarMode, ThemeMode, WebAppEntry } from "../types";
 
 const collapsedGroupsStorageKey = "webapp-v2-collapsed-groups";
@@ -66,6 +67,7 @@ function SortableAppTile({
   appStatus?: AppStatusEntry;
   canManageApps: boolean;
 }) {
+  const { t } = useTranslation();
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: app.id });
   const constrainedTransform = transform ? { ...transform, x: 0 } : null;
 
@@ -93,7 +95,7 @@ function SortableAppTile({
         type="button"
         onClick={() => onSelect(app)}
         title={app.name}
-        aria-label={`Ouvrir ${app.name}`}
+        aria-label={t("app.openAppAria", { name: app.name })}
         {...(canManageApps ? attributes : {})}
         {...(canManageApps ? listeners : {})}
       >
@@ -111,7 +113,7 @@ function SortableAppTile({
           <span className="app-meta">
             <strong>
               {app.name}
-              {app.is_default ? <span className="default-app-badge" title="App par defaut">★</span> : null}
+              {app.is_default ? <span className="default-app-badge" title={t("app.default")}>★</span> : null}
               <span
                 className={appStatus?.status === "online"
                   ? "app-status-dot online"
@@ -120,28 +122,34 @@ function SortableAppTile({
                     : "app-status-dot unknown"}
                 aria-label={
                   appStatus?.status === "online"
-                    ? "Application en ligne"
+                    ? t("status.appOnline")
                     : appStatus?.status === "offline"
-                      ? "Application hors ligne"
-                      : "Statut inconnu"
+                      ? t("status.appOffline")
+                      : t("status.appUnknown")
                 }
                 title={
                   appStatus?.status === "online"
-                    ? "En ligne"
+                    ? t("status.online")
                     : appStatus?.status === "offline"
-                      ? "Hors ligne"
-                      : "Statut inconnu"
+                      ? t("status.offline")
+                      : t("status.unknown")
                 }
               />
             </strong>
-            <small>{app.open_mode === "iframe" ? "Integree" : "Externe"}</small>
+            <small>{app.open_mode === "iframe" ? t("app.openMode.embedded") : t("app.openMode.external")}</small>
           </span>
         ) : null}
       </button>
       {!compact && canManageApps ? (
         <div className="app-tile-actions">
-          <button className="ghost-icon-button" type="button" onClick={() => onEdit(app)} aria-label={`Modifier ${app.name}`}>
-            Edit
+          <button
+            className="ghost-icon-button"
+            type="button"
+            onClick={() => onEdit(app)}
+            aria-label={t("app.editAppAria", { name: app.name })}
+            title={t("common.edit")}
+          >
+            ✎
           </button>
         </div>
       ) : null}
@@ -162,6 +170,7 @@ export function DragOverlayTile({
   dashboardIconsMetadata: DashboardIconsMetadataMap;
   dragOutProgress: number;
 }) {
+  const { t } = useTranslation();
   const fadeProgress = dragOutProgress <= 0.72 ? 0 : (dragOutProgress - 0.72) / 0.28;
   const overlayOpacity = Math.max(0.4, 1 - fadeProgress * 0.6);
   const overlayScale = 1 - fadeProgress * 0.08;
@@ -189,7 +198,7 @@ export function DragOverlayTile({
       {!compact ? (
         <span className="app-meta">
           <strong>{app.name}</strong>
-          <small>{app.open_mode === "iframe" ? "Integree" : "Externe"}</small>
+          <small>{app.open_mode === "iframe" ? t("app.openMode.embedded") : t("app.openMode.external")}</small>
         </span>
       ) : null}
     </div>
@@ -222,6 +231,8 @@ export function Sidebar({
   onOpenUserManager,
   onLogout,
   onToggleTheme,
+  lang,
+  setLang,
   onSelectApp,
   onEditApp,
   onOpenContextMenu,
@@ -251,10 +262,13 @@ export function Sidebar({
   onOpenUserManager: () => void;
   onLogout: () => Promise<void>;
   onToggleTheme: () => void;
+  lang: SupportedLanguage;
+  setLang: (lang: SupportedLanguage) => void;
   onSelectApp: (app: WebAppEntry) => void;
   onEditApp: (app: WebAppEntry) => void;
   onOpenContextMenu: (event: MouseEvent<HTMLDivElement>, app: WebAppEntry) => void;
 }) {
+  const { t } = useTranslation();
   const [filterQuery, setFilterQuery] = useState("");
   const [actionsMenuOpen, setActionsMenuOpen] = useState(false);
   const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(() => readCollapsedGroups());
@@ -280,13 +294,13 @@ export function Sidebar({
     if (ungroupedApps.length > 0) {
       groupedApps.push({
         id: "group:none",
-        label: "Sans groupe",
+        label: t("app.noGroup"),
         apps: ungroupedApps,
       });
     }
 
     return groupedApps;
-  }, [filteredApps, groups]);
+  }, [filteredApps, groups, t]);
   const visibleAppsInCompact = useMemo(() => {
     return filteredApps.filter((app) => {
       const sectionId = app.group_id === null ? "group:none" : `group:${app.group_id}`;
@@ -339,7 +353,7 @@ export function Sidebar({
       <button
         className="edge-trigger"
         type="button"
-        aria-label="Afficher la barre laterale"
+        aria-label={t("app.showSidebar")}
         onMouseEnter={() => setSidebarOpen(true)}
         onFocus={() => setSidebarOpen(true)}
         onClick={() => setSidebarOpen(true)}
@@ -366,8 +380,26 @@ export function Sidebar({
         <div className="brand-block">
           {sidebarMode === "expanded" ? (
             <div className="brand-copy">
-              <p className="eyebrow">Connecte en tant que</p>
+              <p className="eyebrow">{t("auth.signedInAs")}</p>
               <h1>{userName}</h1>
+              <div className="lang-switcher user-lang-switcher" aria-label={t("sidebar.language")}>
+                <button
+                  className={lang === "en" ? "ghost-icon-button lang-toggle active" : "ghost-icon-button lang-toggle"}
+                  type="button"
+                  onClick={() => setLang("en")}
+                  aria-label={t("lang.en")}
+                >
+                  EN
+                </button>
+                <button
+                  className={lang === "fr" ? "ghost-icon-button lang-toggle active" : "ghost-icon-button lang-toggle"}
+                  type="button"
+                  onClick={() => setLang("fr")}
+                  aria-label={t("lang.fr")}
+                >
+                  FR
+                </button>
+              </div>
             </div>
           ) : (
             <div className="compact-header-stack">
@@ -375,7 +407,7 @@ export function Sidebar({
                 className="ghost-icon-button burger-button"
                 type="button"
                 onClick={() => setSidebarMode((current) => (current === "expanded" ? "compact" : "expanded"))}
-                aria-label="Passer en mode etendu"
+                aria-label={t("app.switchExpandedMode")}
               >
                 <span />
                 <span />
@@ -389,7 +421,7 @@ export function Sidebar({
                 className="ghost-icon-button burger-button"
                 type="button"
                 onClick={() => setSidebarMode((current) => (current === "expanded" ? "compact" : "expanded"))}
-                aria-label={sidebarMode === "expanded" ? "Passer en mode icones" : "Passer en mode etendu"}
+                aria-label={sidebarMode === "expanded" ? t("app.switchIconMode") : t("app.switchExpandedMode")}
               >
                 <span />
                 <span />
@@ -400,15 +432,15 @@ export function Sidebar({
         </div>
 
         <div className="sidebar-section">
-          {sidebarMode === "expanded" ? <p className="section-title">Applications</p> : null}
+          {sidebarMode === "expanded" ? <p className="section-title">{t("sidebar.apps")}</p> : null}
           {sidebarMode === "expanded" ? (
             <label className="sidebar-search">
-              <span className="sr-only">Rechercher une application</span>
+              <span className="sr-only">{t("app.searchApps")}</span>
               <input
                 type="search"
                 value={filterQuery}
                 onChange={(event) => setFilterQuery(event.target.value)}
-                placeholder={draggingAppId !== null ? "Recherche indisponible pendant le tri" : "Rechercher une app"}
+                placeholder={draggingAppId !== null ? t("app.searchUnavailableWhileSorting") : t("app.searchApps")}
                 disabled={draggingAppId !== null}
               />
             </label>
@@ -426,7 +458,7 @@ export function Sidebar({
                       type="button"
                       onClick={() => toggleGroupVisibility(section.id)}
                       aria-expanded={!collapsedGroups.has(section.id)}
-                      aria-label={`${collapsedGroups.has(section.id) ? "Afficher" : "Masquer"} le groupe ${section.label}`}
+                      aria-label={collapsedGroups.has(section.id) ? t("app.showGroup", { group: section.label }) : t("app.hideGroup", { group: section.label })}
                     >
                       <span className="group-section-title">{section.label}</span>
                       <span className={collapsedGroups.has(section.id) ? "group-chevron collapsed" : "group-chevron"} aria-hidden="true">▾</span>
@@ -456,7 +488,7 @@ export function Sidebar({
                     ) : null}
                   </section>
                 ))}
-                {filteredApps.length === 0 ? <p className="sidebar-empty-state">Aucune application ne correspond a la recherche.</p> : null}
+                {filteredApps.length === 0 ? <p className="sidebar-empty-state">{t("app.noAppsMatch")}</p> : null}
               </div>
             ) : (
               <div className="app-list">
@@ -475,35 +507,40 @@ export function Sidebar({
                     canManageApps={canManageApps}
                   />
                 ))}
-                {visibleAppsInCompact.length === 0 ? <p className="sidebar-empty-state">Aucune application visible.</p> : null}
+                {visibleAppsInCompact.length === 0 ? <p className="sidebar-empty-state">{t("app.noAppsVisible")}</p> : null}
               </div>
             )}
           </SortableContext>
         </div>
 
         {draggingAppId !== null ? (
-          <div className={dragOutProgress > 0 ? "sidebar-trash-hint active" : "sidebar-trash-hint"}>Sortir a droite pour supprimer</div>
+          <div className={dragOutProgress > 0 ? "sidebar-trash-hint active" : "sidebar-trash-hint"}>{t("app.dragToDelete")}</div>
         ) : null}
 
         <div className="sidebar-bottom-actions">
           {canManageApps ? (
             <>
-              <button className="primary-button" type="button" onClick={onOpenCreateEditor} title="Nouvelle app">
-                {sidebarMode === "expanded" ? "Nouvelle" : "+"}
+              <button className="primary-button" type="button" onClick={onOpenCreateEditor} title={t("app.new")}>
+                {sidebarMode === "expanded" ? t("common.new") : "+"}
               </button>
-              <div ref={actionsMenuRef} className={actionsMenuOpen ? "sidebar-actions-menu open" : "sidebar-actions-menu"}>
-                <button
-                  className="secondary-button sidebar-actions-trigger"
-                  type="button"
-                  onClick={() => setActionsMenuOpen((current) => !current)}
-                  title="Actions"
-                  aria-haspopup="menu"
-                  aria-expanded={actionsMenuOpen}
-                >
-                  {sidebarMode === "expanded" ? "Actions" : "⋯"}
-                </button>
-                {actionsMenuOpen ? (
-                  <div className="sidebar-actions-popover" role="menu" aria-label="Actions de la barre laterale">
+            </>
+          ) : null}
+          <div ref={actionsMenuRef} className={actionsMenuOpen ? "sidebar-actions-menu open" : "sidebar-actions-menu"}>
+            <button
+              className="ghost-icon-button sidebar-actions-trigger"
+              type="button"
+              onClick={() => setActionsMenuOpen((current) => !current)}
+              title={t("common.actions")}
+              aria-haspopup="menu"
+              aria-expanded={actionsMenuOpen}
+              aria-label={t("common.actions")}
+            >
+              ⚙
+            </button>
+            {actionsMenuOpen ? (
+              <div className="sidebar-actions-popover" role="menu" aria-label={t("common.actions")}>
+                {canManageApps ? (
+                  <>
                     <button
                       className="secondary-button"
                       type="button"
@@ -511,9 +548,9 @@ export function Sidebar({
                         setActionsMenuOpen(false);
                         onOpenJsonImport();
                       }}
-                      title="Importer JSON"
+                      title={t("app.importJson")}
                     >
-                      JSON
+                      {t("common.json")}
                     </button>
                     <button
                       className="secondary-button"
@@ -522,9 +559,9 @@ export function Sidebar({
                         setActionsMenuOpen(false);
                         onOpenGroupManager();
                       }}
-                      title="Gerer les groupes"
+                      title={t("modal.groups")}
                     >
-                      Groupes
+                      {t("modal.groups")}
                     </button>
                     {userRole === "admin" ? (
                       <button
@@ -534,33 +571,29 @@ export function Sidebar({
                           setActionsMenuOpen(false);
                           onOpenUserManager();
                         }}
-                        title="Gerer les utilisateurs"
+                        title={t("modal.users")}
                       >
-                        Utilisateurs
+                        {t("modal.users")}
                       </button>
                     ) : null}
-                    <button
-                      className="secondary-button"
-                      type="button"
-                      onClick={() => {
-                        setActionsMenuOpen(false);
-                        void onLogout();
-                      }}
-                      disabled={busy}
-                      title="Deconnexion"
-                    >
-                      Quitter
-                    </button>
-                  </div>
+                  </>
                 ) : null}
+                <button
+                  className="secondary-button"
+                  type="button"
+                  onClick={() => {
+                    setActionsMenuOpen(false);
+                    void onLogout();
+                  }}
+                  disabled={busy}
+                  title={t("auth.signOut")}
+                >
+                  {t("auth.signOut")}
+                </button>
               </div>
-            </>
-          ) : (
-            <button className="secondary-button" type="button" onClick={() => void onLogout()} disabled={busy} title="Deconnexion">
-              {sidebarMode === "expanded" ? "Quitter" : "⏻"}
-            </button>
-          )}
-          <button className="ghost-icon-button theme-toggle" type="button" onClick={onToggleTheme} aria-label="Basculer le theme" title="Dark mode">
+            ) : null}
+          </div>
+          <button className="ghost-icon-button theme-toggle" type="button" onClick={onToggleTheme} aria-label={t("app.themeToggleAria")} title={t("app.themeToggleTitle")}>
             {themeMode === "light" ? "◐" : "◑"}
           </button>
         </div>
