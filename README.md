@@ -1,96 +1,46 @@
-# WebApp V2
+# WebApp
 
-WebApp V2 est un portail personnel pour centraliser ses applications web dans une interface unique.
-Le projet remplace l'ancienne version PHP/JavaScript par un monorepo TypeScript compose d'un frontend React/Vite et d'une API Fastify.
+> Ton homelab, une seule page.
 
-![Apercu WebApp V2](./docs/webapp-v2-preview.png)
+Tu as Plex, Nextcloud, Grafana, Home Assistant, Portainer... et tu passes ta vie a retaper des URLs ou a fouiller dans tes bookmarks ? **WebApp** rassemble tout dans une interface claire, accessible depuis n'importe quel appareil sur ton reseau.
 
-## Fonctionnalites
+![Aperçu WebApp V2](./docs/webapp-v2-preview.png)
 
-- authentification par session HTTP-only
-- ouverture des applications en iframe ou dans un onglet externe
-- reorganisation par glisser-deposer
-- import et export JSON
-- stockage local avec SQLite
-- deploiement simple en local, via Docker ou dans un environnement homelab
+[![Demo](https://img.shields.io/badge/demo-live-brightgreen)](https://webapp-latest-mk9k.onrender.com)
+[![Docker](https://img.shields.io/badge/docker-ghcr.io-blue)](https://ghcr.io/probatou/webapp)
+[![License](https://img.shields.io/github/license/ProBatou/WebApp)](./LICENSE)
+[![Release](https://img.shields.io/github/v/release/ProBatou/WebApp)](https://github.com/ProBatou/WebApp/releases)
 
-## Stack technique
+---
 
-- frontend : React 19 + Vite + TypeScript
-- backend : Fastify 5 + TypeScript
-- base de donnees : SQLite avec `better-sqlite3`
-- validation : Zod
-- authentification : cookies HTTP-only + sessions serveur
-- monorepo : npm workspaces
+## Voir la demo
 
-## Structure du projet
+👉 **[webapp-latest-mk9k.onrender.com](https://webapp-latest-mk9k.onrender.com)**
 
-```text
-apps/
-  api/   # API Fastify + SQLite
-  web/   # Frontend React/Vite
-package.json
-package-lock.json
-tsconfig.base.json
-Dockerfile
-docker-compose.yml
-cosmos-service.json
-start.sh
-```
+Login : `Administrator`  
+Mot de passe : `Administrator`
 
-## Prerequis
+> Le serveur peut mettre ~30 secondes a demarrer s'il est en veille.
 
-- Node.js 20 ou plus recent
-- npm
+---
 
-## Installation locale
+## Ce que ca fait
 
-```bash
-git clone https://github.com/ProBatou/WebApp.git
-cd WebApp
-npm install
-```
+- **Toutes tes apps au meme endroit** : affichage en iframe integree ou ouverture dans un onglet externe
+- **Rafraichissement individuel** : recharge une app sans recharger toute la page
+- **Glisser-deposer** : reorganise les apps librement
+- **Import / export JSON** : sauvegarde ou restaure ta configuration facilement
+- **Theme clair / sombre** : bascule selon tes preferences
+- **Sidebar compacte** : maximise l'espace disponible pour le contenu
+- **Authentification par session** : cookie HTTP-only, sans JWT expose cote client
 
-## Developpement
+---
 
-Pour lancer le frontend et l'API ensemble :
+## Demarrage rapide
 
-```bash
-npm run dev
-```
+### Docker
 
-Services disponibles :
-
-- frontend : `http://localhost:5173`
-- API : `http://localhost:3001`
-- healthcheck : `http://localhost:3001/api/health`
-
-En developpement, Vite proxy automatiquement les requetes `/api` vers Fastify.
-
-## Build de production
-
-```bash
-npm run build
-```
-
-Le build du frontend est genere dans `apps/web/dist`.
-Si ce build est present, l'API Fastify sert directement l'application web via `@fastify/static`.
-
-Pour lancer l'API en mode production apres compilation :
-
-```bash
-npm --workspace apps/api run start
-```
-
-Par defaut, le serveur ecoute sur `http://localhost:3001`.
-Le port peut etre surcharge avec la variable `PORT`.
-
-## Installation via Docker
-
-L'image Docker embarque l'API Fastify et le frontend statique dans un seul conteneur.
-Le point de persistance unique a conserver est `/app/data`, qui contient la base SQLite.
-
-### Demarrage rapide
+Methode recommandee pour un usage normal.
 
 ```bash
 docker run -d \
@@ -100,7 +50,7 @@ docker run -d \
   ghcr.io/probatou/webapp:latest
 ```
 
-Ensuite, ouvrir `http://localhost:3004`.
+Ouvre ensuite `http://localhost:3004` et cree ton compte.
 
 ### Exemple `docker-compose.yml`
 
@@ -114,82 +64,106 @@ services:
     volumes:
       - ./data:/app/data
     restart: unless-stopped
-    environment:
-      - NODE_ENV=production
 ```
 
-### Variables d'environnement utiles
-
-- `NODE_ENV=production`
-- `PORT=3004`
-- `DATABASE_PATH=/app/data/webapp.db`
-
-### Tags d'image
-
-| Tag | Description |
-|-----|-------------|
-| `latest` | Derniere version stable issue de `main` |
-| `v1.0.0` | Version precise |
-| `1.0` | Dernier patch de la serie mineure |
-
-## Donnees et persistance
-
-En local, la base SQLite est creee automatiquement dans `apps/api/data/webapp-v2.db`.
-
-Dans le conteneur Docker, la base est stockee dans :
-
-- `/app/data/webapp.db`
-
-Les fichiers `*.db` sont ignores par Git.
-
-## Verification rapide
-
-- healthcheck API : `/api/health`
-- port par defaut en local : `3001`
-- port par defaut dans l'image Docker : `3004`
-
-## Preview frontend
-
-Si tu veux seulement verifier le build frontend :
+### Developpement local
 
 ```bash
-npm run build --workspace apps/web
-npm --workspace apps/web run preview
-```
-
-Le service de preview Vite est alors disponible sur `http://localhost:4173`.
-
-## Deploiement Cosmos
-
-Le fichier `cosmos-service.json` est fourni pour un deploiement direct dans Cosmos.
-
-Chemins utilises :
-
-- code : `/cosmos-storage/webapp-v2`
-- base SQLite : `/app/data/webapp-v2.db`
-
-## Demo
-
-Une demo publique est disponible ici :
-
-- URL : `https://webapp-34fd.onrender.com`
-- utilisateur : `Administrator`
-- mot de passe : `Administrator`
-
-Pour tester rapidement le projet en local, la commande la plus simple reste :
-
-```bash
+git clone https://github.com/ProBatou/WebApp.git
+cd WebApp
 npm install
 npm run dev
 ```
 
-## Version legacy PHP
+Services disponibles :
 
-L'ancienne version reste accessible dans :
+- Frontend : `http://localhost:5173`
+- API : `http://localhost:3001`
 
-- la branche `php-legacy`
-- le tag `php-legacy`
+---
+
+## Deploiement Cosmos
+
+Le depot contient aussi une configuration dediee a Cosmos avec `cosmos-service.json`.
+
+Ce mode est different de l'image Docker GHCR :
+
+- il monte le code source dans le conteneur
+- il lance `start.sh`
+- il utilise sa propre configuration de base SQLite
+
+Configuration utilisee :
+
+```text
+code  : /cosmos-storage/webapp-v2
+data  : /app/data/webapp-v2.db
+port  : 3004
+```
+
+---
+
+## Variables d'environnement
+
+### Image Docker GHCR
+
+| Variable | Defaut | Description |
+|----------|--------|-------------|
+| `PORT` | `3004` | Port d'ecoute du serveur |
+| `DATABASE_PATH` | `/app/data/webapp.db` | Chemin vers la base SQLite |
+| `NODE_ENV` | `production` | Environnement Node |
+
+### Developpement local
+
+Par defaut :
+
+- l'API ecoute sur `3001`
+- la base SQLite est creee dans `apps/api/data/webapp-v2.db`
+
+---
+
+## Stack
+
+| Couche | Techno |
+|--------|--------|
+| Frontend | React 19 + Vite + TypeScript |
+| Backend | Fastify 5 + TypeScript |
+| Base de donnees | SQLite via `better-sqlite3` |
+| Validation | Zod |
+| Auth | Sessions serveur + cookies HTTP-only |
+| Monorepo | npm workspaces |
+
+---
+
+## Images Docker disponibles
+
+```bash
+ghcr.io/probatou/webapp:latest
+ghcr.io/probatou/webapp:1.0.0
+ghcr.io/probatou/webapp:1.0
+```
+
+Support de `linux/amd64` et `linux/arm64` pour Raspberry Pi, NAS et Apple Silicon.
+
+---
+
+## Historique
+
+WebApp existe depuis une premiere version en PHP/SQLite.
+La v2 est une reecriture complete en TypeScript avec un monorepo, une API Fastify et une interface React moderne.
+
+L'ancienne version reste disponible :
+
+- branche : `php-legacy`
+- tag : `php-legacy`
+
+---
+
+## Contribuer
+
+Les issues et PR sont les bienvenues.
+
+---
 
 ## Licence
 
-Ce projet conserve le fichier `LICENSE` du depot d'origine.
+[Apache 2.0](./LICENSE)
