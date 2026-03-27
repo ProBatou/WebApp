@@ -85,18 +85,14 @@ Services disponibles :
 ## Deploiement Cosmos
 
 Le depot contient aussi une configuration dediee a Cosmos avec `cosmos-service.json`.
-
-Ce mode est different de l'image Docker GHCR :
-
-- il monte le code source dans le conteneur
-- il lance `start.sh`
-- il utilise sa propre configuration de base SQLite
+Cette configuration utilise directement l'image Docker GHCR publiee.
 
 Configuration utilisee :
 
 ```text
-code  : /cosmos-storage/webapp-v2
-data  : /app/data/webapp-v2.db
+image : ghcr.io/probatou/webapp:latest
+data  : /cosmos-storage/webapp-v2/data -> /app/data
+db    : /app/data/webapp.db
 port  : 3004
 ```
 
