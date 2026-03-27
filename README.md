@@ -73,21 +73,52 @@ Le build frontend est genere dans `apps/web/dist/`.
 Si le build frontend existe, l'API Fastify sert aussi les fichiers statiques de l'application.
 Par defaut, le serveur de production tourne sur `http://localhost:3001` sauf si `PORT` est surcharge.
 
-## Docker
+## Installation via Docker
 
-Le projet peut etre lance avec le `docker-compose.yml` fourni :
+Le conteneur publie sur GHCR embarque l'API Fastify et le build frontend statique dans une seule image `node:20-slim`.
+Le seul point de persistance a conserver est le volume `/app/data` pour la base SQLite.
+
+### Demarrage rapide
 
 ```bash
-docker compose up -d
+docker run -d \
+  --name webapp \
+  -p 3004:3004 \
+  -v ./data:/app/data \
+  ghcr.io/probatou/webapp:latest
 ```
 
-Le service :
+Puis ouvrir `http://localhost:3004` et creer le premier compte.
 
-- monte le projet dans `/app`
-- reinstalle les dependances si necessaire
-- build le frontend et l'API au demarrage
-- expose l'application sur `http://localhost:3004`
-- utilise le healthcheck `GET /api/health`
+### docker-compose.yml
+
+```yaml
+services:
+  webapp:
+    image: ghcr.io/probatou/webapp:latest
+    container_name: webapp
+    ports:
+      - "3004:3004"
+    volumes:
+      - ./data:/app/data
+    restart: unless-stopped
+    environment:
+      - NODE_ENV=production
+```
+
+### Tags disponibles
+
+| Tag | Description |
+|-----|-------------|
+| `latest` | Derniere version stable (branche main) |
+| `v1.0.0` | Version specifique |
+| `1.0` | Derniere patch de la version mineure |
+
+### Publication GHCR
+
+Apres le premier push, rendre le package public dans GitHub :
+
+`GitHub -> Packages -> webapp -> Package settings -> Change visibility -> Public`
 
 ## Cosmos
 
@@ -114,7 +145,8 @@ cosmos-service.json
 
 ## Donnees
 
-- la base SQLite locale est creee automatiquement dans `apps/api/data/`
+- la base SQLite locale est creee automatiquement dans `apps/api/data/` en local
+- dans le conteneur Docker, la base est stockee dans `/app/data/webapp.db`
 - les fichiers `*.db` sont ignores par Git
 - l'API expose un endpoint de sante sur `/api/health`
 
