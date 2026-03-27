@@ -1,4 +1,6 @@
-img/custom/*
-!img/custom/.gitkeep
-db/WebApp.db
-version.txt
+node_modules/
+dist/
+apps/api/data/
+*.db
+.env
+.DS_Store

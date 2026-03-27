@@ -1,0 +1,18 @@
+services:
+  webapp-v2:
+    container_name: webapp-v2
+    image: node:20-bookworm-slim
+    environment:
+      NODE_ENV: production
+      PORT: "3004"
+      DATABASE_PATH: /app/data/webapp-v2.db
+    labels:
+      cosmos-force-network-mode: bridge
+    ports:
+      - "3004:3004"
+    volumes:
+      - /cosmos-storage/webapp-v2:/app
+    working_dir: /app
+    command: sh /app/start.sh
+    restart: unless-stopped
+    network_mode: bridge
