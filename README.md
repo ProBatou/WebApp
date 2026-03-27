@@ -44,11 +44,24 @@ npm run build
 npm run dev
 ```
 
-Services disponibles :
+Services disponibles en developpement :
 
 - Frontend : `http://localhost:5173`
 - API : `http://localhost:3001`
 - Healthcheck API : `http://localhost:3001/api/health`
+
+Le frontend Vite proxy automatiquement les requetes `/api` vers le backend Fastify sur le port `3001`.
+
+## Preview frontend
+
+```bash
+npm run build --workspace apps/web
+npm --workspace apps/web run preview
+```
+
+Service disponible :
+
+- Preview Vite : `http://localhost:4173`
 
 ## Build de production
 
@@ -57,6 +70,8 @@ npm run build
 ```
 
 Le build frontend est genere dans `apps/web/dist/`.
+Si le build frontend existe, l'API Fastify sert aussi les fichiers statiques de l'application.
+Par defaut, le serveur de production tourne sur `http://localhost:3001` sauf si `PORT` est surcharge.
 
 ## Docker
 
@@ -112,7 +127,13 @@ L'ancienne version PHP reste accessible dans :
 
 ## Demo
 
-Il n'y a pas de demo publique embarquee pour le moment. Le mode le plus simple pour tester le projet reste :
+Une demo publique est disponible ici :
+
+- Demo : `https://webapp-34fd.onrender.com`
+- Username : `Administrator`
+- Password : `Administrator`
+
+Le mode le plus simple pour tester le projet en local reste :
 
 ```bash
 npm install
