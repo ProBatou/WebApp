@@ -3,9 +3,11 @@ import { mkdirSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
+export type SqliteDatabase = Database.Database;
+
 type Migration = {
   id: string;
-  up: () => void;
+  up: (database: SqliteDatabase) => void;
 };
 
 const currentDir = dirname(fileURLToPath(import.meta.url));
@@ -17,16 +19,16 @@ mkdirSync(dirname(databasePath), { recursive: true });
 export const db = new Database(databasePath);
 db.pragma("journal_mode = WAL");
 
-function hasColumn(tableName: string, columnName: string) {
-  const columns = db.prepare(`PRAGMA table_info(${tableName})`).all() as Array<{ name: string }>;
+function hasColumn(database: SqliteDatabase, tableName: string, columnName: string) {
+  const columns = database.prepare(`PRAGMA table_info(${tableName})`).all() as Array<{ name: string }>;
   return columns.some((column) => column.name === columnName);
 }
 
 const migrations: Migration[] = [
   {
     id: "001_initial_schema",
-    up: () => {
-      db.exec(`
+    up: (database) => {
+      database.exec(`
         CREATE TABLE IF NOT EXISTS users (
           id INTEGER PRIMARY KEY AUTOINCREMENT,
           username TEXT NOT NULL UNIQUE,
@@ -59,24 +61,24 @@ const migrations: Migration[] = [
   },
   {
     id: "002_add_icon_variant_mode",
-    up: () => {
-      if (!hasColumn("apps", "icon_variant_mode")) {
-        db.exec("ALTER TABLE apps ADD COLUMN icon_variant_mode TEXT NOT NULL DEFAULT 'auto' CHECK(icon_variant_mode IN ('auto', 'base'))");
+    up: (database) => {
+      if (!hasColumn(database, "apps", "icon_variant_mode")) {
+        database.exec("ALTER TABLE apps ADD COLUMN icon_variant_mode TEXT NOT NULL DEFAULT 'auto' CHECK(icon_variant_mode IN ('auto', 'base'))");
       }
     },
   },
   {
     id: "003_add_icon_variant_inverted",
-    up: () => {
-      if (!hasColumn("apps", "icon_variant_inverted")) {
-        db.exec("ALTER TABLE apps ADD COLUMN icon_variant_inverted INTEGER NOT NULL DEFAULT 0 CHECK(icon_variant_inverted IN (0, 1))");
+    up: (database) => {
+      if (!hasColumn(database, "apps", "icon_variant_inverted")) {
+        database.exec("ALTER TABLE apps ADD COLUMN icon_variant_inverted INTEGER NOT NULL DEFAULT 0 CHECK(icon_variant_inverted IN (0, 1))");
       }
     },
   },
 ];
 
-function applyMigrations() {
-  db.exec(`
+export function applyMigrations(database: SqliteDatabase) {
+  database.exec(`
     CREATE TABLE IF NOT EXISTS schema_migrations (
       id TEXT PRIMARY KEY,
       applied_at TEXT NOT NULL
@@ -84,12 +86,12 @@ function applyMigrations() {
   `);
 
   const appliedMigrationIds = new Set(
-    (db.prepare("SELECT id FROM schema_migrations ORDER BY id ASC").all() as Array<{ id: string }>).map((migration) => migration.id)
+    (database.prepare("SELECT id FROM schema_migrations ORDER BY id ASC").all() as Array<{ id: string }>).map((migration) => migration.id)
   );
 
-  const applyMigration = db.transaction((migration: Migration) => {
-    migration.up();
-    db.prepare("INSERT INTO schema_migrations (id, applied_at) VALUES (?, ?)").run(migration.id, new Date().toISOString());
+  const applyMigration = database.transaction((migration: Migration) => {
+    migration.up(database);
+    database.prepare("INSERT INTO schema_migrations (id, applied_at) VALUES (?, ?)").run(migration.id, new Date().toISOString());
   });
 
   migrations.forEach((migration) => {
@@ -99,4 +101,4 @@ function applyMigrations() {
   });
 }
 
-applyMigrations();
+applyMigrations(db);

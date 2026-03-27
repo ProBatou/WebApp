@@ -1,6 +1,6 @@
 import type { FastifyInstance, FastifyReply } from "fastify";
 import { z } from "zod";
-import { serializeAppRecord, type SerializedAppRecord } from "../lib/apps.js";
+import { createAppRepository } from "../lib/app-repository.js";
 import { db } from "../lib/db.js";
 import { isDemoMode } from "../lib/demo.js";
 import { requireSession } from "../lib/auth.js";
@@ -26,9 +26,7 @@ const importAppsSchema = z.object({
   items: z.array(appSchema).min(1).max(500),
 });
 
-function listApps() {
-  return (db.prepare("SELECT * FROM apps ORDER BY sort_order ASC, id ASC").all() as AppRecord[]).map(serializeAppRecord);
-}
+const appRepository = createAppRepository(db);
 
 function blockDemoWrites(reply: FastifyReply) {
   if (!isDemoMode) {
@@ -38,49 +36,6 @@ function blockDemoWrites(reply: FastifyReply) {
   reply.code(403).send({ message: "Mode demo: modifications desactivees." });
   return true;
 }
-
-function getOrderedAppIds() {
-  return (db.prepare("SELECT id FROM apps ORDER BY sort_order ASC, id ASC").all() as Array<{ id: number }>).map((row) => row.id);
-}
-
-function hasExactOrderedIds(candidateIds: number[]) {
-  const uniqueIds = new Set(candidateIds);
-  if (uniqueIds.size !== candidateIds.length) {
-    return false;
-  }
-
-  const existingIds = getOrderedAppIds();
-  if (existingIds.length !== candidateIds.length) {
-    return false;
-  }
-
-  return existingIds.every((id) => uniqueIds.has(id));
-}
-
-const insertAppTransaction = db.transaction((payload: z.infer<typeof appSchema>) => {
-  const now = new Date().toISOString();
-  const sortRow = db.prepare("SELECT COALESCE(MAX(sort_order), 0) as maxOrder FROM apps").get() as { maxOrder: number };
-  const result = db
-    .prepare(
-      `INSERT INTO apps (name, description, url, icon, icon_variant_mode, icon_variant_inverted, accent, open_mode, sort_order, created_at, updated_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
-    )
-    .run(
-      payload.name,
-      payload.description,
-      payload.url,
-      payload.icon.trim(),
-      payload.iconVariantMode,
-      payload.iconVariantInverted ? 1 : 0,
-      payload.accent,
-      payload.openMode,
-      sortRow.maxOrder + 1,
-      now,
-      now
-    );
-
-  return db.prepare("SELECT * FROM apps WHERE id = ?").get(Number(result.lastInsertRowid)) as AppRecord;
-});
 
 export async function registerAppRoutes(server: FastifyInstance) {
   const writeRouteConfig = {
@@ -94,7 +49,7 @@ export async function registerAppRoutes(server: FastifyInstance) {
     }
 
     return {
-      items: listApps(),
+      items: appRepository.listApps(),
     };
   });
 
@@ -147,8 +102,8 @@ export async function registerAppRoutes(server: FastifyInstance) {
       return reply.code(400).send({ message: "Donnees invalides.", issues: parsed.error.flatten() });
     }
 
-    const app = insertAppTransaction(parsed.data);
-    return reply.code(201).send({ item: serializeAppRecord(app) });
+    const app = appRepository.insertApp(parsed.data);
+    return reply.code(201).send({ item: appRepository.listApps().find((item) => item.id === app.id) });
   });
 
   server.put("/api/apps/:id", writeRouteConfig, async (request, reply) => {
@@ -194,7 +149,7 @@ export async function registerAppRoutes(server: FastifyInstance) {
       return reply.code(404).send({ message: "Application introuvable." });
     }
 
-    return { item: serializeAppRecord(app) };
+    return { item: appRepository.listApps().find((item) => item.id === app.id) };
   });
 
   server.delete("/api/apps/:id", writeRouteConfig, async (request, reply) => {
@@ -212,16 +167,7 @@ export async function registerAppRoutes(server: FastifyInstance) {
       return reply.code(400).send({ message: "Identifiant invalide." });
     }
 
-    db.prepare("DELETE FROM apps WHERE id = ?").run(id);
-
-    const apps = listApps();
-    const reorder = db.transaction((items: SerializedAppRecord[]) => {
-      const statement = db.prepare("UPDATE apps SET sort_order = ? WHERE id = ?");
-      items.forEach((item, index) => {
-        statement.run(index + 1, item.id);
-      });
-    });
-    reorder(apps);
+    appRepository.deleteAppAndReindex(id);
 
     return reply.code(204).send();
   });
@@ -241,21 +187,12 @@ export async function registerAppRoutes(server: FastifyInstance) {
       return reply.code(400).send({ message: "Ordre invalide." });
     }
 
-    if (!hasExactOrderedIds(parsed.data.orderedIds)) {
+    if (!appRepository.hasExactOrderedIds(parsed.data.orderedIds)) {
       return reply.code(400).send({ message: "Ordre invalide: la liste doit contenir chaque application une seule fois." });
     }
 
-    const reorder = db.transaction((orderedIds: number[]) => {
-      const statement = db.prepare("UPDATE apps SET sort_order = ? WHERE id = ?");
-      orderedIds.forEach((id, index) => {
-        statement.run(index + 1, id);
-      });
-    });
-
-    reorder(parsed.data.orderedIds);
-
     return {
-      items: listApps(),
+      items: appRepository.reorderApps(parsed.data.orderedIds),
     };
   });
 
@@ -274,44 +211,6 @@ export async function registerAppRoutes(server: FastifyInstance) {
       return reply.code(400).send({ message: "Import JSON invalide.", issues: parsed.error.flatten() });
     }
 
-    const insertedIds: number[] = [];
-    const now = new Date().toISOString();
-
-    const importTransaction = db.transaction(() => {
-      if (parsed.data.mode === "replace") {
-        db.prepare("DELETE FROM apps").run();
-      }
-
-      const sortRow = db.prepare("SELECT COALESCE(MAX(sort_order), 0) as maxOrder FROM apps").get() as { maxOrder: number };
-      const insertStatement = db.prepare(
-        `INSERT INTO apps (name, description, url, icon, icon_variant_mode, icon_variant_inverted, accent, open_mode, sort_order, created_at, updated_at)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
-      );
-
-      parsed.data.items.forEach((item, index) => {
-        const result = insertStatement.run(
-          item.name,
-          item.description,
-          item.url,
-          item.icon.trim(),
-          item.iconVariantMode,
-          item.iconVariantInverted ? 1 : 0,
-          item.accent,
-          item.openMode,
-          sortRow.maxOrder + index + 1,
-          now,
-          now
-        );
-
-        insertedIds.push(Number(result.lastInsertRowid));
-      });
-    });
-
-    importTransaction();
-
-    return {
-      items: listApps(),
-      importedIds: insertedIds,
-    };
+    return appRepository.importApps(parsed.data.mode, parsed.data.items);
   });
 }
