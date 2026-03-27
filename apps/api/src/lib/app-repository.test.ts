@@ -24,6 +24,7 @@ function createApp(name: string, overrides: Partial<AppPayload> = {}): AppPayloa
     iconVariantInverted: false,
     accent: "#123456",
     openMode: "iframe",
+    isShared: true,
     ...overrides,
   };
 }

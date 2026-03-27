@@ -1,6 +1,12 @@
-export type AppMode = "iframe" | "external";
-export type IconVariantMode = "auto" | "base";
-export type UserRole = "admin" | "viewer";
+import type {
+  AppMode as SharedAppMode,
+  IconVariantMode as SharedIconVariantMode,
+  UserRole as SharedUserRole,
+} from "@webapp-v2/shared";
+
+export type AppMode = SharedAppMode;
+export type IconVariantMode = SharedIconVariantMode;
+export type UserRole = SharedUserRole;
 
 export type AppRecord = {
   id: number;
