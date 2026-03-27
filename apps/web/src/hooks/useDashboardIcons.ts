@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { dashboardIconsMetadataUrl, getDashboardIconAssetCandidates, getDashboardIconUrl, isDashboardIconSlug } from "../lib/app-utils";
 import type { DashboardIconsMetadataMap, WebAppEntry } from "../types";
 
@@ -18,7 +18,10 @@ export function useDashboardIcons({
   const [dashboardIconsLoading, setDashboardIconsLoading] = useState(false);
   const [dashboardIconsError, setDashboardIconsError] = useState<string | null>(null);
 
-  const hasDashboardIconsInUse = apps.some((app) => isDashboardIconSlug(app.icon)) || isDashboardIconSlug(editorIcon);
+  const hasDashboardIconsInUse = useMemo(
+    () => apps.some((app) => isDashboardIconSlug(app.icon)) || isDashboardIconSlug(editorIcon),
+    [apps, editorIcon]
+  );
   const normalizedIconQuery = iconQuery.trim().toLowerCase();
   const filteredDashboardIcons = normalizedIconQuery
     ? dashboardIcons.filter((icon) => icon.includes(normalizedIconQuery)).slice(0, 8)
