@@ -1,8 +1,25 @@
-import { useMemo, useState, type Dispatch, type MouseEvent, type RefObject, type SetStateAction } from "react";
+import { useMemo, useState, type Dispatch, type MouseEvent, type ReactNode, type RefObject, type SetStateAction } from "react";
+import { useDroppable } from "@dnd-kit/core";
 import { SortableContext, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { AppIcon } from "./AppIcon";
 import type { AppStatusEntry, ContextMenuState, DashboardIconsMetadataMap, GroupEntry, SidebarMode, ThemeMode, WebAppEntry } from "../types";
+
+function GroupDropZone({
+  id,
+  children,
+}: {
+  id: string;
+  children: ReactNode;
+}) {
+  const { isOver, setNodeRef } = useDroppable({ id });
+
+  return (
+    <div ref={setNodeRef} className={isOver ? "group-drop-zone active" : "group-drop-zone"}>
+      {children}
+    </div>
+  );
+}
 
 function SortableAppTile({
   app,
@@ -108,80 +125,6 @@ function SortableAppTile({
   );
 }
 
-function RecentAppTile({
-  app,
-  active,
-  onSelect,
-  onEdit,
-  onContextMenu,
-  themeMode,
-  dashboardIconsMetadata,
-  appStatus,
-}: {
-  app: WebAppEntry;
-  active: boolean;
-  onSelect: (app: WebAppEntry) => void;
-  onEdit: (app: WebAppEntry) => void;
-  onContextMenu: (event: MouseEvent<HTMLDivElement>, app: WebAppEntry) => void;
-  themeMode: ThemeMode;
-  dashboardIconsMetadata: DashboardIconsMetadataMap;
-  appStatus?: AppStatusEntry;
-}) {
-  return (
-    <div
-      className={active ? "app-tile active recent-app-tile" : "app-tile recent-app-tile"}
-      onContextMenu={(event) => {
-        event.stopPropagation();
-        onContextMenu(event, app);
-      }}
-      onMouseDown={(event) => {
-        if (event.button === 2) {
-          event.preventDefault();
-        }
-      }}
-    >
-      <button className="app-main-hitbox" type="button" onClick={() => onSelect(app)} title={app.name} aria-label={`Ouvrir ${app.name}`}>
-        <AppIcon
-          icon={app.icon}
-          name={app.name}
-          url={app.url}
-          accent={app.accent}
-          themeMode={themeMode}
-          dashboardIconsMetadata={dashboardIconsMetadata}
-          iconVariantMode={app.icon_variant_mode}
-          iconVariantInverted={app.icon_variant_inverted}
-        />
-        <span className="app-meta">
-          <strong>
-            {app.name}
-            {app.is_default ? <span className="default-app-badge" title="App par defaut">★</span> : null}
-            <span
-              className={appStatus?.status === "online"
-                ? "app-status-dot online"
-                : appStatus?.status === "offline"
-                  ? "app-status-dot offline"
-                  : "app-status-dot unknown"}
-              title={
-                appStatus?.status === "online"
-                  ? "En ligne"
-                  : appStatus?.status === "offline"
-                    ? "Hors ligne"
-                    : "Statut inconnu"
-              }
-            />
-          </strong>
-          <small>{app.open_mode === "iframe" ? "Integree" : "Externe"}</small>
-        </span>
-      </button>
-      <div className="app-tile-actions">
-        <button className="ghost-icon-button" type="button" onClick={() => onEdit(app)} aria-label={`Modifier ${app.name}`}>
-          Edit
-        </button>
-      </div>
-    </div>
-  );
-}
-
 export function DragOverlayTile({
   app,
   compact,
@@ -236,7 +179,6 @@ export function Sidebar({
   sidebarMode,
   setSidebarMode,
   userName,
-  recentApps,
   groups,
   apps,
   selectedAppId,
@@ -263,7 +205,6 @@ export function Sidebar({
   sidebarMode: SidebarMode;
   setSidebarMode: Dispatch<SetStateAction<SidebarMode>>;
   userName: string;
-  recentApps: WebAppEntry[];
   groups: GroupEntry[];
   apps: WebAppEntry[];
   selectedAppId: number | null;
@@ -296,7 +237,7 @@ export function Sidebar({
   const groupedSections = useMemo(() => {
     const groupedApps = groups
       .map((group) => ({
-        id: `group-${group.id}`,
+        id: `group:${group.id}`,
         label: group.name,
         apps: filteredApps.filter((app) => app.group_id === group.id),
       }))
@@ -305,7 +246,7 @@ export function Sidebar({
     const ungroupedApps = filteredApps.filter((app) => app.group_id === null);
     if (ungroupedApps.length > 0) {
       groupedApps.push({
-        id: "ungrouped",
+        id: "group:none",
         label: "Sans groupe",
         apps: ungroupedApps,
       });
@@ -380,26 +321,6 @@ export function Sidebar({
         </div>
 
         <div className="sidebar-section">
-          {sidebarMode === "expanded" && recentApps.length > 0 ? (
-            <>
-              <p className="section-title">Recents</p>
-              <div className="app-list recent-app-list">
-                {recentApps.map((app) => (
-                  <RecentAppTile
-                    key={`recent-${app.id}`}
-                    app={app}
-                    active={app.id === selectedAppId}
-                    onSelect={onSelectApp}
-                    onEdit={onEditApp}
-                    onContextMenu={onOpenContextMenu}
-                    themeMode={themeMode}
-                    dashboardIconsMetadata={dashboardIconsMetadata}
-                    appStatus={appStatuses[app.id]}
-                  />
-                ))}
-              </div>
-            </>
-          ) : null}
           {sidebarMode === "expanded" ? <p className="section-title">Applications</p> : null}
           {sidebarMode === "expanded" ? (
             <label className="sidebar-search">
@@ -419,22 +340,26 @@ export function Sidebar({
                 {groupedSections.map((section) => (
                   <section key={section.id} className="grouped-app-section">
                     <p className="group-section-title">{section.label}</p>
-                    <div className="app-list">
-                      {section.apps.map((app) => (
-                        <SortableAppTile
-                          key={app.id}
-                          app={app}
-                          active={app.id === selectedAppId}
-                          compact={false}
-                          onSelect={onSelectApp}
-                          onEdit={onEditApp}
-                          onContextMenu={onOpenContextMenu}
-                          themeMode={themeMode}
-                          dashboardIconsMetadata={dashboardIconsMetadata}
-                          appStatus={appStatuses[app.id]}
-                        />
-                      ))}
-                    </div>
+                    <GroupDropZone id={section.id}>
+                      <SortableContext items={section.apps.map((item) => item.id)} strategy={verticalListSortingStrategy}>
+                        <div className="app-list grouped-app-list">
+                          {section.apps.map((app) => (
+                            <SortableAppTile
+                              key={app.id}
+                              app={app}
+                              active={app.id === selectedAppId}
+                              compact={false}
+                              onSelect={onSelectApp}
+                              onEdit={onEditApp}
+                              onContextMenu={onOpenContextMenu}
+                              themeMode={themeMode}
+                              dashboardIconsMetadata={dashboardIconsMetadata}
+                              appStatus={appStatuses[app.id]}
+                            />
+                          ))}
+                        </div>
+                      </SortableContext>
+                    </GroupDropZone>
                   </section>
                 ))}
                 {filteredApps.length === 0 ? <p className="sidebar-empty-state">Aucune application ne correspond a la recherche.</p> : null}

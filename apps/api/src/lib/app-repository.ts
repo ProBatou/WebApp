@@ -15,6 +15,10 @@ export type AppPayload = {
 };
 
 export type ImportMode = "merge" | "replace";
+export type ReorderAppItem = {
+  id: number;
+  groupId: number | null;
+};
 
 export function createAppRepository(database: SqliteDatabase) {
   function listApps() {
@@ -69,15 +73,15 @@ export function createAppRepository(database: SqliteDatabase) {
     return insertAppTransaction(payload);
   }
 
-  function reorderApps(orderedIds: number[]) {
-    const reorder = database.transaction((nextOrderedIds: number[]) => {
-      const statement = database.prepare("UPDATE apps SET sort_order = ? WHERE id = ?");
-      nextOrderedIds.forEach((id, index) => {
-        statement.run(index + 1, id);
+  function reorderApps(items: ReorderAppItem[]) {
+    const reorder = database.transaction((nextItems: ReorderAppItem[]) => {
+      const statement = database.prepare("UPDATE apps SET sort_order = ?, group_id = ? WHERE id = ?");
+      nextItems.forEach((item, index) => {
+        statement.run(index + 1, item.groupId, item.id);
       });
     });
 
-    reorder(orderedIds);
+    reorder(items);
     return listApps();
   }
 
