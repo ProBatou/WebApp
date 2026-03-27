@@ -132,13 +132,6 @@ services:
 | `v1.0.0` | Version precise |
 | `1.0` | Dernier patch de la serie mineure |
 
-### Publication GHCR
-
-L'image est publiee via GitHub Actions sur `ghcr.io/probatou/webapp`.
-Apres le premier push, il faut rendre le package public dans GitHub :
-
-`GitHub -> Packages -> webapp -> Package settings -> Change visibility -> Public`
-
 ## Donnees et persistance
 
 En local, la base SQLite est creee automatiquement dans `apps/api/data/webapp-v2.db`.
