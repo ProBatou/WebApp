@@ -12,11 +12,5 @@ services:
       - "3004:3004"
     volumes:
       - /cosmos-storage/webapp-v2/data:/app/data
-    healthcheck:
-      test: ["CMD", "wget", "-qO-", "http://localhost:3004/api/health"]
-      interval: 30s
-      timeout: 5s
-      retries: 3
-      start_period: 60s
     restart: unless-stopped
     network_mode: bridge
