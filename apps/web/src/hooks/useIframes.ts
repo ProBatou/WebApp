@@ -16,7 +16,10 @@ export function useIframes({
       return;
     }
 
-    setMountedIframeIds((current) => (current.includes(selectedApp.id) ? current : [...current, selectedApp.id]));
+    setMountedIframeIds((current) => {
+      const nextIds = current.filter((iframeId) => iframeId !== selectedApp.id);
+      return [...nextIds, selectedApp.id];
+    });
   }, [selectedApp]);
 
   useEffect(() => {
