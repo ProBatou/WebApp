@@ -7,7 +7,7 @@ export function UserManagerModal({
   currentUserId,
   users,
   onClose,
-  onCreateUser,
+  onCreateInvitation,
   onChangeRole,
   onDeleteUser,
 }: {
@@ -16,13 +16,12 @@ export function UserManagerModal({
   currentUserId: number;
   users: UserEntry[];
   onClose: () => void;
-  onCreateUser: (payload: { username: string; password: string; role: "admin" | "viewer" }) => Promise<void>;
+  onCreateInvitation: (role: "admin" | "viewer") => Promise<string>;
   onChangeRole: (userId: number, role: "admin" | "viewer") => Promise<void>;
   onDeleteUser: (userId: number) => Promise<void>;
 }) {
-  const [username, setUsername] = useState("");
-  const [password, setPassword] = useState("");
   const [role, setRole] = useState<"admin" | "viewer">("viewer");
+  const [inviteLink, setInviteLink] = useState("");
 
   useEffect(() => {
     if (!open) {
@@ -61,39 +60,35 @@ export function UserManagerModal({
             className="user-create-grid"
             onSubmit={(event) => {
               event.preventDefault();
-              void onCreateUser({ username: username.trim(), password, role }).then(() => {
-                setUsername("");
-                setPassword("");
-                setRole("viewer");
+              void onCreateInvitation(role).then((nextInviteLink) => {
+                setInviteLink(nextInviteLink);
               });
             }}
           >
-            <input
-              type="text"
-              value={username}
-              onChange={(event) => setUsername(event.target.value)}
-              placeholder="Nom d'utilisateur"
-              minLength={3}
-              maxLength={32}
-              required
-            />
-            <input
-              type="password"
-              value={password}
-              onChange={(event) => setPassword(event.target.value)}
-              placeholder="Mot de passe"
-              minLength={8}
-              maxLength={128}
-              required
-            />
             <select value={role} onChange={(event) => setRole(event.target.value === "admin" ? "admin" : "viewer")}>
               <option value="viewer">viewer</option>
               <option value="admin">admin</option>
             </select>
             <button className="primary-button" type="submit" disabled={busy}>
-              Ajouter
+              Generer un lien d'invitation
             </button>
           </form>
+          {inviteLink ? (
+            <div className="invitation-link-row">
+              <input type="text" readOnly value={inviteLink} aria-label="Lien d'invitation" />
+              <button
+                className="secondary-button"
+                type="button"
+                onClick={() => {
+                  void navigator.clipboard.writeText(inviteLink);
+                }}
+              >
+                Copier
+              </button>
+            </div>
+          ) : (
+            <p className="json-summary">Genere un lien, copie-le, puis envoie-le manuellement au futur utilisateur.</p>
+          )}
 
           <div className="group-list">
             {users.map((user) => (

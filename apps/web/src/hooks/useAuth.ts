@@ -1,6 +1,19 @@
 import { useEffect, useState } from "react";
 import { apiFetch } from "../lib/api";
-import type { AuthUser, BootstrapResponse } from "../types";
+import type { AuthUser, BootstrapResponse, InvitationInfoResponse } from "../types";
+
+function readInviteTokenFromUrl() {
+  const searchParams = new URLSearchParams(window.location.search);
+  const token = searchParams.get("invite");
+  return token?.trim() ? token : null;
+}
+
+function clearInviteTokenFromUrl() {
+  const nextUrl = new URL(window.location.href);
+  nextUrl.searchParams.delete("invite");
+  const nextPath = `${nextUrl.pathname}${nextUrl.search}${nextUrl.hash}`;
+  window.history.replaceState(null, "", nextPath);
+}
 
 export function useAuth({
   reloadApps,
@@ -21,6 +34,8 @@ export function useAuth({
   const [loading, setLoading] = useState(true);
   const [authError, setAuthError] = useState<string | null>(null);
   const [credentials, setCredentials] = useState({ username: "", password: "" });
+  const [inviteToken, setInviteToken] = useState<string | null>(() => readInviteTokenFromUrl());
+  const [inviteRole, setInviteRole] = useState<"admin" | "viewer" | null>(null);
 
   useEffect(() => {
     const bootstrap = async () => {
@@ -34,7 +49,20 @@ export function useAuth({
         setCredentials(result.demoMode ? { username: "demo", password: "demo" } : { username: "", password: "" });
 
         if (result.user) {
+          clearInviteTokenFromUrl();
+          setInviteToken(null);
+          setInviteRole(null);
           await reloadApps();
+        } else if (inviteToken) {
+          try {
+            const invitation = await apiFetch<InvitationInfoResponse>(`/api/invitations/${encodeURIComponent(inviteToken)}`, { method: "GET" });
+            setInviteRole(invitation.role);
+          } catch {
+            setInviteToken(null);
+            setInviteRole(null);
+            clearInviteTokenFromUrl();
+            setAuthError("Invitation invalide ou expiree.");
+          }
         }
       } catch (bootstrapError) {
         setError(bootstrapError instanceof Error ? bootstrapError.message : "Erreur de chargement.");
@@ -44,7 +72,7 @@ export function useAuth({
     };
 
     void bootstrap();
-  }, [reloadApps, setError]);
+  }, [inviteToken, reloadApps, setError]);
 
   const handleAuthSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -53,7 +81,11 @@ export function useAuth({
       setBusy(true);
       setAuthError(null);
 
-      const endpoint = needsSetup ? "/api/setup" : "/api/login";
+      const endpoint = inviteToken
+        ? `/api/invitations/${encodeURIComponent(inviteToken)}/accept`
+        : needsSetup
+          ? "/api/setup"
+          : "/api/login";
       const result = await apiFetch<{ user: AuthUser }>(endpoint, {
         method: "POST",
         body: JSON.stringify(credentials),
@@ -61,6 +93,11 @@ export function useAuth({
 
       setUser(result.user);
       setNeedsSetup(false);
+      if (inviteToken) {
+        clearInviteTokenFromUrl();
+        setInviteToken(null);
+        setInviteRole(null);
+      }
       await reloadApps();
       setCredentials({ username: "", password: "" });
     } catch (submitError) {
@@ -91,6 +128,8 @@ export function useAuth({
     loading,
     authError,
     credentials,
+    inviteToken,
+    inviteRole,
     setCredentials,
     handleAuthSubmit,
     handleLogout,

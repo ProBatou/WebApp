@@ -71,7 +71,7 @@ export function AppEditor({
 
   return (
     <div className="editor-modal-overlay" onClick={onClose} role="presentation">
-      <aside className="editor-modal" onClick={(event) => event.stopPropagation()} aria-modal="true" role="dialog">
+      <aside className="editor-modal app-editor-modal" onClick={(event) => event.stopPropagation()} aria-modal="true" role="dialog">
         <div className="editor-header">
           <div>
             <p className="eyebrow">Administration</p>
@@ -185,6 +185,21 @@ export function AppEditor({
             >
               <option value="iframe">Iframe integree</option>
               <option value="external">Nouvel onglet</option>
+            </select>
+          </label>
+          <label>
+            <span>Visibilite</span>
+            <select
+              value={editorState.isShared ? "shared" : "private"}
+              onChange={(event) =>
+                setEditorState((current) => ({
+                  ...current,
+                  isShared: event.target.value === "shared",
+                }))
+              }
+            >
+              <option value="shared">Shared</option>
+              <option value="private">Private</option>
             </select>
           </label>
           <label>

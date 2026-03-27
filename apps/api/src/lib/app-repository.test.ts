@@ -160,3 +160,20 @@ test("setDefaultApp keeps a single default app and can clear it", () => {
     database.close();
   }
 });
+
+test("listAppsForRole returns only shared apps for viewer", () => {
+  const { database, repository } = createTestAppRepository();
+  try {
+    repository.insertApp(createApp("SharedOne", { isShared: true }));
+    repository.insertApp(createApp("PrivateOne", { isShared: false }));
+
+    const viewerApps = repository.listAppsForRole("viewer");
+    const adminApps = repository.listAppsForRole("admin");
+
+    assert.equal(viewerApps.length, 1);
+    assert.equal(viewerApps[0]?.name, "SharedOne");
+    assert.equal(adminApps.length, 2);
+  } finally {
+    database.close();
+  }
+});

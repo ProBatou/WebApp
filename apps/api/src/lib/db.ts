@@ -53,6 +53,18 @@ const migrations: Migration[] = [
           FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
         );
 
+        CREATE TABLE IF NOT EXISTS invitations (
+          id TEXT PRIMARY KEY,
+          role TEXT NOT NULL CHECK(role IN ('admin', 'viewer')),
+          invited_by_user_id INTEGER NOT NULL,
+          accepted_user_id INTEGER,
+          expires_at TEXT NOT NULL,
+          used_at TEXT,
+          created_at TEXT NOT NULL,
+          FOREIGN KEY (invited_by_user_id) REFERENCES users(id) ON DELETE CASCADE,
+          FOREIGN KEY (accepted_user_id) REFERENCES users(id) ON DELETE SET NULL
+        );
+
         CREATE TABLE IF NOT EXISTS apps (
           id INTEGER PRIMARY KEY AUTOINCREMENT,
           name TEXT NOT NULL,
@@ -62,6 +74,7 @@ const migrations: Migration[] = [
           accent TEXT NOT NULL,
           open_mode TEXT NOT NULL CHECK(open_mode IN ('iframe', 'external')),
           is_default INTEGER NOT NULL DEFAULT 0 CHECK(is_default IN (0, 1)),
+          is_shared INTEGER NOT NULL DEFAULT 1 CHECK(is_shared IN (0, 1)),
           group_id INTEGER REFERENCES groups(id) ON DELETE SET NULL,
           sort_order INTEGER NOT NULL,
           created_at TEXT NOT NULL,
@@ -120,6 +133,32 @@ const migrations: Migration[] = [
     up: (database) => {
       if (!hasColumn(database, "users", "role")) {
         database.exec("ALTER TABLE users ADD COLUMN role TEXT NOT NULL DEFAULT 'admin' CHECK(role IN ('admin', 'viewer'))");
+      }
+    },
+  },
+  {
+    id: "008_create_invitations",
+    up: (database) => {
+      database.exec(`
+        CREATE TABLE IF NOT EXISTS invitations (
+          id TEXT PRIMARY KEY,
+          role TEXT NOT NULL CHECK(role IN ('admin', 'viewer')),
+          invited_by_user_id INTEGER NOT NULL,
+          accepted_user_id INTEGER,
+          expires_at TEXT NOT NULL,
+          used_at TEXT,
+          created_at TEXT NOT NULL,
+          FOREIGN KEY (invited_by_user_id) REFERENCES users(id) ON DELETE CASCADE,
+          FOREIGN KEY (accepted_user_id) REFERENCES users(id) ON DELETE SET NULL
+        );
+      `);
+    },
+  },
+  {
+    id: "009_add_is_shared",
+    up: (database) => {
+      if (!hasColumn(database, "apps", "is_shared")) {
+        database.exec("ALTER TABLE apps ADD COLUMN is_shared INTEGER NOT NULL DEFAULT 1 CHECK(is_shared IN (0, 1))");
       }
     },
   },

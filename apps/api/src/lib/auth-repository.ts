@@ -16,6 +16,10 @@ function isSecureRequest(request: FastifyRequest) {
 }
 
 export function createAuthRepository(database: SqliteDatabase, createSessionId: () => string = () => randomBytes(24).toString("hex")) {
+  function createInvitationToken() {
+    return randomBytes(24).toString("hex");
+  }
+
   function listUsers() {
     return database
       .prepare("SELECT id, username, role, created_at FROM users ORDER BY id ASC")
@@ -160,6 +164,69 @@ export function createAuthRepository(database: SqliteDatabase, createSessionId: 
     return { deleted: true as const };
   }
 
+  function createInvitation(role: SessionUser["role"], invitedByUserId: number) {
+    const now = new Date();
+    const expiresAt = new Date(now.getTime() + 1000 * 60 * 60 * 24 * 7);
+    const invitationId = createInvitationToken();
+
+    database
+      .prepare(
+        `INSERT INTO invitations (id, role, invited_by_user_id, expires_at, used_at, created_at)
+         VALUES (?, ?, ?, ?, NULL, ?)`
+      )
+      .run(invitationId, role, invitedByUserId, expiresAt.toISOString(), now.toISOString());
+
+    return {
+      id: invitationId,
+      role,
+      expires_at: expiresAt.toISOString(),
+    };
+  }
+
+  function getInvitation(token: string) {
+    const now = new Date().toISOString();
+    return database
+      .prepare(
+        `SELECT id, role, expires_at
+         FROM invitations
+         WHERE id = ? AND used_at IS NULL AND expires_at > ?`
+      )
+      .get(token, now) as { id: string; role: SessionUser["role"]; expires_at: string } | undefined;
+  }
+
+  function consumeInvitation(token: string, username: string, passwordHash: string) {
+    const now = new Date().toISOString();
+
+    const consumeInvitationTransaction = database.transaction((invitationToken: string, nextUsername: string, nextPasswordHash: string) => {
+      const invitation = database
+        .prepare(
+          `SELECT id, role
+           FROM invitations
+           WHERE id = ? AND used_at IS NULL AND expires_at > ?`
+        )
+        .get(invitationToken, now) as { id: string; role: SessionUser["role"] } | undefined;
+
+      if (!invitation) {
+        return { error: "invalid_invitation" as const };
+      }
+
+      const existingUser = findUserByUsername(nextUsername);
+      if (existingUser) {
+        return { error: "username_taken" as const };
+      }
+
+      const createdUser = createUser(nextUsername, nextPasswordHash, invitation.role);
+
+      database
+        .prepare("UPDATE invitations SET used_at = ?, accepted_user_id = ? WHERE id = ?")
+        .run(now, createdUser.id, invitationToken);
+
+      return { user: createdUser };
+    });
+
+    return consumeInvitationTransaction(token, username, passwordHash);
+  }
+
   function getSessionUser(request: FastifyRequest) {
     const sessionId = request.cookies[sessionCookieName];
     if (!sessionId) {
@@ -217,5 +284,8 @@ export function createAuthRepository(database: SqliteDatabase, createSessionId: 
     requireAdmin,
     updateUserRole,
     deleteUser,
+    createInvitation,
+    getInvitation,
+    consumeInvitation,
   };
 }

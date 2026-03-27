@@ -18,6 +18,7 @@ export type WebAppEntry = {
   accent: string;
   open_mode: AppMode;
   is_default: boolean;
+  is_shared: boolean;
   group_id: number | null;
   sort_order: number;
   created_at: string;
@@ -56,6 +57,18 @@ export type UsersResponse = {
   items: UserEntry[];
 };
 
+export type InvitationResponse = {
+  token: string;
+  role: "admin" | "viewer";
+  expiresAt: string;
+  inviteUrl: string;
+};
+
+export type InvitationInfoResponse = {
+  role: "admin" | "viewer";
+  expiresAt: string;
+};
+
 export type ImportAppsResponse = {
   items: WebAppEntry[];
   importedIds: number[];
@@ -82,6 +95,7 @@ export type AppPayload = {
   iconVariantInverted: boolean;
   accent: string;
   openMode: AppMode;
+  isShared: boolean;
   groupId?: number | null;
 };
 
@@ -98,6 +112,7 @@ export type JsonTransferItem = Partial<AppPayload> & {
   iconVariantInverted?: unknown;
   accent?: unknown;
   openMode?: unknown;
+  isShared?: unknown;
   groupId?: unknown;
 };
 
