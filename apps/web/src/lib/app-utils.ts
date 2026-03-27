@@ -69,12 +69,13 @@ export function getDashboardIconBaseSlug(icon: string) {
 export function getDashboardIconVariants(icon: string, metadataMap: DashboardIconsMetadataMap) {
   const baseIcon = getDashboardIconBaseSlug(icon);
   const metadata = metadataMap[icon] ?? metadataMap[baseIcon];
+  const isExplicitLightVariant = icon.endsWith("-light") && icon !== baseIcon;
 
   return {
     baseIcon,
     lightBackgroundIcon: metadata?.colors?.dark ?? baseIcon,
-    darkBackgroundIcon: metadata?.colors?.light ?? (baseIcon.endsWith("-light") ? baseIcon : `${baseIcon}-light`),
-    hasVariants: Boolean(metadata?.colors?.light || metadata?.colors?.dark || icon.endsWith("-light")),
+    darkBackgroundIcon: metadata?.colors?.light ?? (isExplicitLightVariant ? icon : baseIcon),
+    hasVariants: Boolean(metadata?.colors?.light || metadata?.colors?.dark || isExplicitLightVariant),
   };
 }
 

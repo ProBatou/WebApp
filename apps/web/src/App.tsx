@@ -1,5 +1,16 @@
 import { useCallback, useEffect, useRef, useState, startTransition, type ChangeEvent, type MouseEvent } from "react";
-import { DndContext, DragOverlay, closestCenter, type DragCancelEvent, type DragEndEvent, type DragMoveEvent, type DragStartEvent } from "@dnd-kit/core";
+import {
+  DndContext,
+  DragOverlay,
+  PointerSensor,
+  closestCenter,
+  useSensor,
+  useSensors,
+  type DragCancelEvent,
+  type DragEndEvent,
+  type DragMoveEvent,
+  type DragStartEvent,
+} from "@dnd-kit/core";
 import { AuthScreen } from "./components/AuthScreen";
 import { AppEditor } from "./components/AppEditor";
 import { ConfirmModal } from "./components/ConfirmModal";
@@ -17,6 +28,14 @@ import { useIframes } from "./hooks/useIframes";
 import type { ContextMenuState, ImportAppsResponse, JsonImportMode, JsonModalMode, SidebarMode, ThemeMode, WebAppEntry } from "./types";
 
 export default function App() {
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 8,
+      },
+    })
+  );
+
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [sidebarMode, setSidebarMode] = useState<SidebarMode>("expanded");
   const [themeMode, setThemeMode] = useState<ThemeMode>(() => {
@@ -436,6 +455,7 @@ export default function App() {
 
   return (
     <DndContext
+      sensors={sensors}
       collisionDetection={closestCenter}
       onDragStart={handleDragStart}
       onDragMove={handleDragMove}
