@@ -1,0 +1,25 @@
+[changelog]
+header = ""
+body = """
+{% for group, commits in commits | group_by(attribute="group") %}
+### {{ group | upper_first }}
+{% for commit in commits %}
+- {{ commit.message | upper_first }} ([{{ commit.id | truncate(length=7, end="") }}](https://github.com/ProBatou/WebApp/commit/{{ commit.id }}))
+{%- endfor %}
+{% endfor %}
+"""
+trim = true
+
+[git]
+conventional_commits = true
+filter_unconventional = false
+commit_parsers = [
+  { message = "^feat", group = "Nouvelles fonctionnalités" },
+  { message = "^fix", group = "Corrections de bugs" },
+  { message = "^perf", group = "Performances" },
+  { message = "^refactor", group = "Refactoring" },
+  { message = "^doc", group = "Documentation" },
+  { message = "^chore", group = "Maintenance" },
+]
+filter_commits = false
+tag_pattern = "v[0-9]*"
