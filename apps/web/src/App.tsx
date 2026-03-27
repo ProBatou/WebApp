@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, startTransition, type ChangeEvent, type MouseEvent } from "react";
+import { useCallback, useEffect, useRef, useState, startTransition, type ChangeEvent, type MouseEvent } from "react";
 import { DndContext, DragOverlay, closestCenter, type DragCancelEvent, type DragEndEvent, type DragMoveEvent, type DragStartEvent } from "@dnd-kit/core";
 import { AuthScreen } from "./components/AuthScreen";
 import { AppEditor } from "./components/AppEditor";
@@ -40,6 +40,11 @@ export default function App() {
   }>({ open: false, message: "", onConfirm: null });
   const sidebarRef = useRef<HTMLElement | null>(null);
   const jsonFileInputRef = useRef<HTMLInputElement | null>(null);
+  const closeJsonModal = useCallback(() => {
+    setJsonModalMode(null);
+    setJsonModalError(null);
+    setJsonModalInfo(null);
+  }, []);
 
   const {
     apps,
@@ -61,6 +66,9 @@ export default function App() {
     apps,
     selectedApp,
   });
+  const handleAfterDelete = useCallback(() => {
+    setContextMenu(null);
+  }, []);
 
   const {
     editorMode,
@@ -83,9 +91,7 @@ export default function App() {
     deleteApp,
     setBusy,
     setError,
-    onAfterDelete: () => {
-      setContextMenu(null);
-    },
+    onAfterDelete: handleAfterDelete,
   });
 
   const normalizedIconQuery = debouncedIconQuery.trim().toLowerCase();
@@ -100,6 +106,17 @@ export default function App() {
     .map((iframeId) => apps.find((item) => item.id === iframeId && item.open_mode === "iframe") ?? null)
     .filter((app): app is WebAppEntry => app !== null);
 
+  const clearAppState = useCallback(() => {
+    resetAppsState();
+    resetIframes();
+  }, [resetAppsState, resetIframes]);
+
+  const clearUiState = useCallback(() => {
+    closeEditor();
+    setContextMenu(null);
+    closeJsonModal();
+  }, [closeEditor, closeJsonModal]);
+
   const {
     user,
     needsSetup,
@@ -110,18 +127,9 @@ export default function App() {
     handleAuthSubmit,
     handleLogout,
   } = useAuth({
-    reloadApps: async () => {
-      await reloadApps();
-    },
-    clearAppState: () => {
-      resetAppsState();
-      resetIframes();
-    },
-    clearUiState: () => {
-      closeEditor();
-      setContextMenu(null);
-      closeJsonModal();
-    },
+    reloadApps,
+    clearAppState,
+    clearUiState,
     setError,
     setBusy,
   });
@@ -185,12 +193,6 @@ export default function App() {
 
   const toggleThemeMode = () => {
     setThemeMode((current) => (current === "light" ? "dark" : "light"));
-  };
-
-  const closeJsonModal = () => {
-    setJsonModalMode(null);
-    setJsonModalError(null);
-    setJsonModalInfo(null);
   };
 
   const handleSelectApp = (app: WebAppEntry) => {

@@ -2,7 +2,7 @@
 
 WebApp est un agregateur d'applications web personnel. Cette V2 remplace l'ancienne base PHP/JavaScript par un monorepo TypeScript avec un frontend React/Vite et une API Fastify.
 
-![Apercu WebApp V2](./docs/webapp-v2-preview.svg)
+![Apercu WebApp V2](./docs/webapp-v2-preview.png)
 
 ## Apercu
 
