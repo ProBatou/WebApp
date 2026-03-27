@@ -52,7 +52,7 @@ export function getDashboardIconAssetUrls(icon: string) {
 
 export function getFaviconCandidates(url: string) {
   try {
-    const parsedUrl = new URL(url);
+    const parsedUrl = parseHttpUrl(url);
     return [
       new URL("/favicon.ico", parsedUrl.origin).toString(),
       `https://www.google.com/s2/favicons?domain=${encodeURIComponent(parsedUrl.hostname)}&sz=128`,
@@ -220,6 +220,15 @@ export function isAccentColor(value: string) {
   return /^#([0-9a-fA-F]{6})$/.test(value);
 }
 
+export function parseHttpUrl(url: string) {
+  const parsedUrl = new URL(url);
+  if (!["http:", "https:"].includes(parsedUrl.protocol)) {
+    throw new Error("URL invalide.");
+  }
+
+  return parsedUrl;
+}
+
 export function exportAppsToJson(apps: WebAppEntry[]) {
   return JSON.stringify(
     apps.map((app) => ({
@@ -284,7 +293,7 @@ export function parseImportedApps(rawValue: string) {
     }
 
     try {
-      new URL(url);
+      parseHttpUrl(url);
     } catch {
       throw new Error(`Entree ${index + 1}: URL invalide.`);
     }

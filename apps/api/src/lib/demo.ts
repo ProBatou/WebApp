@@ -68,12 +68,17 @@ const demoApps = [
   },
 ];
 
+const demoPasswordHashes: Record<string, string> = {
+  demo: "$2b$10$ZUi.YxW2tJOvyHVYqZ4jK.x/hsDTjstynk4Wus2M6TyV6mJS7aQVG",
+};
+
 export async function ensureDemoState() {
   if (!isDemoMode) {
     return;
   }
 
-  const passwordHash = await bcrypt.hash(demoPassword, 10);
+  const passwordHash = demoPasswordHashes[demoPassword] ?? (await bcrypt.hash(demoPassword, 10));
+
   const now = new Date().toISOString();
 
   const resetDemoState = db.transaction(() => {
