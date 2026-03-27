@@ -282,6 +282,35 @@ export default function App() {
     setContextMenu(null);
   };
 
+  const handleToggleDefaultApp = async (app: WebAppEntry) => {
+    try {
+      setBusy(true);
+      setError(null);
+
+      const result = await apiFetch<{ items: WebAppEntry[] }>(
+        `/api/apps/${app.id}/default`,
+        {
+          method: app.is_default ? "DELETE" : "POST",
+        }
+      );
+
+      setApps(result.items);
+
+      if (!app.is_default) {
+        startTransition(() => {
+          setSelectedAppId(app.id);
+        });
+      }
+
+      pushToast(app.is_default ? "App par defaut retiree." : `${app.name} definie comme app par defaut.`);
+      setContextMenu(null);
+    } catch (toggleError) {
+      setError(toggleError instanceof Error ? toggleError.message : "Erreur de mise a jour.");
+    } finally {
+      setBusy(false);
+    }
+  };
+
   const openCreateEditorFromUi = () => {
     setContextMenu(null);
     closeJsonModal();
@@ -406,7 +435,7 @@ export default function App() {
     setShortcutHelpOpen(false);
 
     const menuWidth = 190;
-    const menuHeight = app.open_mode === "iframe" ? 172 : 132;
+    const menuHeight = app.open_mode === "iframe" ? 212 : 172;
     const maxX = Math.max(12, window.innerWidth - menuWidth - 12);
     const maxY = Math.max(12, window.innerHeight - menuHeight - 12);
 
@@ -578,6 +607,11 @@ export default function App() {
           onDelete={() => {
             if (contextMenu?.app) {
               void handleDeleteAppFromUi(contextMenu.app.id);
+            }
+          }}
+          onToggleDefault={() => {
+            if (contextMenu?.app) {
+              void handleToggleDefaultApp(contextMenu.app);
             }
           }}
           onCreate={openCreateEditorFromUi}

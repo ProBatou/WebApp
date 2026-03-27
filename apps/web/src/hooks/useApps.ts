@@ -20,7 +20,7 @@ export function useApps({
 
     const nextId = preferSelectedId && appsResult.items.some((item) => item.id === preferSelectedId)
       ? preferSelectedId
-      : appsResult.items[0]?.id ?? null;
+      : appsResult.items.find((item) => item.is_default)?.id ?? appsResult.items[0]?.id ?? null;
 
     startTransition(() => {
       setSelectedAppId(nextId);

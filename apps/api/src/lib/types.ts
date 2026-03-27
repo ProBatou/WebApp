@@ -11,6 +11,7 @@ export type AppRecord = {
   icon_variant_inverted: number;
   accent: string;
   open_mode: AppMode;
+  is_default: number;
   sort_order: number;
   created_at: string;
   updated_at: string;

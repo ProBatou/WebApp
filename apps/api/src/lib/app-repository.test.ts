@@ -107,3 +107,20 @@ test("importApps replace clears existing apps and restarts ordering", () => {
     database.close();
   }
 });
+
+test("setDefaultApp keeps a single default app and can clear it", () => {
+  const { database, repository } = createTestAppRepository();
+  try {
+    const plex = repository.insertApp(createApp("Plex"));
+    const grafana = repository.insertApp(createApp("Grafana"));
+
+    let items = repository.setDefaultApp(grafana.id);
+    assert.equal(items.find((app) => app.id === plex.id)?.is_default, false);
+    assert.equal(items.find((app) => app.id === grafana.id)?.is_default, true);
+
+    items = repository.setDefaultApp(null);
+    assert.equal(items.some((app) => app.is_default), false);
+  } finally {
+    database.close();
+  }
+});
