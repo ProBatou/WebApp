@@ -1,5 +1,6 @@
 import type { FastifyInstance, FastifyReply } from "fastify";
 import { z } from "zod";
+import { serializeAppRecord, type SerializedAppRecord } from "../lib/apps.js";
 import { db } from "../lib/db.js";
 import { isDemoMode } from "../lib/demo.js";
 import { requireSession } from "../lib/auth.js";
@@ -26,14 +27,7 @@ const importAppsSchema = z.object({
 });
 
 function listApps() {
-  return (db.prepare("SELECT * FROM apps ORDER BY sort_order ASC, id ASC").all() as AppRecord[]).map(serializeApp);
-}
-
-function serializeApp(app: AppRecord) {
-  return {
-    ...app,
-    icon_variant_inverted: Boolean(app.icon_variant_inverted),
-  };
+  return (db.prepare("SELECT * FROM apps ORDER BY sort_order ASC, id ASC").all() as AppRecord[]).map(serializeAppRecord);
 }
 
 function blockDemoWrites(reply: FastifyReply) {
@@ -44,8 +38,6 @@ function blockDemoWrites(reply: FastifyReply) {
   reply.code(403).send({ message: "Mode demo: modifications desactivees." });
   return true;
 }
-
-type SerializedAppRecord = ReturnType<typeof serializeApp>;
 
 function getOrderedAppIds() {
   return (db.prepare("SELECT id FROM apps ORDER BY sort_order ASC, id ASC").all() as Array<{ id: number }>).map((row) => row.id);
@@ -91,6 +83,10 @@ const insertAppTransaction = db.transaction((payload: z.infer<typeof appSchema>)
 });
 
 export async function registerAppRoutes(server: FastifyInstance) {
+  const writeRouteConfig = {
+    config: { rateLimit: { max: 30, timeWindow: "1 minute" } },
+  } as const;
+
   server.get("/api/apps", async (request, reply) => {
     const user = requireSession(request, reply);
     if (!user) {
@@ -102,7 +98,41 @@ export async function registerAppRoutes(server: FastifyInstance) {
     };
   });
 
-  server.post("/api/apps", async (request, reply) => {
+  server.get("/api/apps/:id/ping", async (request, reply) => {
+    const user = requireSession(request, reply);
+    if (!user) {
+      return reply;
+    }
+
+    const id = Number((request.params as { id: string }).id);
+    if (!Number.isInteger(id)) {
+      return reply.code(400).send({ message: "Identifiant invalide." });
+    }
+
+    const app = db.prepare("SELECT id, url FROM apps WHERE id = ?").get(id) as Pick<AppRecord, "id" | "url"> | undefined;
+    if (!app) {
+      return reply.code(404).send({ message: "Application introuvable." });
+    }
+
+    try {
+      const response = await fetch(app.url, {
+        method: "HEAD",
+        signal: AbortSignal.timeout(3000),
+      });
+
+      return {
+        status: response.ok ? "online" : "offline",
+        checkedAt: new Date().toISOString(),
+      };
+    } catch {
+      return {
+        status: "offline",
+        checkedAt: new Date().toISOString(),
+      };
+    }
+  });
+
+  server.post("/api/apps", writeRouteConfig, async (request, reply) => {
     if (blockDemoWrites(reply)) {
       return reply;
     }
@@ -118,10 +148,10 @@ export async function registerAppRoutes(server: FastifyInstance) {
     }
 
     const app = insertAppTransaction(parsed.data);
-    return reply.code(201).send({ item: serializeApp(app) });
+    return reply.code(201).send({ item: serializeAppRecord(app) });
   });
 
-  server.put("/api/apps/:id", async (request, reply) => {
+  server.put("/api/apps/:id", writeRouteConfig, async (request, reply) => {
     if (blockDemoWrites(reply)) {
       return reply;
     }
@@ -164,10 +194,10 @@ export async function registerAppRoutes(server: FastifyInstance) {
       return reply.code(404).send({ message: "Application introuvable." });
     }
 
-    return { item: serializeApp(app) };
+    return { item: serializeAppRecord(app) };
   });
 
-  server.delete("/api/apps/:id", async (request, reply) => {
+  server.delete("/api/apps/:id", writeRouteConfig, async (request, reply) => {
     if (blockDemoWrites(reply)) {
       return reply;
     }
@@ -196,7 +226,7 @@ export async function registerAppRoutes(server: FastifyInstance) {
     return reply.code(204).send();
   });
 
-  server.post("/api/apps/reorder", async (request, reply) => {
+  server.post("/api/apps/reorder", writeRouteConfig, async (request, reply) => {
     if (blockDemoWrites(reply)) {
       return reply;
     }
@@ -229,7 +259,7 @@ export async function registerAppRoutes(server: FastifyInstance) {
     };
   });
 
-  server.post("/api/apps/import", async (request, reply) => {
+  server.post("/api/apps/import", writeRouteConfig, async (request, reply) => {
     if (blockDemoWrites(reply)) {
       return reply;
     }

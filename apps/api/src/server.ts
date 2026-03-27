@@ -6,7 +6,7 @@ import cors from "@fastify/cors";
 import cookie from "@fastify/cookie";
 import rateLimit from "@fastify/rate-limit";
 import staticPlugin from "@fastify/static";
-import "./lib/db.js";
+import { db } from "./lib/db.js";
 import { ensureDemoState } from "./lib/demo.js";
 import { registerAuthRoutes } from "./routes/auth.js";
 import { registerAppRoutes } from "./routes/apps.js";
@@ -32,7 +32,30 @@ await server.register(rateLimit, {
   global: false,
 });
 
+server.addHook("onSend", async (_request, reply, payload) => {
+  reply.header(
+    "Content-Security-Policy",
+    [
+      "default-src 'self'",
+      "base-uri 'self'",
+      "object-src 'none'",
+      "frame-ancestors 'self'",
+      "form-action 'self'",
+      "script-src 'self'",
+      "style-src 'self' 'unsafe-inline'",
+      "img-src 'self' data: https:",
+      "font-src 'self' data:",
+      "connect-src 'self' http: https: ws: wss:",
+      "frame-src 'self' http: https:",
+    ].join("; ")
+  );
+
+  return payload;
+});
+
 server.get("/api/health", async () => {
+  db.prepare("SELECT 1").get();
+
   return {
     status: "ok",
     service: "webapp-v2-api",

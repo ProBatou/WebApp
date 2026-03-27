@@ -36,6 +36,18 @@ export type ImportAppsResponse = {
   importedIds: number[];
 };
 
+export type AppStatus = "online" | "offline" | "unknown";
+
+export type AppPingResponse = {
+  status: Exclude<AppStatus, "unknown">;
+  checkedAt: string;
+};
+
+export type AppStatusEntry = {
+  status: AppStatus;
+  checkedAt: string | null;
+};
+
 export type AppPayload = {
   name: string;
   description: string;

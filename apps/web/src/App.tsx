@@ -16,15 +16,19 @@ import { AppEditor } from "./components/AppEditor";
 import { ConfirmModal } from "./components/ConfirmModal";
 import { ContextMenu } from "./components/ContextMenu";
 import { JsonModal } from "./components/JsonModal";
+import { ShortcutHelpModal } from "./components/ShortcutHelpModal";
 import { DragOverlayTile, Sidebar } from "./components/Sidebar";
+import { ToastContainer } from "./components/ToastContainer";
 import { Workspace } from "./components/Workspace";
 import { parseImportedApps, exportAppsToJson, getSuggestedDashboardIcon, themeStorageKey } from "./lib/app-utils";
 import { apiFetch } from "./lib/api";
 import { useApps } from "./hooks/useApps";
+import { useAppStatus } from "./hooks/useAppStatus";
 import { useAuth } from "./hooks/useAuth";
 import { useDashboardIcons } from "./hooks/useDashboardIcons";
 import { useEditor } from "./hooks/useEditor";
 import { useIframes } from "./hooks/useIframes";
+import { useToast } from "./hooks/useToast";
 import type { ContextMenuState, ImportAppsResponse, JsonImportMode, JsonModalMode, SidebarMode, ThemeMode, WebAppEntry } from "./types";
 
 export default function App() {
@@ -52,6 +56,7 @@ export default function App() {
   const [contextMenu, setContextMenu] = useState<ContextMenuState>(null);
   const [draggingAppId, setDraggingAppId] = useState<number | null>(null);
   const [dragOutProgress, setDragOutProgress] = useState(0);
+  const [shortcutHelpOpen, setShortcutHelpOpen] = useState(false);
   const [confirmState, setConfirmState] = useState<{
     open: boolean;
     message: string;
@@ -64,6 +69,7 @@ export default function App() {
     setJsonModalError(null);
     setJsonModalInfo(null);
   }, []);
+  const { toasts, pushToast, pushErrorToast, dismissToast } = useToast();
 
   const {
     apps,
@@ -134,6 +140,7 @@ export default function App() {
     closeEditor();
     setContextMenu(null);
     closeJsonModal();
+    setShortcutHelpOpen(false);
   }, [closeEditor, closeJsonModal]);
 
   const {
@@ -154,6 +161,11 @@ export default function App() {
     setBusy,
   });
 
+  const { appStatuses } = useAppStatus({
+    apps,
+    enabled: Boolean(user),
+  });
+
   useEffect(() => {
     document.documentElement.dataset.theme = themeMode;
     window.localStorage.setItem(themeStorageKey, themeMode);
@@ -164,6 +176,15 @@ export default function App() {
       setContextMenu(null);
     }
   }, [sidebarOpen]);
+
+  useEffect(() => {
+    if (!user || !error) {
+      return;
+    }
+
+    pushErrorToast(error);
+    setError(null);
+  }, [error, pushErrorToast, user]);
 
   useEffect(() => {
     if (!editorOpen || iconSelectionLocked || !normalizedIconQuery) {
@@ -180,7 +201,7 @@ export default function App() {
   }, [dashboardIconsState.dashboardIcons, editorOpen, editorState.icon, iconSelectionLocked, normalizedIconQuery, setEditorState]);
 
   useEffect(() => {
-    if (!editorOpen && !jsonModalMode) {
+    if (!editorOpen && !jsonModalMode && !shortcutHelpOpen) {
       return undefined;
     }
 
@@ -193,23 +214,50 @@ export default function App() {
         if (jsonModalMode) {
           closeJsonModal();
         }
+
+        if (shortcutHelpOpen) {
+          setShortcutHelpOpen(false);
+        }
       }
     };
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [closeEditor, editorOpen, jsonModalMode]);
+  }, [closeEditor, editorOpen, jsonModalMode, shortcutHelpOpen, closeJsonModal]);
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
+      const target = event.target;
+      const isTypingTarget = target instanceof HTMLElement
+        && (target.isContentEditable || ["INPUT", "TEXTAREA", "SELECT"].includes(target.tagName));
+
       if (event.key === "Escape") {
         setContextMenu(null);
+        return;
+      }
+
+      if (!user || event.ctrlKey || event.metaKey || event.altKey || isTypingTarget) {
+        return;
+      }
+
+      if (event.key.toLowerCase() === "n") {
+        event.preventDefault();
+        openCreateEditorFromUi();
+        return;
+      }
+
+      if (event.key === "?") {
+        event.preventDefault();
+        setContextMenu(null);
+        closeEditor();
+        closeJsonModal();
+        setShortcutHelpOpen(true);
       }
     };
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, []);
+  }, [closeEditor, closeJsonModal, user]);
 
   const toggleThemeMode = () => {
     setThemeMode((current) => (current === "light" ? "dark" : "light"));
@@ -237,18 +285,21 @@ export default function App() {
   const openCreateEditorFromUi = () => {
     setContextMenu(null);
     closeJsonModal();
+    setShortcutHelpOpen(false);
     openCreateEditor();
   };
 
   const openEditEditorFromUi = (app: WebAppEntry) => {
     setContextMenu(null);
     closeJsonModal();
+    setShortcutHelpOpen(false);
     openEditEditor(app);
   };
 
   const openJsonImport = () => {
     setContextMenu(null);
     closeEditor();
+    setShortcutHelpOpen(false);
     setJsonImportMode("merge");
     setJsonValue("");
     setJsonModalError(null);
@@ -259,6 +310,7 @@ export default function App() {
   const openJsonExport = () => {
     setContextMenu(null);
     closeEditor();
+    setShortcutHelpOpen(false);
     setJsonModalError(null);
     setJsonModalInfo(null);
     setJsonValue(exportAppsToJson(apps));
@@ -289,6 +341,7 @@ export default function App() {
       await navigator.clipboard.writeText(jsonValue);
       setJsonModalError(null);
       setJsonModalInfo("JSON copie.");
+      pushToast("JSON copie dans le presse-papiers.");
     } catch {
       setJsonModalError("Impossible de copier le JSON.");
       setJsonModalInfo(null);
@@ -317,6 +370,9 @@ export default function App() {
         setSelectedAppId(preferredId);
       });
       closeJsonModal();
+      pushToast(
+        `${result.importedIds.length} application${result.importedIds.length > 1 ? "s" : ""} importee${result.importedIds.length > 1 ? "s" : ""}.`
+      );
     } catch (importError) {
       setJsonModalError(importError instanceof Error ? importError.message : "Erreur d'import.");
     } finally {
@@ -347,6 +403,7 @@ export default function App() {
 
   const openContextMenu = (event: MouseEvent<HTMLDivElement>, app: WebAppEntry) => {
     event.preventDefault();
+    setShortcutHelpOpen(false);
 
     const menuWidth = 190;
     const menuHeight = app.open_mode === "iframe" ? 172 : 132;
@@ -362,6 +419,7 @@ export default function App() {
 
   const openSidebarContextMenu = (event: MouseEvent<HTMLElement>) => {
     event.preventDefault();
+    setShortcutHelpOpen(false);
 
     const menuWidth = 190;
     const menuHeight = 172;
@@ -464,7 +522,12 @@ export default function App() {
       onDragCancel={handleDragCancel}
       onDragEnd={(event) => void handleDragEnd(event)}
     >
-      <div className="app-shell" onClick={() => setContextMenu(null)}>
+      <div className="app-shell" onClick={() => setContextMenu(null)} aria-busy={busy}>
+        <div className={busy ? "busy-indicator visible" : "busy-indicator"} role="status" aria-live="polite">
+          <span className="busy-spinner" aria-hidden="true" />
+          <span>Chargement...</span>
+        </div>
+
         <Sidebar
           sidebarRef={sidebarRef}
           sidebarOpen={sidebarOpen}
@@ -480,6 +543,7 @@ export default function App() {
           dashboardIconsMetadata={dashboardIconsState.dashboardIconsMetadata}
           busy={busy}
           contextMenu={contextMenu}
+          appStatuses={appStatuses}
           onOpenSidebarContextMenu={openSidebarContextMenu}
           onOpenCreateEditor={openCreateEditorFromUi}
           onOpenJsonImport={openJsonImport}
@@ -491,7 +555,6 @@ export default function App() {
         />
 
         <Workspace
-          error={error}
           selectedApp={selectedApp}
           mountedIframeApps={mountedIframeApps}
           iframeReloadTokens={iframeReloadTokens}
@@ -573,6 +636,9 @@ export default function App() {
           onConfirm={() => confirmState.onConfirm?.()}
           onCancel={() => setConfirmState({ open: false, message: "", onConfirm: null })}
         />
+
+        <ShortcutHelpModal open={shortcutHelpOpen} onClose={() => setShortcutHelpOpen(false)} />
+        <ToastContainer toasts={toasts} onDismiss={dismissToast} />
       </div>
 
       <DragOverlay zIndex={2000} dropAnimation={null}>
