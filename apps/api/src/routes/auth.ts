@@ -12,10 +12,16 @@ import {
   sessionCookieName,
   verifyPassword,
 } from "../lib/auth.js";
+import { isDemoMode } from "../lib/demo.js";
 
-const authPayloadSchema = z.object({
+const setupPayloadSchema = z.object({
   username: z.string().trim().min(3).max(32),
   password: z.string().min(8).max(128),
+});
+
+const loginPayloadSchema = z.object({
+  username: z.string().trim().min(3).max(32),
+  password: z.string().min(1).max(128),
 });
 
 export async function registerAuthRoutes(server: FastifyInstance) {
@@ -23,7 +29,8 @@ export async function registerAuthRoutes(server: FastifyInstance) {
     const user = getSessionUser(request);
 
     return {
-      needsSetup: !hasUsers(),
+      needsSetup: isDemoMode ? false : !hasUsers(),
+      demoMode: isDemoMode,
       user,
     };
   });
@@ -43,7 +50,11 @@ export async function registerAuthRoutes(server: FastifyInstance) {
       config: { rateLimit: { max: 5, timeWindow: "1 minute" } },
     },
     async (request, reply) => {
-    const parsed = authPayloadSchema.safeParse(request.body);
+    if (isDemoMode) {
+      return reply.code(403).send({ message: "Mode demo: creation de compte desactivee." });
+    }
+
+    const parsed = setupPayloadSchema.safeParse(request.body);
     if (!parsed.success) {
       return reply.code(400).send({ message: "Identifiants invalides." });
     }
@@ -66,7 +77,7 @@ export async function registerAuthRoutes(server: FastifyInstance) {
       config: { rateLimit: { max: 10, timeWindow: "1 minute" } },
     },
     async (request, reply) => {
-    const parsed = authPayloadSchema.safeParse(request.body);
+    const parsed = loginPayloadSchema.safeParse(request.body);
     if (!parsed.success) {
       return reply.code(400).send({ message: "Identifiants invalides." });
     }

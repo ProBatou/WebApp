@@ -17,10 +17,11 @@ Tu as Plex, Nextcloud, Grafana, Home Assistant, Portainer... et tu passes ta vie
 
 👉 **[webapp-latest-mk9k.onrender.com](https://webapp-latest-mk9k.onrender.com)**
 
-Login : `Administrator`  
-Mot de passe : `Administrator`
+Login : `demo`  
+Mot de passe : `demo`
 
 > Le serveur peut mettre ~30 secondes a demarrer s'il est en veille.
+> Cette instance publique est en mode demo : les modifications sont desactivees.
 
 ---
 

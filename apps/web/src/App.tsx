@@ -139,6 +139,7 @@ export default function App() {
   const {
     user,
     needsSetup,
+    demoMode,
     loading,
     authError,
     credentials,
@@ -442,6 +443,7 @@ export default function App() {
     return (
       <AuthScreen
         needsSetup={needsSetup}
+        demoMode={demoMode}
         themeMode={themeMode}
         busy={busy}
         authError={authError}

@@ -1,6 +1,7 @@
-import type { FastifyInstance } from "fastify";
+import type { FastifyInstance, FastifyReply } from "fastify";
 import { z } from "zod";
 import { db } from "../lib/db.js";
+import { isDemoMode } from "../lib/demo.js";
 import { requireSession } from "../lib/auth.js";
 import type { AppRecord } from "../lib/types.js";
 
@@ -33,6 +34,15 @@ function serializeApp(app: AppRecord) {
     ...app,
     icon_variant_inverted: Boolean(app.icon_variant_inverted),
   };
+}
+
+function blockDemoWrites(reply: FastifyReply) {
+  if (!isDemoMode) {
+    return false;
+  }
+
+  reply.code(403).send({ message: "Mode demo: modifications desactivees." });
+  return true;
 }
 
 type SerializedAppRecord = ReturnType<typeof serializeApp>;
@@ -93,6 +103,10 @@ export async function registerAppRoutes(server: FastifyInstance) {
   });
 
   server.post("/api/apps", async (request, reply) => {
+    if (blockDemoWrites(reply)) {
+      return reply;
+    }
+
     const user = requireSession(request, reply);
     if (!user) {
       return reply;
@@ -108,6 +122,10 @@ export async function registerAppRoutes(server: FastifyInstance) {
   });
 
   server.put("/api/apps/:id", async (request, reply) => {
+    if (blockDemoWrites(reply)) {
+      return reply;
+    }
+
     const user = requireSession(request, reply);
     if (!user) {
       return reply;
@@ -150,6 +168,10 @@ export async function registerAppRoutes(server: FastifyInstance) {
   });
 
   server.delete("/api/apps/:id", async (request, reply) => {
+    if (blockDemoWrites(reply)) {
+      return reply;
+    }
+
     const user = requireSession(request, reply);
     if (!user) {
       return reply;
@@ -175,6 +197,10 @@ export async function registerAppRoutes(server: FastifyInstance) {
   });
 
   server.post("/api/apps/reorder", async (request, reply) => {
+    if (blockDemoWrites(reply)) {
+      return reply;
+    }
+
     const user = requireSession(request, reply);
     if (!user) {
       return reply;
@@ -204,6 +230,10 @@ export async function registerAppRoutes(server: FastifyInstance) {
   });
 
   server.post("/api/apps/import", async (request, reply) => {
+    if (blockDemoWrites(reply)) {
+      return reply;
+    }
+
     const user = requireSession(request, reply);
     if (!user) {
       return reply;

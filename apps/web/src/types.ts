@@ -23,6 +23,7 @@ export type WebAppEntry = {
 
 export type BootstrapResponse = {
   needsSetup: boolean;
+  demoMode: boolean;
   user: AuthUser | null;
 };
 
