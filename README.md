@@ -1,13 +1,28 @@
 # WebApp V2
 
-WebApp est un agregateur d'applications web. Cette branche `v2` remplace l'ancienne implementation PHP/JavaScript par un monorepo TypeScript avec un frontend React/Vite et une API Fastify.
+WebApp est un agregateur d'applications web personnel. Cette V2 remplace l'ancienne base PHP/JavaScript par un monorepo TypeScript avec un frontend React/Vite et une API Fastify.
+
+![Apercu WebApp V2](./docs/webapp-v2-preview.svg)
+
+## Apercu
+
+WebApp centralise tes services dans une interface unique avec :
+
+- authentification par session HTTP only
+- ouverture des apps en iframe ou dans un onglet externe
+- reorganisation par glisser-deposer
+- import et export JSON
+- stockage local SQLite
+- deploiement simple en local ou via Docker/Cosmos
 
 ## Stack
 
-- Frontend: React + Vite + TypeScript
-- Backend: Fastify + TypeScript
-- Base de donnees: SQLite
-- Organisation: npm workspaces
+- Frontend : React 19 + Vite + TypeScript
+- Backend : Fastify 5 + TypeScript
+- Base de donnees : SQLite
+- Validation : Zod
+- Auth : cookies httpOnly + sessions serveur
+- Workspace : npm workspaces
 
 ## Prerequis
 
@@ -17,20 +32,56 @@ WebApp est un agregateur d'applications web. Cette branche `v2` remplace l'ancie
 ## Installation
 
 ```bash
-git clone <url-du-repo>
+git clone https://github.com/ProBatou/WebApp.git
 cd WebApp
 npm install
 npm run build
 ```
 
-## Developpement
+## Developpement local
 
 ```bash
 npm run dev
 ```
 
-- Frontend: `http://localhost:5173`
-- API: `http://localhost:3001`
+Services disponibles :
+
+- Frontend : `http://localhost:5173`
+- API : `http://localhost:3001`
+- Healthcheck API : `http://localhost:3001/api/health`
+
+## Build de production
+
+```bash
+npm run build
+```
+
+Le build frontend est genere dans `apps/web/dist/`.
+
+## Docker
+
+Le projet peut etre lance avec le `docker-compose.yml` fourni :
+
+```bash
+docker compose up -d
+```
+
+Le service :
+
+- monte le projet dans `/app`
+- reinstalle les dependances si necessaire
+- build le frontend et l'API au demarrage
+- expose l'application sur `http://localhost:3004`
+- utilise le healthcheck `GET /api/health`
+
+## Cosmos
+
+Le fichier `cosmos-service.json` est fourni pour un deploiement Cosmos direct.
+
+Chemins utilises :
+
+- code : `/cosmos-storage/webapp-v2`
+- base SQLite : `/app/data/webapp-v2.db`
 
 ## Structure
 
@@ -46,22 +97,28 @@ start.sh
 cosmos-service.json
 ```
 
-## Docker
+## Donnees
 
-Le projet peut etre demarre avec le `docker-compose.yml` fourni, prevu pour monter l'application dans `/app` et exposer le service sur le port `3004`.
-
-```bash
-docker compose up -d
-```
-
-Le conteneur lance `start.sh`, installe les dependances si necessaire, build le frontend, build l'API puis demarre le serveur Fastify en servant aussi les fichiers statiques du frontend.
+- la base SQLite locale est creee automatiquement dans `apps/api/data/`
+- les fichiers `*.db` sont ignores par Git
+- l'API expose un endpoint de sante sur `/api/health`
 
 ## Version legacy PHP
 
-L'ancienne version PHP reste accessible via la branche `php-legacy`, creee avant l'integration de la reecriture TypeScript.
+L'ancienne version PHP reste accessible dans :
 
-## Remarques
+- la branche `php-legacy`
+- le tag `php-legacy`
 
-- Le build frontend genere `apps/web/dist/`.
-- La base SQLite locale est creee automatiquement dans `apps/api/data/`.
-- Cette version est destinee a remplacer l'ancienne base PHP tout en conservant l'historique Git dans le depot d'origine.
+## Demo
+
+Il n'y a pas de demo publique embarquee pour le moment. Le mode le plus simple pour tester le projet reste :
+
+```bash
+npm install
+npm run dev
+```
+
+## Licence
+
+Ce projet conserve le fichier `LICENSE` du depot d'origine.
