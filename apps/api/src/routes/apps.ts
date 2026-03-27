@@ -20,7 +20,12 @@ const appSchema = z.object({
 });
 
 const reorderSchema = z.object({
-  orderedIds: z.array(z.number().int().positive()).min(1),
+  items: z.array(
+    z.object({
+      id: z.number().int().positive(),
+      groupId: z.number().int().positive().nullable(),
+    })
+  ).min(1),
 });
 
 const importAppsSchema = z.object({
@@ -249,12 +254,12 @@ export async function registerAppRoutes(server: FastifyInstance) {
       return reply.code(400).send({ message: "Ordre invalide." });
     }
 
-    if (!appRepository.hasExactOrderedIds(parsed.data.orderedIds)) {
+    if (!appRepository.hasExactOrderedIds(parsed.data.items.map((item) => item.id))) {
       return reply.code(400).send({ message: "Ordre invalide: la liste doit contenir chaque application une seule fois." });
     }
 
     return {
-      items: appRepository.reorderApps(parsed.data.orderedIds),
+      items: appRepository.reorderApps(parsed.data.items),
     };
   });
 

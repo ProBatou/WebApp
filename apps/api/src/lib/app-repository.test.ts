@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import Database from "better-sqlite3";
 import { createAppRepository, type AppPayload } from "./app-repository.js";
 import { applyMigrations } from "./db.js";
+import { createGroupRepository } from "./group-repository.js";
 
 function createTestAppRepository() {
   const database = new Database(":memory:");
@@ -51,13 +52,48 @@ test("reorderApps updates sort_order and list order", () => {
     const grafana = repository.insertApp(createApp("Grafana"));
     const jellyfin = repository.insertApp(createApp("Jellyfin"));
 
-    const reordered = repository.reorderApps([jellyfin.id, plex.id, grafana.id]);
+    const reordered = repository.reorderApps([
+      { id: jellyfin.id, groupId: null },
+      { id: plex.id, groupId: null },
+      { id: grafana.id, groupId: null },
+    ]);
 
     assert.deepEqual(
       reordered.map((app) => ({ id: app.id, sort_order: app.sort_order })),
       [
         { id: jellyfin.id, sort_order: 1 },
         { id: plex.id, sort_order: 2 },
+        { id: grafana.id, sort_order: 3 },
+      ]
+    );
+  } finally {
+    database.close();
+  }
+});
+
+test("reorderApps can move an app to a different group", () => {
+  const { database, repository } = createTestAppRepository();
+  try {
+    const groupRepository = createGroupRepository(database);
+    const mediaGroup = groupRepository.createGroup("Media");
+    const monitorGroup = groupRepository.createGroup("Monitoring");
+
+    const plex = repository.insertApp(createApp("Plex", { groupId: mediaGroup.id }));
+    const grafana = repository.insertApp(createApp("Grafana", { groupId: mediaGroup.id }));
+    const jellyfin = repository.insertApp(createApp("Jellyfin", { groupId: monitorGroup.id }));
+
+    const reordered = repository.reorderApps([
+      { id: plex.id, groupId: mediaGroup.id },
+      { id: jellyfin.id, groupId: monitorGroup.id },
+      { id: grafana.id, groupId: monitorGroup.id },
+    ]);
+
+    assert.equal(reordered.find((app) => app.id === grafana.id)?.group_id, monitorGroup.id);
+    assert.deepEqual(
+      reordered.map((app) => ({ id: app.id, sort_order: app.sort_order })),
+      [
+        { id: plex.id, sort_order: 1 },
+        { id: jellyfin.id, sort_order: 2 },
         { id: grafana.id, sort_order: 3 },
       ]
     );

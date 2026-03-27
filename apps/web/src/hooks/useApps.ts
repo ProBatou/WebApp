@@ -1,23 +1,22 @@
-import { startTransition, useCallback, useEffect, useState } from "react";
+import { startTransition, useCallback, useState } from "react";
 import { type DragEndEvent } from "@dnd-kit/core";
-import { arrayMove } from "@dnd-kit/sortable";
 import { apiFetch } from "../lib/api";
-import type { AppsResponse, WebAppEntry } from "../types";
+import type { AppsResponse, GroupEntry, WebAppEntry } from "../types";
 
-const recentAppsStorageKey = "webapp-v2-recent-app-ids";
+const ungroupedDropId = "group:none";
 
-function readRecentAppIds() {
-  const rawValue = window.localStorage.getItem(recentAppsStorageKey);
-  if (!rawValue) {
-    return [];
+function getDropGroupId(dropId: string) {
+  if (dropId === ungroupedDropId) {
+    return null;
   }
 
-  try {
-    const parsedValue = JSON.parse(rawValue) as unknown;
-    return Array.isArray(parsedValue) ? parsedValue.filter((value): value is number => Number.isInteger(value) && value > 0).slice(0, 5) : [];
-  } catch {
-    return [];
+  const prefix = "group:";
+  if (!dropId.startsWith(prefix)) {
+    return null;
   }
+
+  const value = Number(dropId.slice(prefix.length));
+  return Number.isInteger(value) ? value : null;
 }
 
 export function useApps({
@@ -29,23 +28,6 @@ export function useApps({
 }) {
   const [apps, setApps] = useState<WebAppEntry[]>([]);
   const [selectedAppId, setSelectedAppId] = useState<number | null>(null);
-  const [recentAppIds, setRecentAppIds] = useState<number[]>(() => readRecentAppIds());
-
-  useEffect(() => {
-    if (apps.length === 0) {
-      return;
-    }
-
-    setRecentAppIds((current) => {
-      const nextIds = current.filter((appId) => apps.some((item) => item.id === appId));
-      if (nextIds.length === current.length) {
-        return current;
-      }
-
-      window.localStorage.setItem(recentAppsStorageKey, JSON.stringify(nextIds));
-      return nextIds;
-    });
-  }, [apps]);
 
   const reloadApps = useCallback(async (preferSelectedId?: number | null) => {
     const appsResult = await apiFetch<AppsResponse>("/api/apps", { method: "GET" });
@@ -73,7 +55,11 @@ export function useApps({
     }
   }, [reloadApps, selectedAppId, setBusy, setError]);
 
-  const handleReorder = useCallback(async (event: DragEndEvent, isDroppedOutsideSidebar: (event: DragEndEvent) => boolean) => {
+  const handleReorder = useCallback(async (
+    event: DragEndEvent,
+    isDroppedOutsideSidebar: (event: DragEndEvent) => boolean,
+    groups: GroupEntry[]
+  ) => {
     const { active, over } = event;
     const activeId = Number(active.id);
     if (Number.isNaN(activeId)) {
@@ -89,23 +75,76 @@ export function useApps({
       return;
     }
 
-    const oldIndex = apps.findIndex((item) => item.id === activeId);
-    const newIndex = apps.findIndex((item) => item.id === Number(over.id));
-    if (oldIndex < 0 || newIndex < 0) {
+    const activeApp = apps.find((item) => item.id === activeId);
+    if (!activeApp) {
       return;
     }
 
-    const reordered = arrayMove(apps, oldIndex, newIndex).map((item, index) => ({
-      ...item,
-      sort_order: index + 1,
-    }));
+    const overId = typeof over.id === "number" ? over.id : String(over.id);
+    const targetGroupId = typeof overId === "string"
+      ? getDropGroupId(overId)
+      : apps.find((item) => item.id === Number(overId))?.group_id ?? activeApp.group_id;
+
+    const oldIndex = apps.findIndex((item) => item.id === activeId);
+    if (oldIndex < 0) {
+      return;
+    }
+
+    const appsWithoutActive = apps.filter((item) => item.id !== activeId);
+    let insertIndex = appsWithoutActive.findIndex((item) => item.id === Number(over.id));
+
+    if (insertIndex < 0) {
+      const lastIndexInTargetGroup = appsWithoutActive.reduce((lastIndex, item, index) => {
+        return item.group_id === targetGroupId ? index : lastIndex;
+      }, -1);
+
+      insertIndex = lastIndexInTargetGroup >= 0 ? lastIndexInTargetGroup + 1 : appsWithoutActive.length;
+
+      const targetGroupPosition = targetGroupId === null ? groups.length : groups.findIndex((group) => group.id === targetGroupId);
+      if (lastIndexInTargetGroup < 0 && targetGroupPosition >= 0) {
+        const nextGroup = groups.slice(targetGroupPosition + (targetGroupId === null ? 0 : 1)).find((group) =>
+          appsWithoutActive.some((item) => item.group_id === group.id)
+        );
+        if (nextGroup) {
+          const nextGroupIndex = appsWithoutActive.findIndex((item) => item.group_id === nextGroup.id);
+          insertIndex = nextGroupIndex >= 0 ? nextGroupIndex : insertIndex;
+        }
+      }
+    }
+
+    const nextActiveApp = {
+      ...activeApp,
+      group_id: targetGroupId,
+    };
+    const reordered = [
+      ...appsWithoutActive.slice(0, Math.min(insertIndex, appsWithoutActive.length)),
+      nextActiveApp,
+      ...appsWithoutActive.slice(Math.min(insertIndex, appsWithoutActive.length)),
+    ].map((item, index) => {
+      if (item.id !== activeId) {
+        return {
+          ...item,
+          sort_order: index + 1,
+        };
+      }
+
+      return {
+        ...nextActiveApp,
+        sort_order: index + 1,
+      };
+    });
 
     setApps(reordered);
 
     try {
       await apiFetch<AppsResponse>("/api/apps/reorder", {
         method: "POST",
-        body: JSON.stringify({ orderedIds: reordered.map((item) => item.id) }),
+        body: JSON.stringify({
+          items: reordered.map((item) => ({
+            id: item.id,
+            groupId: item.group_id,
+          })),
+        }),
       });
     } catch (reorderError) {
       setError(reorderError instanceof Error ? reorderError.message : "Erreur de reorganisation.");
@@ -122,21 +161,7 @@ export function useApps({
     startTransition(() => {
       setSelectedAppId(appId);
     });
-
-    if (appId === null) {
-      return;
-    }
-
-    setRecentAppIds((current) => {
-      const nextIds = [appId, ...current.filter((id) => id !== appId)].slice(0, 5);
-      window.localStorage.setItem(recentAppsStorageKey, JSON.stringify(nextIds));
-      return nextIds;
-    });
   }, []);
-
-  const recentApps = recentAppIds
-    .map((appId) => apps.find((item) => item.id === appId) ?? null)
-    .filter((app): app is WebAppEntry => app !== null);
 
   return {
     apps,
@@ -148,6 +173,5 @@ export function useApps({
     deleteApp,
     handleReorder,
     resetAppsState,
-    recentApps,
   };
 }

@@ -499,8 +499,8 @@ textarea {
   top: 0;
   left: 0;
   bottom: 0;
-  width: min(340px, calc(100vw - 36px));
-  padding: 20px;
+  width: min(316px, calc(100vw - 28px));
+  padding: 16px;
   display: flex;
   flex-direction: column;
   overflow-x: hidden;
@@ -515,12 +515,12 @@ textarea {
 }
 
 .sidebar.compact {
-  width: 96px;
-  padding: 14px 10px;
+  width: 84px;
+  padding: 12px 8px;
 }
 
 .sidebar.expanded {
-  width: min(340px, calc(100vw - 36px));
+  width: min(316px, calc(100vw - 28px));
 }
 
 .sidebar.drawer-open {
@@ -562,7 +562,7 @@ textarea {
 
 .brand-copy h1 {
   margin: 6px 0 0;
-  font-size: 1.8rem;
+  font-size: 1.55rem;
   line-height: 1;
   font-family: "Gill Sans", "Trebuchet MS", sans-serif;
 }
@@ -600,11 +600,11 @@ textarea {
 .sidebar.compact .secondary-button,
 .sidebar.compact .ghost-icon-button,
 .sidebar.compact .sidebar-toggle {
-  width: 56px;
-  min-width: 56px;
-  height: 56px;
+  width: 48px;
+  min-width: 48px;
+  height: 48px;
   padding: 0;
-  border-radius: 18px;
+  border-radius: 16px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -615,12 +615,12 @@ textarea {
   display: flex;
   flex-direction: column;
   flex: 1;
-  margin-top: 22px;
+  margin-top: 16px;
 }
 
 .sidebar-search {
   display: block;
-  margin-bottom: 12px;
+  margin-bottom: 10px;
 }
 
 .sidebar-search input {
@@ -630,7 +630,7 @@ textarea {
 .app-section-list {
   display: flex;
   flex-direction: column;
-  gap: 18px;
+  gap: 14px;
   overflow-x: hidden;
   overflow-y: auto;
   padding-right: 4px;
@@ -645,29 +645,38 @@ textarea {
 .grouped-app-section {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 8px;
 }
 
 .group-section-title {
   margin: 0 4px;
   color: var(--muted);
-  font-size: 0.85rem;
+  font-size: 0.76rem;
   text-transform: uppercase;
   letter-spacing: 0.08em;
+}
+
+.group-drop-zone {
+  border-radius: 16px;
+  transition: background-color 140ms ease, border-color 140ms ease;
+}
+
+.group-drop-zone.active {
+  background: rgba(198, 92, 49, 0.08);
 }
 
 .sidebar-bottom-actions {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-  gap: 10px;
+  gap: 8px;
   margin-top: auto;
-  padding-top: 18px;
+  padding-top: 14px;
 }
 
 .sidebar-bottom-actions .primary-button,
 .sidebar-bottom-actions .secondary-button,
 .sidebar-bottom-actions .ghost-icon-button {
-  min-height: 56px;
+  min-height: 46px;
   min-width: 0;
   white-space: nowrap;
   overflow: hidden;
@@ -680,13 +689,13 @@ textarea {
   width: 100%;
   padding-left: 14px;
   padding-right: 14px;
-  font-size: 0.95rem;
+  font-size: 0.88rem;
 }
 
 .sidebar-bottom-actions .theme-toggle {
   width: 100%;
   min-width: 0;
-  height: 56px;
+  height: 46px;
   padding: 0;
 }
 
@@ -697,14 +706,15 @@ textarea {
 }
 
 .section-title {
-  margin: 0 0 12px;
+  margin: 0 0 8px;
   color: var(--muted);
+  font-size: 0.84rem;
 }
 
 .app-list {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 8px;
   overflow-x: hidden;
   overflow-y: auto;
   padding-right: 4px;
@@ -717,14 +727,6 @@ textarea {
   margin: 8px 4px 0;
   color: var(--muted);
   font-size: 0.92rem;
-}
-
-.recent-app-list {
-  margin-bottom: 18px;
-}
-
-.recent-app-tile {
-  background: var(--panel-muted);
 }
 
 .group-modal {
@@ -770,9 +772,9 @@ textarea {
 .app-tile {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 8px;
-  border-radius: 22px;
+  gap: 6px;
+  padding: 6px;
+  border-radius: 18px;
   background: var(--tile-surface);
   border: 1px solid transparent;
 }
@@ -780,7 +782,7 @@ textarea {
 .sidebar.compact .app-tile {
   width: 100%;
   justify-content: center;
-  padding: 6px;
+  padding: 4px;
 }
 
 .app-tile.active {
@@ -814,13 +816,13 @@ textarea {
 .app-main-hitbox {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
   flex: 1;
   min-width: 0;
   border: 0;
   background: transparent;
   text-align: left;
-  padding: 6px;
+  padding: 4px;
   cursor: grab;
   user-select: none;
 }
@@ -831,9 +833,9 @@ textarea {
 }
 
 .app-icon {
-  width: 48px;
-  height: 48px;
-  border-radius: 16px;
+  width: 40px;
+  height: 40px;
+  border-radius: 14px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -850,8 +852,8 @@ textarea {
 }
 
 .app-icon-image {
-  width: 28px;
-  height: 28px;
+  width: 24px;
+  height: 24px;
   object-fit: contain;
 }
 
@@ -866,8 +868,8 @@ textarea {
 .app-meta strong {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
-  font-size: 0.98rem;
+  gap: 6px;
+  font-size: 0.9rem;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -880,12 +882,12 @@ textarea {
 }
 
 .app-status-dot {
-  width: 10px;
-  height: 10px;
-  flex: 0 0 10px;
+  width: 8px;
+  height: 8px;
+  flex: 0 0 8px;
   border-radius: 999px;
   border: 1px solid rgba(255, 255, 255, 0.32);
-  box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.06);
+  box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.06);
 }
 
 .app-status-dot.online {
@@ -902,6 +904,7 @@ textarea {
 
 .app-meta small {
   color: var(--muted);
+  font-size: 0.78rem;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;

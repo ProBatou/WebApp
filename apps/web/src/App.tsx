@@ -77,7 +77,6 @@ export default function App() {
   const {
     apps,
     setApps,
-    recentApps,
     selectedAppId,
     selectApp,
     reloadApps,
@@ -542,7 +541,7 @@ export default function App() {
   const handleDragEnd = async (event: DragEndEvent) => {
     setDraggingAppId(null);
     setDragOutProgress(0);
-    await handleReorder(event, isDroppedOutsideSidebar);
+    await handleReorder(event, isDroppedOutsideSidebar, groups);
   };
 
   const draggedApp = draggingAppId === null ? null : apps.find((item) => item.id === draggingAppId) ?? null;
@@ -593,7 +592,6 @@ export default function App() {
           sidebarMode={sidebarMode}
           setSidebarMode={setSidebarMode}
           userName={user.username}
-          recentApps={recentApps}
           groups={groups}
           apps={apps}
           selectedAppId={selectedAppId}
