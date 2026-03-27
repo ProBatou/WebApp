@@ -1,6 +1,7 @@
 export type AuthUser = {
   id: number;
   username: string;
+  role: "admin" | "viewer";
 };
 
 export type AppMode = "iframe" | "external";

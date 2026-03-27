@@ -27,6 +27,7 @@ export function createAuthRepository(database: SqliteDatabase, createSessionId: 
     return {
       id: Number(result.lastInsertRowid),
       username,
+      role: "admin",
     } satisfies SessionUser;
   }
 
@@ -45,6 +46,7 @@ export function createAuthRepository(database: SqliteDatabase, createSessionId: 
       return {
         id: Number(result.lastInsertRowid),
         username: nextUsername,
+        role: "admin",
       } satisfies SessionUser;
     });
 
@@ -52,8 +54,8 @@ export function createAuthRepository(database: SqliteDatabase, createSessionId: 
   }
 
   function findUserByUsername(username: string) {
-    return database.prepare("SELECT id, username, password_hash FROM users WHERE username = ?").get(username) as
-      | { id: number; username: string; password_hash: string }
+    return database.prepare("SELECT id, username, password_hash, role FROM users WHERE username = ?").get(username) as
+      | { id: number; username: string; password_hash: string; role: SessionUser["role"] }
       | undefined;
   }
 
@@ -104,6 +106,7 @@ export function createAuthRepository(database: SqliteDatabase, createSessionId: 
     const row = database
       .prepare(
         `SELECT users.id, users.username
+                , users.role
          FROM sessions
          INNER JOIN users ON users.id = sessions.user_id
          WHERE sessions.id = ? AND sessions.expires_at > ?`
@@ -128,6 +131,15 @@ export function createAuthRepository(database: SqliteDatabase, createSessionId: 
     return user;
   }
 
+  function requireAdmin(user: SessionUser, reply: FastifyReply) {
+    if (user.role !== "admin") {
+      reply.code(403).send({ message: "Acces administrateur requis." });
+      return null;
+    }
+
+    return user;
+  }
+
   return {
     hasUsers,
     createUser,
@@ -137,5 +149,6 @@ export function createAuthRepository(database: SqliteDatabase, createSessionId: 
     clearSession,
     getSessionUser,
     requireSession,
+    requireAdmin,
   };
 }

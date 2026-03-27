@@ -1,5 +1,6 @@
 export type AppMode = "iframe" | "external";
 export type IconVariantMode = "auto" | "base";
+export type UserRole = "admin" | "viewer";
 
 export type AppRecord = {
   id: number;
@@ -28,4 +29,5 @@ export type GroupRecord = {
 export type SessionUser = {
   id: number;
   username: string;
+  role: UserRole;
 };

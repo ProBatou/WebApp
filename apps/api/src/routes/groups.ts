@@ -1,6 +1,6 @@
 import type { FastifyInstance, FastifyReply } from "fastify";
 import { z } from "zod";
-import { requireSession } from "../lib/auth.js";
+import { requireAdmin, requireSession } from "../lib/auth.js";
 import { db } from "../lib/db.js";
 import { isDemoMode } from "../lib/demo.js";
 import { createGroupRepository } from "../lib/group-repository.js";
@@ -37,12 +37,16 @@ export async function registerGroupRoutes(server: FastifyInstance) {
   });
 
   server.post("/api/groups", writeRouteConfig, async (request, reply) => {
-    if (blockDemoWrites(reply)) {
+    const user = requireSession(request, reply);
+    if (!user) {
       return reply;
     }
 
-    const user = requireSession(request, reply);
-    if (!user) {
+    if (!requireAdmin(user, reply)) {
+      return reply;
+    }
+
+    if (blockDemoWrites(reply)) {
       return reply;
     }
 
@@ -57,12 +61,16 @@ export async function registerGroupRoutes(server: FastifyInstance) {
   });
 
   server.put("/api/groups/:id", writeRouteConfig, async (request, reply) => {
-    if (blockDemoWrites(reply)) {
+    const user = requireSession(request, reply);
+    if (!user) {
       return reply;
     }
 
-    const user = requireSession(request, reply);
-    if (!user) {
+    if (!requireAdmin(user, reply)) {
+      return reply;
+    }
+
+    if (blockDemoWrites(reply)) {
       return reply;
     }
 
@@ -85,12 +93,16 @@ export async function registerGroupRoutes(server: FastifyInstance) {
   });
 
   server.delete("/api/groups/:id", writeRouteConfig, async (request, reply) => {
-    if (blockDemoWrites(reply)) {
+    const user = requireSession(request, reply);
+    if (!user) {
       return reply;
     }
 
-    const user = requireSession(request, reply);
-    if (!user) {
+    if (!requireAdmin(user, reply)) {
+      return reply;
+    }
+
+    if (blockDemoWrites(reply)) {
       return reply;
     }
 

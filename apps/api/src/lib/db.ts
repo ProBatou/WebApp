@@ -41,6 +41,7 @@ const migrations: Migration[] = [
           id INTEGER PRIMARY KEY AUTOINCREMENT,
           username TEXT NOT NULL UNIQUE,
           password_hash TEXT NOT NULL,
+          role TEXT NOT NULL DEFAULT 'admin' CHECK(role IN ('admin', 'viewer')),
           created_at TEXT NOT NULL
         );
 
@@ -111,6 +112,14 @@ const migrations: Migration[] = [
     up: (database) => {
       if (!hasColumn(database, "apps", "group_id")) {
         database.exec("ALTER TABLE apps ADD COLUMN group_id INTEGER REFERENCES groups(id) ON DELETE SET NULL");
+      }
+    },
+  },
+  {
+    id: "007_add_user_role",
+    up: (database) => {
+      if (!hasColumn(database, "users", "role")) {
+        database.exec("ALTER TABLE users ADD COLUMN role TEXT NOT NULL DEFAULT 'admin' CHECK(role IN ('admin', 'viewer'))");
       }
     },
   },

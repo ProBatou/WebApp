@@ -45,4 +45,8 @@ export function requireSession(...args: Parameters<typeof authRepository.require
   return authRepository.requireSession(...args);
 }
 
+export function requireAdmin(...args: Parameters<typeof authRepository.requireAdmin>) {
+  return authRepository.requireAdmin(...args);
+}
+
 export { sessionCookieName };
