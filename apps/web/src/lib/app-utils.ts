@@ -11,6 +11,7 @@ import type {
 
 export const themeStorageKey = "webapp-v2-theme";
 export const dashboardIconsMetadataUrl = "https://raw.githubusercontent.com/homarr-labs/dashboard-icons/refs/heads/main/metadata.json";
+export const dashboardIconsProxyBaseUrl = "/api/icons/proxy";
 export const dashboardIconsCdnBaseUrl = "https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/svg";
 export const jsonImportExample = `[
   {
@@ -41,11 +42,12 @@ export function isDashboardIconSlug(value: string) {
 }
 
 export function getDashboardIconUrl(icon: string) {
-  return `${dashboardIconsCdnBaseUrl}/${icon}.svg`;
+  return `${dashboardIconsProxyBaseUrl}/${icon}`;
 }
 
 export function getDashboardIconAssetUrls(icon: string) {
   return [
+    `${dashboardIconsProxyBaseUrl}/${icon}`,
     `${dashboardIconsCdnBaseUrl}/${icon}.svg`,
     `${dashboardIconsCdnBaseUrl.replace(/\/svg$/, "/png")}/${icon}.png`,
   ];

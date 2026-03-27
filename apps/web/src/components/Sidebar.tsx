@@ -1,9 +1,31 @@
-import { useMemo, useState, type Dispatch, type MouseEvent, type ReactNode, type RefObject, type SetStateAction } from "react";
+import { useEffect, useMemo, useRef, useState, type Dispatch, type MouseEvent, type ReactNode, type RefObject, type SetStateAction } from "react";
 import { useDroppable } from "@dnd-kit/core";
 import { SortableContext, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { AppIcon } from "./AppIcon";
 import type { AppStatusEntry, ContextMenuState, DashboardIconsMetadataMap, GroupEntry, SidebarMode, ThemeMode, WebAppEntry } from "../types";
+
+const collapsedGroupsStorageKey = "webapp-v2-collapsed-groups";
+
+function readCollapsedGroups() {
+  const rawValue = window.localStorage.getItem(collapsedGroupsStorageKey);
+  if (!rawValue) {
+    return new Set<string>();
+  }
+
+  try {
+    const parsedValue = JSON.parse(rawValue) as unknown;
+    if (!Array.isArray(parsedValue)) {
+      return new Set<string>();
+    }
+
+    return new Set(
+      parsedValue.filter((value): value is string => typeof value === "string" && value.startsWith("group:"))
+    );
+  } catch {
+    return new Set<string>();
+  }
+}
 
 function GroupDropZone({
   id,
@@ -226,6 +248,9 @@ export function Sidebar({
   onOpenContextMenu: (event: MouseEvent<HTMLDivElement>, app: WebAppEntry) => void;
 }) {
   const [filterQuery, setFilterQuery] = useState("");
+  const [actionsMenuOpen, setActionsMenuOpen] = useState(false);
+  const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(() => readCollapsedGroups());
+  const actionsMenuRef = useRef<HTMLDivElement | null>(null);
   const normalizedFilterQuery = filterQuery.trim().toLowerCase();
   const filteredApps = useMemo(() => {
     if (draggingAppId !== null || !normalizedFilterQuery) {
@@ -254,6 +279,52 @@ export function Sidebar({
 
     return groupedApps;
   }, [filteredApps, groups]);
+  const visibleAppsInCompact = useMemo(() => {
+    return filteredApps.filter((app) => {
+      const sectionId = app.group_id === null ? "group:none" : `group:${app.group_id}`;
+      return !collapsedGroups.has(sectionId);
+    });
+  }, [collapsedGroups, filteredApps]);
+
+  useEffect(() => {
+    if (!actionsMenuOpen) {
+      return undefined;
+    }
+
+    const handlePointerDown = (event: PointerEvent) => {
+      const target = event.target;
+      if (!(target instanceof Node)) {
+        return;
+      }
+
+      if (!actionsMenuRef.current?.contains(target)) {
+        setActionsMenuOpen(false);
+      }
+    };
+
+    window.addEventListener("pointerdown", handlePointerDown);
+    return () => window.removeEventListener("pointerdown", handlePointerDown);
+  }, [actionsMenuOpen]);
+
+  useEffect(() => {
+    setActionsMenuOpen(false);
+  }, [sidebarMode]);
+
+  useEffect(() => {
+    window.localStorage.setItem(collapsedGroupsStorageKey, JSON.stringify(Array.from(collapsedGroups)));
+  }, [collapsedGroups]);
+
+  const toggleGroupVisibility = (groupId: string) => {
+    setCollapsedGroups((current) => {
+      const next = new Set(current);
+      if (next.has(groupId)) {
+        next.delete(groupId);
+      } else {
+        next.add(groupId);
+      }
+      return next;
+    });
+  };
 
   return (
     <>
@@ -334,39 +405,53 @@ export function Sidebar({
               />
             </label>
           ) : null}
-          <SortableContext items={filteredApps.map((item) => item.id)} strategy={verticalListSortingStrategy}>
+          <SortableContext
+            items={(sidebarMode === "compact" ? visibleAppsInCompact : filteredApps).map((item) => item.id)}
+            strategy={verticalListSortingStrategy}
+          >
             {sidebarMode === "expanded" ? (
               <div className="app-section-list">
                 {groupedSections.map((section) => (
                   <section key={section.id} className="grouped-app-section">
-                    <p className="group-section-title">{section.label}</p>
-                    <GroupDropZone id={section.id}>
-                      <SortableContext items={section.apps.map((item) => item.id)} strategy={verticalListSortingStrategy}>
-                        <div className="app-list grouped-app-list">
-                          {section.apps.map((app) => (
-                            <SortableAppTile
-                              key={app.id}
-                              app={app}
-                              active={app.id === selectedAppId}
-                              compact={false}
-                              onSelect={onSelectApp}
-                              onEdit={onEditApp}
-                              onContextMenu={onOpenContextMenu}
-                              themeMode={themeMode}
-                              dashboardIconsMetadata={dashboardIconsMetadata}
-                              appStatus={appStatuses[app.id]}
-                            />
-                          ))}
-                        </div>
-                      </SortableContext>
-                    </GroupDropZone>
+                    <button
+                      className="group-section-toggle"
+                      type="button"
+                      onClick={() => toggleGroupVisibility(section.id)}
+                      aria-expanded={!collapsedGroups.has(section.id)}
+                      aria-label={`${collapsedGroups.has(section.id) ? "Afficher" : "Masquer"} le groupe ${section.label}`}
+                    >
+                      <span className="group-section-title">{section.label}</span>
+                      <span className={collapsedGroups.has(section.id) ? "group-chevron collapsed" : "group-chevron"} aria-hidden="true">▾</span>
+                    </button>
+                    {!collapsedGroups.has(section.id) ? (
+                      <GroupDropZone id={section.id}>
+                        <SortableContext items={section.apps.map((item) => item.id)} strategy={verticalListSortingStrategy}>
+                          <div className="app-list grouped-app-list">
+                            {section.apps.map((app) => (
+                              <SortableAppTile
+                                key={app.id}
+                                app={app}
+                                active={app.id === selectedAppId}
+                                compact={false}
+                                onSelect={onSelectApp}
+                                onEdit={onEditApp}
+                                onContextMenu={onOpenContextMenu}
+                                themeMode={themeMode}
+                                dashboardIconsMetadata={dashboardIconsMetadata}
+                                appStatus={appStatuses[app.id]}
+                              />
+                            ))}
+                          </div>
+                        </SortableContext>
+                      </GroupDropZone>
+                    ) : null}
                   </section>
                 ))}
                 {filteredApps.length === 0 ? <p className="sidebar-empty-state">Aucune application ne correspond a la recherche.</p> : null}
               </div>
             ) : (
               <div className="app-list">
-                {filteredApps.map((app) => (
+                {visibleAppsInCompact.map((app) => (
                   <SortableAppTile
                     key={app.id}
                     app={app}
@@ -380,7 +465,7 @@ export function Sidebar({
                     appStatus={appStatuses[app.id]}
                   />
                 ))}
-                {filteredApps.length === 0 ? <p className="sidebar-empty-state">Aucune application ne correspond a la recherche.</p> : null}
+                {visibleAppsInCompact.length === 0 ? <p className="sidebar-empty-state">Aucune application visible.</p> : null}
               </div>
             )}
           </SortableContext>
@@ -394,15 +479,56 @@ export function Sidebar({
           <button className="primary-button" type="button" onClick={onOpenCreateEditor} title="Nouvelle app">
             {sidebarMode === "expanded" ? "Nouvelle" : "+"}
           </button>
-          <button className="secondary-button" type="button" onClick={onOpenJsonImport} title="Importer JSON">
-            {sidebarMode === "expanded" ? "JSON" : "{}"}
-          </button>
-          <button className="secondary-button" type="button" onClick={onOpenGroupManager} title="Gerer les groupes">
-            {sidebarMode === "expanded" ? "Groupes" : "≡"}
-          </button>
-          <button className="secondary-button" type="button" onClick={() => void onLogout()} disabled={busy} title="Deconnexion">
-            {sidebarMode === "expanded" ? "Quitter" : "⏻"}
-          </button>
+          <div ref={actionsMenuRef} className={actionsMenuOpen ? "sidebar-actions-menu open" : "sidebar-actions-menu"}>
+            <button
+              className="secondary-button sidebar-actions-trigger"
+              type="button"
+              onClick={() => setActionsMenuOpen((current) => !current)}
+              title="Actions"
+              aria-haspopup="menu"
+              aria-expanded={actionsMenuOpen}
+            >
+              {sidebarMode === "expanded" ? "Actions" : "⋯"}
+            </button>
+            {actionsMenuOpen ? (
+              <div className="sidebar-actions-popover" role="menu" aria-label="Actions de la barre laterale">
+                <button
+                  className="secondary-button"
+                  type="button"
+                  onClick={() => {
+                    setActionsMenuOpen(false);
+                    onOpenJsonImport();
+                  }}
+                  title="Importer JSON"
+                >
+                  JSON
+                </button>
+                <button
+                  className="secondary-button"
+                  type="button"
+                  onClick={() => {
+                    setActionsMenuOpen(false);
+                    onOpenGroupManager();
+                  }}
+                  title="Gerer les groupes"
+                >
+                  Groupes
+                </button>
+                <button
+                  className="secondary-button"
+                  type="button"
+                  onClick={() => {
+                    setActionsMenuOpen(false);
+                    void onLogout();
+                  }}
+                  disabled={busy}
+                  title="Deconnexion"
+                >
+                  Quitter
+                </button>
+              </div>
+            ) : null}
+          </div>
           <button className="ghost-icon-button theme-toggle" type="button" onClick={onToggleTheme} aria-label="Basculer le theme" title="Dark mode">
             {themeMode === "light" ? "◐" : "◑"}
           </button>
