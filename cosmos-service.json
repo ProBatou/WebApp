@@ -17,8 +17,8 @@
       ],
       "volumes": [
         {
-          "Type": "bind",
-          "Source": "/cosmos-storage/webapp-v2/data",
+          "Type": "volume",
+          "Source": "webapp-data",
           "Target": "/app/data"
         }
       ],
