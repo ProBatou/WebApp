@@ -17,9 +17,17 @@ export type WebAppEntry = {
   accent: string;
   open_mode: AppMode;
   is_default: boolean;
+  group_id: number | null;
   sort_order: number;
   created_at: string;
   updated_at: string;
+};
+
+export type GroupEntry = {
+  id: number;
+  name: string;
+  sort_order: number;
+  created_at: string;
 };
 
 export type BootstrapResponse = {
@@ -30,6 +38,10 @@ export type BootstrapResponse = {
 
 export type AppsResponse = {
   items: WebAppEntry[];
+};
+
+export type GroupsResponse = {
+  items: GroupEntry[];
 };
 
 export type ImportAppsResponse = {
@@ -58,6 +70,7 @@ export type AppPayload = {
   iconVariantInverted: boolean;
   accent: string;
   openMode: AppMode;
+  groupId?: number | null;
 };
 
 export type AppEditorState = AppPayload;
@@ -73,6 +86,7 @@ export type JsonTransferItem = Partial<AppPayload> & {
   iconVariantInverted?: unknown;
   accent?: unknown;
   openMode?: unknown;
+  groupId?: unknown;
 };
 
 export type EditorMode = "create" | "edit";

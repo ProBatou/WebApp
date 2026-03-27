@@ -11,6 +11,7 @@ import type {
   AppMode,
   DashboardIconsMetadataMap,
   EditorMode,
+  GroupEntry,
   ThemeMode,
 } from "../types";
 
@@ -29,6 +30,7 @@ export function AppEditor({
   dashboardIconsLoading,
   dashboardIconsError,
   filteredDashboardIcons,
+  groups,
   themeMode,
   onClose,
   onSubmit,
@@ -49,6 +51,7 @@ export function AppEditor({
   dashboardIconsLoading: boolean;
   dashboardIconsError: string | null;
   filteredDashboardIcons: string[];
+  groups: GroupEntry[];
   themeMode: ThemeMode;
   onClose: () => void;
   onSubmit: (event: FormEvent<HTMLFormElement>, resolvedIcon: string) => Promise<void>;
@@ -182,6 +185,25 @@ export function AppEditor({
             >
               <option value="iframe">Iframe integree</option>
               <option value="external">Nouvel onglet</option>
+            </select>
+          </label>
+          <label>
+            <span>Groupe</span>
+            <select
+              value={editorState.groupId ?? ""}
+              onChange={(event) =>
+                setEditorState((current) => ({
+                  ...current,
+                  groupId: event.target.value ? Number(event.target.value) : null,
+                }))
+              }
+            >
+              <option value="">Sans groupe</option>
+              {groups.map((group) => (
+                <option key={group.id} value={group.id}>
+                  {group.name}
+                </option>
+              ))}
             </select>
           </label>
 

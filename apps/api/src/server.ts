@@ -10,6 +10,7 @@ import { db } from "./lib/db.js";
 import { ensureDemoState } from "./lib/demo.js";
 import { registerAuthRoutes } from "./routes/auth.js";
 import { registerAppRoutes } from "./routes/apps.js";
+import { registerGroupRoutes } from "./routes/groups.js";
 
 const currentDir = dirname(fileURLToPath(import.meta.url));
 const webDistPath = resolve(currentDir, "../../web/dist");
@@ -65,6 +66,7 @@ server.get("/api/health", async () => {
 
 await registerAuthRoutes(server);
 await registerAppRoutes(server);
+await registerGroupRoutes(server);
 
 if (hasWebBuild) {
   await server.register(staticPlugin, {

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState, startTransition, type ChangeEvent, type MouseEvent } from "react";
+import { useCallback, useEffect, useRef, useState, type ChangeEvent, type MouseEvent } from "react";
 import {
   DndContext,
   DragOverlay,
@@ -15,6 +15,7 @@ import { AuthScreen } from "./components/AuthScreen";
 import { AppEditor } from "./components/AppEditor";
 import { ConfirmModal } from "./components/ConfirmModal";
 import { ContextMenu } from "./components/ContextMenu";
+import { GroupManagerModal } from "./components/GroupManagerModal";
 import { JsonModal } from "./components/JsonModal";
 import { ShortcutHelpModal } from "./components/ShortcutHelpModal";
 import { DragOverlayTile, Sidebar } from "./components/Sidebar";
@@ -27,6 +28,7 @@ import { useAppStatus } from "./hooks/useAppStatus";
 import { useAuth } from "./hooks/useAuth";
 import { useDashboardIcons } from "./hooks/useDashboardIcons";
 import { useEditor } from "./hooks/useEditor";
+import { useGroups } from "./hooks/useGroups";
 import { useIframes } from "./hooks/useIframes";
 import { useToast } from "./hooks/useToast";
 import type { ContextMenuState, ImportAppsResponse, JsonImportMode, JsonModalMode, SidebarMode, ThemeMode, WebAppEntry } from "./types";
@@ -53,6 +55,7 @@ export default function App() {
   const [jsonValue, setJsonValue] = useState("");
   const [jsonModalError, setJsonModalError] = useState<string | null>(null);
   const [jsonModalInfo, setJsonModalInfo] = useState<string | null>(null);
+  const [groupManagerOpen, setGroupManagerOpen] = useState(false);
   const [contextMenu, setContextMenu] = useState<ContextMenuState>(null);
   const [draggingAppId, setDraggingAppId] = useState<number | null>(null);
   const [dragOutProgress, setDragOutProgress] = useState(0);
@@ -82,6 +85,17 @@ export default function App() {
     handleReorder,
     resetAppsState,
   } = useApps({
+    setBusy,
+    setError,
+  });
+  const {
+    groups,
+    reloadGroups,
+    createGroup,
+    updateGroup,
+    deleteGroup,
+    resetGroups,
+  } = useGroups({
     setBusy,
     setError,
   });
@@ -134,13 +148,15 @@ export default function App() {
 
   const clearAppState = useCallback(() => {
     resetAppsState();
+    resetGroups();
     resetIframes();
-  }, [resetAppsState, resetIframes]);
+  }, [resetAppsState, resetGroups, resetIframes]);
 
   const clearUiState = useCallback(() => {
     closeEditor();
     setContextMenu(null);
     closeJsonModal();
+    setGroupManagerOpen(false);
     setShortcutHelpOpen(false);
   }, [closeEditor, closeJsonModal]);
 
@@ -179,6 +195,14 @@ export default function App() {
   }, [sidebarOpen]);
 
   useEffect(() => {
+    if (!user) {
+      return;
+    }
+
+    void reloadGroups();
+  }, [reloadGroups, user]);
+
+  useEffect(() => {
     if (!user || !error) {
       return;
     }
@@ -202,7 +226,7 @@ export default function App() {
   }, [dashboardIconsState.dashboardIcons, editorOpen, editorState.icon, iconSelectionLocked, normalizedIconQuery, setEditorState]);
 
   useEffect(() => {
-    if (!editorOpen && !jsonModalMode && !shortcutHelpOpen) {
+    if (!editorOpen && !jsonModalMode && !shortcutHelpOpen && !groupManagerOpen) {
       return undefined;
     }
 
@@ -219,12 +243,16 @@ export default function App() {
         if (shortcutHelpOpen) {
           setShortcutHelpOpen(false);
         }
+
+        if (groupManagerOpen) {
+          setGroupManagerOpen(false);
+        }
       }
     };
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [closeEditor, editorOpen, jsonModalMode, shortcutHelpOpen, closeJsonModal]);
+  }, [closeEditor, editorOpen, jsonModalMode, shortcutHelpOpen, groupManagerOpen, closeJsonModal]);
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -252,6 +280,7 @@ export default function App() {
         setContextMenu(null);
         closeEditor();
         closeJsonModal();
+        setGroupManagerOpen(false);
         setShortcutHelpOpen(true);
       }
     };
@@ -310,6 +339,7 @@ export default function App() {
   const openCreateEditorFromUi = () => {
     setContextMenu(null);
     closeJsonModal();
+    setGroupManagerOpen(false);
     setShortcutHelpOpen(false);
     openCreateEditor();
   };
@@ -317,6 +347,7 @@ export default function App() {
   const openEditEditorFromUi = (app: WebAppEntry) => {
     setContextMenu(null);
     closeJsonModal();
+    setGroupManagerOpen(false);
     setShortcutHelpOpen(false);
     openEditEditor(app);
   };
@@ -324,6 +355,7 @@ export default function App() {
   const openJsonImport = () => {
     setContextMenu(null);
     closeEditor();
+    setGroupManagerOpen(false);
     setShortcutHelpOpen(false);
     setJsonImportMode("merge");
     setJsonValue("");
@@ -335,6 +367,7 @@ export default function App() {
   const openJsonExport = () => {
     setContextMenu(null);
     closeEditor();
+    setGroupManagerOpen(false);
     setShortcutHelpOpen(false);
     setJsonModalError(null);
     setJsonModalInfo(null);
@@ -426,6 +459,7 @@ export default function App() {
 
   const openContextMenu = (event: MouseEvent<HTMLDivElement>, app: WebAppEntry) => {
     event.preventDefault();
+    setGroupManagerOpen(false);
     setShortcutHelpOpen(false);
 
     const menuWidth = 190;
@@ -442,6 +476,7 @@ export default function App() {
 
   const openSidebarContextMenu = (event: MouseEvent<HTMLElement>) => {
     event.preventDefault();
+    setGroupManagerOpen(false);
     setShortcutHelpOpen(false);
 
     const menuWidth = 190;
@@ -559,6 +594,7 @@ export default function App() {
           setSidebarMode={setSidebarMode}
           userName={user.username}
           recentApps={recentApps}
+          groups={groups}
           apps={apps}
           selectedAppId={selectedAppId}
           draggingAppId={draggingAppId}
@@ -571,6 +607,13 @@ export default function App() {
           onOpenSidebarContextMenu={openSidebarContextMenu}
           onOpenCreateEditor={openCreateEditorFromUi}
           onOpenJsonImport={openJsonImport}
+          onOpenGroupManager={() => {
+            setContextMenu(null);
+            closeEditor();
+            closeJsonModal();
+            setShortcutHelpOpen(false);
+            setGroupManagerOpen(true);
+          }}
           onLogout={handleLogout}
           onToggleTheme={toggleThemeMode}
           onSelectApp={handleSelectApp}
@@ -633,6 +676,7 @@ export default function App() {
           dashboardIconsLoading={dashboardIconsState.dashboardIconsLoading}
           dashboardIconsError={dashboardIconsState.dashboardIconsError}
           filteredDashboardIcons={dashboardIconsState.filteredDashboardIcons}
+          groups={groups}
           themeMode={themeMode}
           onClose={closeEditor}
           onSubmit={handleSaveApp}
@@ -667,6 +711,26 @@ export default function App() {
         />
 
         <ShortcutHelpModal open={shortcutHelpOpen} onClose={() => setShortcutHelpOpen(false)} />
+        <GroupManagerModal
+          open={groupManagerOpen}
+          busy={busy}
+          groups={groups}
+          onClose={() => setGroupManagerOpen(false)}
+          onCreateGroup={async (name) => {
+            const group = await createGroup(name);
+            pushToast(`${group.name} ajoute.`);
+          }}
+          onRenameGroup={async (groupId, name) => {
+            const group = await updateGroup(groupId, name);
+            pushToast(`${group.name} renomme.`);
+          }}
+          onDeleteGroup={async (groupId) => {
+            const group = groups.find((item) => item.id === groupId);
+            await deleteGroup(groupId);
+            await reloadApps(selectedAppId);
+            pushToast(group ? `${group.name} supprime.` : "Groupe supprime.");
+          }}
+        />
         <ToastContainer toasts={toasts} onDismiss={dismissToast} />
       </div>
 

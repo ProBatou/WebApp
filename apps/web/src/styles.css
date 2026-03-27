@@ -627,6 +627,35 @@ textarea {
   width: 100%;
 }
 
+.app-section-list {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  overflow-x: hidden;
+  overflow-y: auto;
+  padding-right: 4px;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.app-section-list::-webkit-scrollbar {
+  display: none;
+}
+
+.grouped-app-section {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.group-section-title {
+  margin: 0 4px;
+  color: var(--muted);
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
 .sidebar-bottom-actions {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
@@ -696,6 +725,37 @@ textarea {
 
 .recent-app-tile {
   background: var(--panel-muted);
+}
+
+.group-modal {
+  width: min(640px, 100%);
+}
+
+.group-create-row,
+.group-edit-row,
+.group-item-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: center;
+}
+
+.group-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.group-item {
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  background: var(--preview-surface);
+}
+
+.group-item-actions {
+  display: flex;
+  gap: 10px;
 }
 
 .app-list::-webkit-scrollbar {

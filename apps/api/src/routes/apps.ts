@@ -3,6 +3,7 @@ import { z } from "zod";
 import { createAppRepository } from "../lib/app-repository.js";
 import { db } from "../lib/db.js";
 import { isDemoMode } from "../lib/demo.js";
+import { createGroupRepository } from "../lib/group-repository.js";
 import { requireSession } from "../lib/auth.js";
 import type { AppRecord } from "../lib/types.js";
 
@@ -15,6 +16,7 @@ const appSchema = z.object({
   iconVariantInverted: z.boolean().default(false),
   accent: z.string().regex(/^#([0-9a-fA-F]{6})$/, "Couleur invalide."),
   openMode: z.enum(["iframe", "external"]),
+  groupId: z.number().int().positive().nullable().optional(),
 });
 
 const reorderSchema = z.object({
@@ -27,6 +29,7 @@ const importAppsSchema = z.object({
 });
 
 const appRepository = createAppRepository(db);
+const groupRepository = createGroupRepository(db);
 
 function blockDemoWrites(reply: FastifyReply) {
   if (!isDemoMode) {
@@ -152,6 +155,10 @@ export async function registerAppRoutes(server: FastifyInstance) {
       return reply.code(400).send({ message: "Donnees invalides.", issues: parsed.error.flatten() });
     }
 
+    if (parsed.data.groupId !== undefined && parsed.data.groupId !== null && !groupRepository.hasGroup(parsed.data.groupId)) {
+      return reply.code(400).send({ message: "Groupe invalide." });
+    }
+
     const app = appRepository.insertApp(parsed.data);
     return reply.code(201).send({ item: appRepository.listApps().find((item) => item.id === app.id) });
   });
@@ -176,10 +183,14 @@ export async function registerAppRoutes(server: FastifyInstance) {
       return reply.code(400).send({ message: "Donnees invalides.", issues: parsed.error.flatten() });
     }
 
+    if (parsed.data.groupId !== undefined && parsed.data.groupId !== null && !groupRepository.hasGroup(parsed.data.groupId)) {
+      return reply.code(400).send({ message: "Groupe invalide." });
+    }
+
     const now = new Date().toISOString();
     db.prepare(
       `UPDATE apps
-       SET name = ?, description = ?, url = ?, icon = ?, icon_variant_mode = ?, icon_variant_inverted = ?, accent = ?, open_mode = ?, updated_at = ?
+       SET name = ?, description = ?, url = ?, icon = ?, icon_variant_mode = ?, icon_variant_inverted = ?, accent = ?, open_mode = ?, group_id = ?, updated_at = ?
        WHERE id = ?`
     ).run(
       parsed.data.name,
@@ -190,6 +201,7 @@ export async function registerAppRoutes(server: FastifyInstance) {
       parsed.data.iconVariantInverted ? 1 : 0,
       parsed.data.accent,
       parsed.data.openMode,
+      parsed.data.groupId ?? null,
       now,
       id
     );
@@ -259,6 +271,13 @@ export async function registerAppRoutes(server: FastifyInstance) {
     const parsed = importAppsSchema.safeParse(request.body);
     if (!parsed.success) {
       return reply.code(400).send({ message: "Import JSON invalide.", issues: parsed.error.flatten() });
+    }
+
+    const invalidGroupReference = parsed.data.items.some(
+      (item) => item.groupId !== undefined && item.groupId !== null && !groupRepository.hasGroup(item.groupId)
+    );
+    if (invalidGroupReference) {
+      return reply.code(400).send({ message: "Import JSON invalide." });
     }
 
     return appRepository.importApps(parsed.data.mode, parsed.data.items);

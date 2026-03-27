@@ -2,7 +2,7 @@ import { useMemo, useState, type Dispatch, type MouseEvent, type RefObject, type
 import { SortableContext, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { AppIcon } from "./AppIcon";
-import type { AppStatusEntry, ContextMenuState, DashboardIconsMetadataMap, SidebarMode, ThemeMode, WebAppEntry } from "../types";
+import type { AppStatusEntry, ContextMenuState, DashboardIconsMetadataMap, GroupEntry, SidebarMode, ThemeMode, WebAppEntry } from "../types";
 
 function SortableAppTile({
   app,
@@ -237,6 +237,7 @@ export function Sidebar({
   setSidebarMode,
   userName,
   recentApps,
+  groups,
   apps,
   selectedAppId,
   draggingAppId,
@@ -249,6 +250,7 @@ export function Sidebar({
   onOpenSidebarContextMenu,
   onOpenCreateEditor,
   onOpenJsonImport,
+  onOpenGroupManager,
   onLogout,
   onToggleTheme,
   onSelectApp,
@@ -262,6 +264,7 @@ export function Sidebar({
   setSidebarMode: Dispatch<SetStateAction<SidebarMode>>;
   userName: string;
   recentApps: WebAppEntry[];
+  groups: GroupEntry[];
   apps: WebAppEntry[];
   selectedAppId: number | null;
   draggingAppId: number | null;
@@ -274,6 +277,7 @@ export function Sidebar({
   onOpenSidebarContextMenu: (event: MouseEvent<HTMLElement>) => void;
   onOpenCreateEditor: () => void;
   onOpenJsonImport: () => void;
+  onOpenGroupManager: () => void;
   onLogout: () => Promise<void>;
   onToggleTheme: () => void;
   onSelectApp: (app: WebAppEntry) => void;
@@ -289,6 +293,26 @@ export function Sidebar({
 
     return apps.filter((app) => app.name.toLowerCase().includes(normalizedFilterQuery));
   }, [apps, draggingAppId, normalizedFilterQuery]);
+  const groupedSections = useMemo(() => {
+    const groupedApps = groups
+      .map((group) => ({
+        id: `group-${group.id}`,
+        label: group.name,
+        apps: filteredApps.filter((app) => app.group_id === group.id),
+      }))
+      .filter((section) => section.apps.length > 0);
+
+    const ungroupedApps = filteredApps.filter((app) => app.group_id === null);
+    if (ungroupedApps.length > 0) {
+      groupedApps.push({
+        id: "ungrouped",
+        label: "Sans groupe",
+        apps: ungroupedApps,
+      });
+    }
+
+    return groupedApps;
+  }, [filteredApps, groups]);
 
   return (
     <>
@@ -390,23 +414,50 @@ export function Sidebar({
             </label>
           ) : null}
           <SortableContext items={filteredApps.map((item) => item.id)} strategy={verticalListSortingStrategy}>
-            <div className="app-list">
-              {filteredApps.map((app) => (
-                <SortableAppTile
-                  key={app.id}
-                  app={app}
-                  active={app.id === selectedAppId}
-                  compact={sidebarMode === "compact"}
-                  onSelect={onSelectApp}
-                  onEdit={onEditApp}
-                  onContextMenu={onOpenContextMenu}
-                  themeMode={themeMode}
-                  dashboardIconsMetadata={dashboardIconsMetadata}
-                  appStatus={appStatuses[app.id]}
-                />
-              ))}
-              {filteredApps.length === 0 ? <p className="sidebar-empty-state">Aucune application ne correspond a la recherche.</p> : null}
-            </div>
+            {sidebarMode === "expanded" ? (
+              <div className="app-section-list">
+                {groupedSections.map((section) => (
+                  <section key={section.id} className="grouped-app-section">
+                    <p className="group-section-title">{section.label}</p>
+                    <div className="app-list">
+                      {section.apps.map((app) => (
+                        <SortableAppTile
+                          key={app.id}
+                          app={app}
+                          active={app.id === selectedAppId}
+                          compact={false}
+                          onSelect={onSelectApp}
+                          onEdit={onEditApp}
+                          onContextMenu={onOpenContextMenu}
+                          themeMode={themeMode}
+                          dashboardIconsMetadata={dashboardIconsMetadata}
+                          appStatus={appStatuses[app.id]}
+                        />
+                      ))}
+                    </div>
+                  </section>
+                ))}
+                {filteredApps.length === 0 ? <p className="sidebar-empty-state">Aucune application ne correspond a la recherche.</p> : null}
+              </div>
+            ) : (
+              <div className="app-list">
+                {filteredApps.map((app) => (
+                  <SortableAppTile
+                    key={app.id}
+                    app={app}
+                    active={app.id === selectedAppId}
+                    compact
+                    onSelect={onSelectApp}
+                    onEdit={onEditApp}
+                    onContextMenu={onOpenContextMenu}
+                    themeMode={themeMode}
+                    dashboardIconsMetadata={dashboardIconsMetadata}
+                    appStatus={appStatuses[app.id]}
+                  />
+                ))}
+                {filteredApps.length === 0 ? <p className="sidebar-empty-state">Aucune application ne correspond a la recherche.</p> : null}
+              </div>
+            )}
           </SortableContext>
         </div>
 
@@ -420,6 +471,9 @@ export function Sidebar({
           </button>
           <button className="secondary-button" type="button" onClick={onOpenJsonImport} title="Importer JSON">
             {sidebarMode === "expanded" ? "JSON" : "{}"}
+          </button>
+          <button className="secondary-button" type="button" onClick={onOpenGroupManager} title="Gerer les groupes">
+            {sidebarMode === "expanded" ? "Groupes" : "≡"}
           </button>
           <button className="secondary-button" type="button" onClick={() => void onLogout()} disabled={busy} title="Deconnexion">
             {sidebarMode === "expanded" ? "Quitter" : "⏻"}

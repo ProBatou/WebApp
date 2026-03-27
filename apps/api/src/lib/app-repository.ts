@@ -11,6 +11,7 @@ export type AppPayload = {
   iconVariantInverted: boolean;
   accent: string;
   openMode: "iframe" | "external";
+  groupId?: number | null;
 };
 
 export type ImportMode = "merge" | "replace";
@@ -43,8 +44,8 @@ export function createAppRepository(database: SqliteDatabase) {
     const sortRow = database.prepare("SELECT COALESCE(MAX(sort_order), 0) as maxOrder FROM apps").get() as { maxOrder: number };
     const result = database
       .prepare(
-        `INSERT INTO apps (name, description, url, icon, icon_variant_mode, icon_variant_inverted, accent, open_mode, is_default, sort_order, created_at, updated_at)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0, ?, ?, ?)`
+        `INSERT INTO apps (name, description, url, icon, icon_variant_mode, icon_variant_inverted, accent, open_mode, is_default, group_id, sort_order, created_at, updated_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0, ?, ?, ?, ?)`
       )
       .run(
         payload.name,
@@ -55,6 +56,7 @@ export function createAppRepository(database: SqliteDatabase) {
         payload.iconVariantInverted ? 1 : 0,
         payload.accent,
         payload.openMode,
+        payload.groupId ?? null,
         sortRow.maxOrder + 1,
         now,
         now
@@ -116,8 +118,8 @@ export function createAppRepository(database: SqliteDatabase) {
 
       const sortRow = database.prepare("SELECT COALESCE(MAX(sort_order), 0) as maxOrder FROM apps").get() as { maxOrder: number };
       const insertStatement = database.prepare(
-        `INSERT INTO apps (name, description, url, icon, icon_variant_mode, icon_variant_inverted, accent, open_mode, is_default, sort_order, created_at, updated_at)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0, ?, ?, ?)`
+        `INSERT INTO apps (name, description, url, icon, icon_variant_mode, icon_variant_inverted, accent, open_mode, is_default, group_id, sort_order, created_at, updated_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0, ?, ?, ?, ?)`
       );
 
       items.forEach((item, index) => {
@@ -130,6 +132,7 @@ export function createAppRepository(database: SqliteDatabase) {
           item.iconVariantInverted ? 1 : 0,
           item.accent,
           item.openMode,
+          item.groupId ?? null,
           sortRow.maxOrder + index + 1,
           now,
           now
