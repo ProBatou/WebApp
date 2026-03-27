@@ -31,19 +31,7 @@
       "expose": [],
       "runtime": "runc",
       "hostname": "webapp-v2",
-      "network_mode": "bridge",
-      "healthcheck": {
-        "test": [
-          "CMD",
-          "wget",
-          "-qO-",
-          "http://localhost:3004/api/health"
-        ],
-        "interval": 30000000000,
-        "timeout": 5000000000,
-        "retries": 3,
-        "start_period": 60000000000
-      }
+      "network_mode": "bridge"
     }
   }
 }
