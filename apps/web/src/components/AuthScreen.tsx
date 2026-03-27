@@ -3,6 +3,7 @@ import type { ThemeMode } from "../types";
 
 export function AuthScreen({
   needsSetup,
+  demoMode,
   themeMode,
   busy,
   authError,
@@ -12,6 +13,7 @@ export function AuthScreen({
   onToggleTheme,
 }: {
   needsSetup: boolean;
+  demoMode: boolean;
   themeMode: ThemeMode;
   busy: boolean;
   authError: string | null;
@@ -41,11 +43,22 @@ export function AuthScreen({
         </div>
 
         <div className="auth-copy-block">
-          <h2>{needsSetup ? "Creer le premier compte" : "Entrer dans le dashboard"}</h2>
+          <h2>{needsSetup ? "Creer le premier compte" : demoMode ? "Entrer dans la demo" : "Entrer dans le dashboard"}</h2>
           <p className="auth-subtitle">
-            {needsSetup ? "Configure l'acces initial a ton portail personnel." : "Connecte-toi pour retrouver tes applications dans une interface epuree."}
+            {needsSetup
+              ? "Configure l'acces initial a ton portail personnel."
+              : demoMode
+                ? "Utilise le compte demo fourni. Les modifications sont desactivees sur cette instance."
+                : "Connecte-toi pour retrouver tes applications dans une interface epuree."}
           </p>
         </div>
+
+        {demoMode ? (
+          <div className="auth-footer-note">
+            <span className="auth-footer-dot" />
+            <p>Compte demo : `demo` / `demo`</p>
+          </div>
+        ) : null}
 
         <form className="auth-form" onSubmit={(event) => void onSubmit(event)}>
           <label>
@@ -65,7 +78,7 @@ export function AuthScreen({
               type="password"
               value={credentials.password}
               onChange={(event) => setCredentials((current) => ({ ...current, password: event.target.value }))}
-              minLength={8}
+              minLength={demoMode ? 1 : 8}
               maxLength={128}
               required
             />

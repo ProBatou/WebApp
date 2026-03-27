@@ -17,6 +17,7 @@ export function useAuth({
 }) {
   const [user, setUser] = useState<AuthUser | null>(null);
   const [needsSetup, setNeedsSetup] = useState(false);
+  const [demoMode, setDemoMode] = useState(false);
   const [loading, setLoading] = useState(true);
   const [authError, setAuthError] = useState<string | null>(null);
   const [credentials, setCredentials] = useState({ username: "", password: "" });
@@ -28,7 +29,9 @@ export function useAuth({
         setError(null);
         const result = await apiFetch<BootstrapResponse>("/api/bootstrap", { method: "GET" });
         setNeedsSetup(result.needsSetup);
+        setDemoMode(result.demoMode);
         setUser(result.user);
+        setCredentials(result.demoMode ? { username: "demo", password: "demo" } : { username: "", password: "" });
 
         if (result.user) {
           await reloadApps();
@@ -84,6 +87,7 @@ export function useAuth({
   return {
     user,
     needsSetup,
+    demoMode,
     loading,
     authError,
     credentials,

@@ -7,6 +7,7 @@ import cookie from "@fastify/cookie";
 import rateLimit from "@fastify/rate-limit";
 import staticPlugin from "@fastify/static";
 import "./lib/db.js";
+import { ensureDemoState } from "./lib/demo.js";
 import { registerAuthRoutes } from "./routes/auth.js";
 import { registerAppRoutes } from "./routes/apps.js";
 
@@ -18,6 +19,8 @@ const server = Fastify({
   logger: true,
   trustProxy: true,
 });
+
+await ensureDemoState();
 
 await server.register(cors, {
   origin: ["http://localhost:5173"],
