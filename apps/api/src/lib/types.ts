@@ -13,6 +13,7 @@ export type AppRecord = {
   accent: string;
   open_mode: AppMode;
   is_default: number;
+  is_shared: number;
   group_id: number | null;
   sort_order: number;
   created_at: string;

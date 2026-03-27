@@ -2,11 +2,13 @@ import type { FastifyInstance } from "fastify";
 import { z } from "zod";
 import {
   clearSession,
-  createUser,
+  consumeInvitation,
+  createInvitation,
   deleteUser,
   createInitialUser,
   createSession,
   findUserByUsername,
+  getInvitation,
   getSessionUser,
   hasUsers,
   hashPassword,
@@ -30,13 +32,16 @@ const loginPayloadSchema = z.object({
 });
 
 const createUserPayloadSchema = z.object({
-  username: z.string().trim().min(3).max(32),
-  password: z.string().min(8).max(128),
   role: z.enum(["admin", "viewer"]).default("viewer"),
 });
 
 const updateUserRolePayloadSchema = z.object({
   role: z.enum(["admin", "viewer"]),
+});
+
+const acceptInvitationPayloadSchema = z.object({
+  username: z.string().trim().min(3).max(32),
+  password: z.string().min(8).max(128),
 });
 
 export async function registerAuthRoutes(server: FastifyInstance) {
@@ -139,7 +144,7 @@ export async function registerAuthRoutes(server: FastifyInstance) {
   });
 
   server.post(
-    "/api/users",
+    "/api/invitations",
     {
       config: { rateLimit: { max: 20, timeWindow: "1 minute" } },
     },
@@ -162,15 +167,67 @@ export async function registerAuthRoutes(server: FastifyInstance) {
         return reply.code(400).send({ message: "Donnees invalides." });
       }
 
-      const existingUser = findUserByUsername(parsed.data.username);
-      if (existingUser) {
-        return reply.code(409).send({ message: "Nom d'utilisateur deja utilise." });
+      const invitation = createInvitation(parsed.data.role, user.id);
+      const host = request.headers.host ?? "localhost:3001";
+      const requestOrigin = request.headers.origin ?? `${request.protocol}://${host}`;
+      return reply.code(201).send({
+        token: invitation.id,
+        role: invitation.role,
+        expiresAt: invitation.expires_at,
+        inviteUrl: `${requestOrigin}/?invite=${encodeURIComponent(invitation.id)}`,
+      });
+    }
+  );
+
+  server.get("/api/invitations/:token", async (request, reply) => {
+    const token = (request.params as { token: string }).token;
+    const invitation = getInvitation(token);
+    if (!invitation) {
+      return reply.code(404).send({ message: "Invitation invalide ou expiree." });
+    }
+
+    return {
+      role: invitation.role,
+      expiresAt: invitation.expires_at,
+    };
+  });
+
+  server.post(
+    "/api/invitations/:token/accept",
+    {
+      config: { rateLimit: { max: 10, timeWindow: "1 minute" } },
+    },
+    async (request, reply) => {
+      if (isDemoMode) {
+        return reply.code(403).send({ message: "Mode demo: modifications desactivees." });
+      }
+
+      const token = (request.params as { token: string }).token;
+      const parsed = acceptInvitationPayloadSchema.safeParse(request.body);
+      if (!parsed.success) {
+        return reply.code(400).send({ message: "Donnees invalides." });
       }
 
       const passwordHash = await hashPassword(parsed.data.password);
-      createUser(parsed.data.username, passwordHash, parsed.data.role);
+      const result = consumeInvitation(token, parsed.data.username, passwordHash);
+      if ("error" in result) {
+        if (result.error === "invalid_invitation") {
+          return reply.code(404).send({ message: "Invitation invalide ou expiree." });
+        }
 
-      return reply.code(201).send({ items: listUsers() });
+        if (result.error === "username_taken") {
+          return reply.code(409).send({ message: "Nom d'utilisateur deja utilise." });
+        }
+
+        return reply.code(400).send({ message: "Invitation invalide." });
+      }
+
+      clearSession(request, reply, request.cookies[sessionCookieName]);
+      createSession(request, reply, result.user.id);
+
+      return {
+        user: result.user,
+      };
     }
   );
 

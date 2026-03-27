@@ -16,6 +16,7 @@ const appSchema = z.object({
   iconVariantInverted: z.boolean().default(false),
   accent: z.string().regex(/^#([0-9a-fA-F]{6})$/, "Couleur invalide."),
   openMode: z.enum(["iframe", "external"]),
+  isShared: z.boolean().default(true),
   groupId: z.number().int().positive().nullable().optional(),
 });
 
@@ -57,7 +58,7 @@ export async function registerAppRoutes(server: FastifyInstance) {
     }
 
     return {
-      items: appRepository.listApps(),
+      items: appRepository.listAppsForRole(user.role),
     };
   });
 
@@ -72,8 +73,14 @@ export async function registerAppRoutes(server: FastifyInstance) {
       return reply.code(400).send({ message: "Identifiant invalide." });
     }
 
-    const app = db.prepare("SELECT id, url FROM apps WHERE id = ?").get(id) as Pick<AppRecord, "id" | "url"> | undefined;
+    const app = db.prepare("SELECT id, url, is_shared FROM apps WHERE id = ?").get(id) as
+      | Pick<AppRecord, "id" | "url" | "is_shared">
+      | undefined;
     if (!app) {
+      return reply.code(404).send({ message: "Application introuvable." });
+    }
+
+    if (user.role !== "admin" && app.is_shared !== 1) {
       return reply.code(404).send({ message: "Application introuvable." });
     }
 
@@ -211,7 +218,7 @@ export async function registerAppRoutes(server: FastifyInstance) {
     const now = new Date().toISOString();
     db.prepare(
       `UPDATE apps
-       SET name = ?, description = ?, url = ?, icon = ?, icon_variant_mode = ?, icon_variant_inverted = ?, accent = ?, open_mode = ?, group_id = ?, updated_at = ?
+       SET name = ?, description = ?, url = ?, icon = ?, icon_variant_mode = ?, icon_variant_inverted = ?, accent = ?, open_mode = ?, is_shared = ?, group_id = ?, updated_at = ?
        WHERE id = ?`
     ).run(
       parsed.data.name,
@@ -222,6 +229,7 @@ export async function registerAppRoutes(server: FastifyInstance) {
       parsed.data.iconVariantInverted ? 1 : 0,
       parsed.data.accent,
       parsed.data.openMode,
+      parsed.data.isShared ? 1 : 0,
       parsed.data.groupId ?? null,
       now,
       id

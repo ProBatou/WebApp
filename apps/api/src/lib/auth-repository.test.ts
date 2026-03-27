@@ -221,3 +221,28 @@ test("deleteUser forbids self deletion", () => {
     database.close();
   }
 });
+
+test("createInvitation and consumeInvitation create the invited user with the requested role", () => {
+  const { database, repository } = createTestAuthRepository();
+  try {
+    const admin = repository.createUser("admin", "hash", "admin");
+    const invitation = repository.createInvitation("viewer", admin.id);
+
+    const consumed = repository.consumeInvitation(invitation.id, "new-user", "hash2");
+    assert.ok("user" in consumed && consumed.user);
+    if (!("user" in consumed) || !consumed.user) {
+      assert.fail("Expected invitation consumption to create a user.");
+    }
+
+    assert.equal(consumed.user.username, "new-user");
+    assert.equal(consumed.user.role, "viewer");
+
+    const invitationRow = database
+      .prepare("SELECT id, used_at FROM invitations WHERE id = ?")
+      .get(invitation.id) as { id: string; used_at: string | null } | undefined;
+    assert.ok(invitationRow);
+    assert.notEqual(invitationRow?.used_at, null);
+  } finally {
+    database.close();
+  }
+});

@@ -34,6 +34,7 @@ export const emptyEditorState: AppEditorState = {
   iconVariantInverted: false,
   accent: "#cf5c36",
   openMode: "iframe",
+  isShared: true,
   groupId: null,
 };
 
@@ -243,6 +244,7 @@ export function exportAppsToJson(apps: WebAppEntry[]) {
       iconVariantInverted: app.icon_variant_inverted,
       accent: app.accent,
       openMode: app.open_mode,
+      isShared: app.is_shared,
       groupId: app.group_id,
     })),
     null,
@@ -287,6 +289,7 @@ export function parseImportedApps(rawValue: string) {
     const iconVariantInverted = typeof item.iconVariantInverted === "boolean" ? item.iconVariantInverted : false;
     const accent = typeof item.accent === "string" && isAccentColor(item.accent) ? item.accent : emptyEditorState.accent;
     const openMode = isAppMode(item.openMode) ? item.openMode : emptyEditorState.openMode;
+    const isShared = typeof item.isShared === "boolean" ? item.isShared : true;
     const groupId = typeof item.groupId === "number" && Number.isInteger(item.groupId) && item.groupId > 0 ? item.groupId : null;
 
     if (name.length < 2) {
@@ -317,6 +320,7 @@ export function parseImportedApps(rawValue: string) {
       iconVariantInverted,
       accent,
       openMode,
+      isShared,
       groupId,
     };
   });

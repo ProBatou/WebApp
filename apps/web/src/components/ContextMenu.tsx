@@ -4,6 +4,7 @@ import type { ContextMenuState, SidebarMode } from "../types";
 export function ContextMenu({
   contextMenu,
   sidebarMode,
+  canManageApps,
   onClose,
   onRefresh,
   onEdit,
@@ -16,6 +17,7 @@ export function ContextMenu({
 }: {
   contextMenu: ContextMenuState;
   sidebarMode: SidebarMode;
+  canManageApps: boolean;
   onClose: () => void;
   onRefresh: () => void;
   onEdit: () => void;
@@ -94,22 +96,26 @@ export function ContextMenu({
               Rafraichir
             </button>
           ) : null}
-          <button type="button" className="sidebar-context-item" role="menuitem" onClick={onEdit}>
-            Editer
-          </button>
-          <button type="button" className="sidebar-context-item" role="menuitem" onClick={onToggleDefault}>
-            {contextMenu.app.is_default ? "Retirer des favoris" : "Definir par defaut"}
-          </button>
-          <button type="button" className="sidebar-context-item" role="menuitem" onClick={onDelete}>
-            Supprimer
-          </button>
+          {canManageApps ? (
+            <>
+              <button type="button" className="sidebar-context-item" role="menuitem" onClick={onEdit}>
+                Editer
+              </button>
+              <button type="button" className="sidebar-context-item" role="menuitem" onClick={onToggleDefault}>
+                {contextMenu.app.is_default ? "Retirer des favoris" : "Definir par defaut"}
+              </button>
+              <button type="button" className="sidebar-context-item" role="menuitem" onClick={onDelete}>
+                Supprimer
+              </button>
+            </>
+          ) : null}
         </>
       ) : null}
-      <button type="button" className="sidebar-context-item" role="menuitem" onClick={onCreate}>
-        Nouvelle app
-      </button>
-      {!contextMenu.app ? (
+      {!contextMenu.app && canManageApps ? (
         <>
+          <button type="button" className="sidebar-context-item" role="menuitem" onClick={onCreate}>
+            Nouvelle app
+          </button>
           <button type="button" className="sidebar-context-item" role="menuitem" onClick={onImport}>
             Importer JSON
           </button>

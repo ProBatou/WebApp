@@ -864,7 +864,14 @@ textarea {
 
 .user-create-grid {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) 140px auto;
+  grid-template-columns: 180px minmax(0, 1fr);
+  gap: 10px;
+  align-items: center;
+}
+
+.invitation-link-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
   gap: 10px;
   align-items: center;
 }
@@ -1244,6 +1251,96 @@ textarea {
   background: var(--modal-surface);
   display: flex;
   flex-direction: column;
+}
+
+.app-editor-modal {
+  width: min(980px, 100%);
+  max-height: min(94vh, 980px);
+  overflow: hidden;
+  padding: 18px;
+}
+
+.app-editor-modal .editor-form {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px 12px;
+  align-content: start;
+}
+
+.app-editor-modal .editor-logo-row,
+.app-editor-modal .icon-search-panel,
+.app-editor-modal .preview-card,
+.app-editor-modal .editor-actions {
+  grid-column: 1 / -1;
+}
+
+.app-editor-modal .editor-header h3 {
+  margin-top: 6px;
+  font-size: 1.36rem;
+}
+
+.app-editor-modal .icon-search-panel {
+  gap: 8px;
+}
+
+.app-editor-modal .icon-search-results {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.app-editor-modal .icon-search-item {
+  padding: 10px;
+  border-radius: 14px;
+  gap: 10px;
+}
+
+.app-editor-modal .icon-search-preview {
+  width: 36px;
+  height: 36px;
+  flex: 0 0 36px;
+  border-radius: 12px;
+}
+
+.app-editor-modal .icon-search-preview img {
+  width: 22px;
+  height: 22px;
+}
+
+.app-editor-modal .icon-variant-badge {
+  display: none;
+}
+
+.app-editor-modal .preview-card {
+  padding: 12px;
+  border-radius: 16px;
+}
+
+.app-editor-modal .preview-card-content {
+  gap: 8px;
+}
+
+.app-editor-modal .selected-icon-variants-grid {
+  gap: 8px;
+}
+
+.app-editor-modal .selected-icon-variant-card {
+  padding: 10px;
+  border-radius: 14px;
+}
+
+.app-editor-modal .selected-icon-variant-preview {
+  width: 42px;
+  height: 42px;
+  flex: 0 0 42px;
+}
+
+.app-editor-modal .selected-icon-variant-preview img {
+  width: 24px;
+  height: 24px;
+}
+
+.app-editor-modal .editor-actions {
+  margin-top: 2px;
 }
 
 .editor-header {
@@ -1724,6 +1821,23 @@ a[aria-disabled="true"] {
     top: 14px;
     left: 18px;
     right: 18px;
+  }
+
+  .app-editor-modal {
+    width: min(760px, 100%);
+    max-height: min(92vh, 920px);
+    overflow: auto;
+    padding: 18px;
+  }
+
+  .app-editor-modal .editor-form {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .app-editor-modal .icon-search-results {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 

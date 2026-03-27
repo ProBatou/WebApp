@@ -32,7 +32,18 @@ import { useEditor } from "./hooks/useEditor";
 import { useGroups } from "./hooks/useGroups";
 import { useIframes } from "./hooks/useIframes";
 import { useToast } from "./hooks/useToast";
-import type { ContextMenuState, ImportAppsResponse, JsonImportMode, JsonModalMode, SidebarMode, ThemeMode, UserEntry, UsersResponse, WebAppEntry } from "./types";
+import type {
+  ContextMenuState,
+  ImportAppsResponse,
+  InvitationResponse,
+  JsonImportMode,
+  JsonModalMode,
+  SidebarMode,
+  ThemeMode,
+  UserEntry,
+  UsersResponse,
+  WebAppEntry,
+} from "./types";
 
 export default function App() {
   const sensors = useSensors(
@@ -170,6 +181,8 @@ export default function App() {
     loading,
     authError,
     credentials,
+    inviteToken,
+    inviteRole,
     setCredentials,
     handleAuthSubmit,
     handleLogout,
@@ -185,6 +198,7 @@ export default function App() {
     apps,
     enabled: Boolean(user),
   });
+  const canManageApps = user?.role === "admin";
 
   useEffect(() => {
     document.documentElement.dataset.theme = themeMode;
@@ -276,7 +290,7 @@ export default function App() {
         return;
       }
 
-      if (event.key.toLowerCase() === "n") {
+      if (canManageApps && event.key.toLowerCase() === "n") {
         event.preventDefault();
         openCreateEditorFromUi();
         return;
@@ -295,7 +309,7 @@ export default function App() {
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [closeEditor, closeJsonModal, user]);
+  }, [canManageApps, closeEditor, closeJsonModal, user]);
 
   const reloadUsers = useCallback(async () => {
     const result = await apiFetch<UsersResponse>("/api/users", { method: "GET" });
@@ -350,6 +364,10 @@ export default function App() {
   };
 
   const openCreateEditorFromUi = () => {
+    if (!canManageApps) {
+      return;
+    }
+
     setContextMenu(null);
     closeJsonModal();
     setGroupManagerOpen(false);
@@ -359,6 +377,10 @@ export default function App() {
   };
 
   const openEditEditorFromUi = (app: WebAppEntry) => {
+    if (!canManageApps) {
+      return;
+    }
+
     setContextMenu(null);
     closeJsonModal();
     setGroupManagerOpen(false);
@@ -368,6 +390,10 @@ export default function App() {
   };
 
   const openJsonImport = () => {
+    if (!canManageApps) {
+      return;
+    }
+
     setContextMenu(null);
     closeEditor();
     setGroupManagerOpen(false);
@@ -381,6 +407,10 @@ export default function App() {
   };
 
   const openJsonExport = () => {
+    if (!canManageApps) {
+      return;
+    }
+
     setContextMenu(null);
     closeEditor();
     setGroupManagerOpen(false);
@@ -475,6 +505,10 @@ export default function App() {
   };
 
   const openContextMenu = (event: MouseEvent<HTMLDivElement>, app: WebAppEntry) => {
+    if (!canManageApps && app.open_mode !== "iframe") {
+      return;
+    }
+
     event.preventDefault();
     setGroupManagerOpen(false);
     setUserManagerOpen(false);
@@ -493,6 +527,10 @@ export default function App() {
   };
 
   const openSidebarContextMenu = (event: MouseEvent<HTMLElement>) => {
+    if (!canManageApps) {
+      return;
+    }
+
     event.preventDefault();
     setGroupManagerOpen(false);
     setUserManagerOpen(false);
@@ -583,6 +621,8 @@ export default function App() {
         busy={busy}
         authError={authError}
         credentials={credentials}
+        inviteToken={inviteToken}
+        inviteRole={inviteRole}
         setCredentials={setCredentials}
         onSubmit={handleAuthSubmit}
         onToggleTheme={toggleThemeMode}
@@ -613,6 +653,7 @@ export default function App() {
           setSidebarMode={setSidebarMode}
           userName={user.username}
           userRole={user.role}
+          canManageApps={canManageApps}
           groups={groups}
           apps={apps}
           selectedAppId={selectedAppId}
@@ -661,6 +702,7 @@ export default function App() {
         <ContextMenu
           contextMenu={contextMenu}
           sidebarMode={sidebarMode}
+          canManageApps={canManageApps}
           onClose={() => setContextMenu(null)}
           onRefresh={() => {
             if (contextMenu?.app) {
@@ -693,7 +735,7 @@ export default function App() {
         />
 
         <AppEditor
-          open={editorOpen}
+          open={editorOpen && canManageApps}
           busy={busy}
           editorMode={editorMode}
           editorState={editorState}
@@ -768,16 +810,16 @@ export default function App() {
           currentUserId={user.id}
           users={managedUsers}
           onClose={() => setUserManagerOpen(false)}
-          onCreateUser={async (payload) => {
+          onCreateInvitation={async (role) => {
             try {
               setBusy(true);
               setError(null);
-              const result = await apiFetch<UsersResponse>("/api/users", {
+              const result = await apiFetch<InvitationResponse>("/api/invitations", {
                 method: "POST",
-                body: JSON.stringify(payload),
+                body: JSON.stringify({ role }),
               });
-              setManagedUsers(result.items);
-              pushToast(`Utilisateur ${payload.username} ajoute.`);
+              pushToast("Lien d'invitation genere.");
+              return result.inviteUrl;
             } finally {
               setBusy(false);
             }

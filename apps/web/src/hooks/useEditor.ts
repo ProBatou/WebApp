@@ -58,6 +58,7 @@ export function useEditor({
       iconVariantInverted: app.icon_variant_inverted,
       accent: app.accent,
       openMode: app.open_mode,
+      isShared: app.is_shared,
       groupId: app.group_id,
     });
     setIconQuery(app.icon);

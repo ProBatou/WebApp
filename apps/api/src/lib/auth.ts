@@ -61,4 +61,16 @@ export function deleteUser(...args: Parameters<typeof authRepository.deleteUser>
   return authRepository.deleteUser(...args);
 }
 
+export function createInvitation(...args: Parameters<typeof authRepository.createInvitation>) {
+  return authRepository.createInvitation(...args);
+}
+
+export function getInvitation(...args: Parameters<typeof authRepository.getInvitation>) {
+  return authRepository.getInvitation(...args);
+}
+
+export function consumeInvitation(...args: Parameters<typeof authRepository.consumeInvitation>) {
+  return authRepository.consumeInvitation(...args);
+}
+
 export { sessionCookieName };

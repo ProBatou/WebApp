@@ -8,6 +8,8 @@ export function AuthScreen({
   busy,
   authError,
   credentials,
+  inviteToken,
+  inviteRole,
   setCredentials,
   onSubmit,
   onToggleTheme,
@@ -18,16 +20,35 @@ export function AuthScreen({
   busy: boolean;
   authError: string | null;
   credentials: { username: string; password: string };
+  inviteToken: string | null;
+  inviteRole: "admin" | "viewer" | null;
   setCredentials: Dispatch<SetStateAction<{ username: string; password: string }>>;
   onSubmit: (event: FormEvent<HTMLFormElement>) => Promise<void>;
   onToggleTheme: () => void;
 }) {
+  const inviteMode = Boolean(inviteToken);
+  const eyebrow = inviteMode ? "Invitation" : needsSetup ? "Initialisation" : "Connexion";
+  const title = inviteMode
+    ? "Finaliser votre compte"
+    : needsSetup
+      ? "Creer le premier compte"
+      : demoMode
+        ? "Entrer dans la demo"
+        : "Entrer dans le dashboard";
+  const subtitle = inviteMode
+    ? `Definis ton username et ton mot de passe pour activer ton acces (${inviteRole ?? "viewer"}).`
+    : needsSetup
+      ? "Configure l'acces initial a ton portail personnel."
+      : demoMode
+        ? "Utilise le compte demo fourni. Les modifications sont desactivees sur cette instance."
+        : "Connecte-toi pour retrouver tes applications dans une interface epuree.";
+
   return (
     <div className="auth-shell">
       <section className="auth-panel auth-card form-panel">
         <div className="auth-card-header">
           <div>
-            <p className="eyebrow">{needsSetup ? "Initialisation" : "Connexion"}</p>
+            <p className="eyebrow">{eyebrow}</p>
             <h1 className="auth-title">WebApp</h1>
           </div>
           <div className="auth-header-actions">
@@ -43,17 +64,11 @@ export function AuthScreen({
         </div>
 
         <div className="auth-copy-block">
-          <h2>{needsSetup ? "Creer le premier compte" : demoMode ? "Entrer dans la demo" : "Entrer dans le dashboard"}</h2>
-          <p className="auth-subtitle">
-            {needsSetup
-              ? "Configure l'acces initial a ton portail personnel."
-              : demoMode
-                ? "Utilise le compte demo fourni. Les modifications sont desactivees sur cette instance."
-                : "Connecte-toi pour retrouver tes applications dans une interface epuree."}
-          </p>
+          <h2>{title}</h2>
+          <p className="auth-subtitle">{subtitle}</p>
         </div>
 
-        {demoMode ? (
+        {demoMode && !inviteMode ? (
           <div className="auth-footer-note">
             <span className="auth-footer-dot" />
             <p>Compte demo : `demo` / `demo`</p>
@@ -85,7 +100,7 @@ export function AuthScreen({
           </label>
           {authError ? <p className="form-error">{authError}</p> : null}
           <button className="primary-button auth-submit" type="submit" disabled={busy}>
-            {needsSetup ? "Creer le compte" : "Se connecter"}
+            {inviteMode ? "Activer mon compte" : needsSetup ? "Creer le compte" : "Se connecter"}
           </button>
         </form>
 

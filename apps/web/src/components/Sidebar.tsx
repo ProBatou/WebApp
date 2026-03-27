@@ -53,6 +53,7 @@ function SortableAppTile({
   themeMode,
   dashboardIconsMetadata,
   appStatus,
+  canManageApps,
 }: {
   app: WebAppEntry;
   active: boolean;
@@ -63,6 +64,7 @@ function SortableAppTile({
   themeMode: ThemeMode;
   dashboardIconsMetadata: DashboardIconsMetadataMap;
   appStatus?: AppStatusEntry;
+  canManageApps: boolean;
 }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: app.id });
   const constrainedTransform = transform ? { ...transform, x: 0 } : null;
@@ -92,8 +94,8 @@ function SortableAppTile({
         onClick={() => onSelect(app)}
         title={app.name}
         aria-label={`Ouvrir ${app.name}`}
-        {...attributes}
-        {...listeners}
+        {...(canManageApps ? attributes : {})}
+        {...(canManageApps ? listeners : {})}
       >
         <AppIcon
           icon={app.icon}
@@ -136,7 +138,7 @@ function SortableAppTile({
           </span>
         ) : null}
       </button>
-      {!compact ? (
+      {!compact && canManageApps ? (
         <div className="app-tile-actions">
           <button className="ghost-icon-button" type="button" onClick={() => onEdit(app)} aria-label={`Modifier ${app.name}`}>
             Edit
@@ -202,6 +204,7 @@ export function Sidebar({
   setSidebarMode,
   userName,
   userRole,
+  canManageApps,
   groups,
   apps,
   selectedAppId,
@@ -230,6 +233,7 @@ export function Sidebar({
   setSidebarMode: Dispatch<SetStateAction<SidebarMode>>;
   userName: string;
   userRole: "admin" | "viewer";
+  canManageApps: boolean;
   groups: GroupEntry[];
   apps: WebAppEntry[];
   selectedAppId: number | null;
@@ -441,9 +445,10 @@ export function Sidebar({
                                 onEdit={onEditApp}
                                 onContextMenu={onOpenContextMenu}
                                 themeMode={themeMode}
-                                dashboardIconsMetadata={dashboardIconsMetadata}
-                                appStatus={appStatuses[app.id]}
-                              />
+                              dashboardIconsMetadata={dashboardIconsMetadata}
+                              appStatus={appStatuses[app.id]}
+                              canManageApps={canManageApps}
+                            />
                             ))}
                           </div>
                         </SortableContext>
@@ -467,6 +472,7 @@ export function Sidebar({
                     themeMode={themeMode}
                     dashboardIconsMetadata={dashboardIconsMetadata}
                     appStatus={appStatuses[app.id]}
+                    canManageApps={canManageApps}
                   />
                 ))}
                 {visibleAppsInCompact.length === 0 ? <p className="sidebar-empty-state">Aucune application visible.</p> : null}
@@ -480,72 +486,80 @@ export function Sidebar({
         ) : null}
 
         <div className="sidebar-bottom-actions">
-          <button className="primary-button" type="button" onClick={onOpenCreateEditor} title="Nouvelle app">
-            {sidebarMode === "expanded" ? "Nouvelle" : "+"}
-          </button>
-          <div ref={actionsMenuRef} className={actionsMenuOpen ? "sidebar-actions-menu open" : "sidebar-actions-menu"}>
-            <button
-              className="secondary-button sidebar-actions-trigger"
-              type="button"
-              onClick={() => setActionsMenuOpen((current) => !current)}
-              title="Actions"
-              aria-haspopup="menu"
-              aria-expanded={actionsMenuOpen}
-            >
-              {sidebarMode === "expanded" ? "Actions" : "⋯"}
-            </button>
-            {actionsMenuOpen ? (
-              <div className="sidebar-actions-popover" role="menu" aria-label="Actions de la barre laterale">
+          {canManageApps ? (
+            <>
+              <button className="primary-button" type="button" onClick={onOpenCreateEditor} title="Nouvelle app">
+                {sidebarMode === "expanded" ? "Nouvelle" : "+"}
+              </button>
+              <div ref={actionsMenuRef} className={actionsMenuOpen ? "sidebar-actions-menu open" : "sidebar-actions-menu"}>
                 <button
-                  className="secondary-button"
+                  className="secondary-button sidebar-actions-trigger"
                   type="button"
-                  onClick={() => {
-                    setActionsMenuOpen(false);
-                    onOpenJsonImport();
-                  }}
-                  title="Importer JSON"
+                  onClick={() => setActionsMenuOpen((current) => !current)}
+                  title="Actions"
+                  aria-haspopup="menu"
+                  aria-expanded={actionsMenuOpen}
                 >
-                  JSON
+                  {sidebarMode === "expanded" ? "Actions" : "⋯"}
                 </button>
-                <button
-                  className="secondary-button"
-                  type="button"
-                  onClick={() => {
-                    setActionsMenuOpen(false);
-                    onOpenGroupManager();
-                  }}
-                  title="Gerer les groupes"
-                >
-                  Groupes
-                </button>
-                {userRole === "admin" ? (
-                  <button
-                    className="secondary-button"
-                    type="button"
-                    onClick={() => {
-                      setActionsMenuOpen(false);
-                      onOpenUserManager();
-                    }}
-                    title="Gerer les utilisateurs"
-                  >
-                    Utilisateurs
-                  </button>
+                {actionsMenuOpen ? (
+                  <div className="sidebar-actions-popover" role="menu" aria-label="Actions de la barre laterale">
+                    <button
+                      className="secondary-button"
+                      type="button"
+                      onClick={() => {
+                        setActionsMenuOpen(false);
+                        onOpenJsonImport();
+                      }}
+                      title="Importer JSON"
+                    >
+                      JSON
+                    </button>
+                    <button
+                      className="secondary-button"
+                      type="button"
+                      onClick={() => {
+                        setActionsMenuOpen(false);
+                        onOpenGroupManager();
+                      }}
+                      title="Gerer les groupes"
+                    >
+                      Groupes
+                    </button>
+                    {userRole === "admin" ? (
+                      <button
+                        className="secondary-button"
+                        type="button"
+                        onClick={() => {
+                          setActionsMenuOpen(false);
+                          onOpenUserManager();
+                        }}
+                        title="Gerer les utilisateurs"
+                      >
+                        Utilisateurs
+                      </button>
+                    ) : null}
+                    <button
+                      className="secondary-button"
+                      type="button"
+                      onClick={() => {
+                        setActionsMenuOpen(false);
+                        void onLogout();
+                      }}
+                      disabled={busy}
+                      title="Deconnexion"
+                    >
+                      Quitter
+                    </button>
+                  </div>
                 ) : null}
-                <button
-                  className="secondary-button"
-                  type="button"
-                  onClick={() => {
-                    setActionsMenuOpen(false);
-                    void onLogout();
-                  }}
-                  disabled={busy}
-                  title="Deconnexion"
-                >
-                  Quitter
-                </button>
               </div>
-            ) : null}
-          </div>
+            </>
+          ) : (
+            <button className="secondary-button" type="button" onClick={() => void onLogout()} disabled={busy} title="Deconnexion">
+              {sidebarMode === "expanded" ? "Quitter" : "⏻"}
+            </button>
+          )}
           <button className="ghost-icon-button theme-toggle" type="button" onClick={onToggleTheme} aria-label="Basculer le theme" title="Dark mode">
             {themeMode === "light" ? "◐" : "◑"}
           </button>
