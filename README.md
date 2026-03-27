@@ -86,6 +86,7 @@ Services disponibles :
 
 Le depot contient aussi une configuration dediee a Cosmos avec `cosmos-service.json`.
 Cette configuration utilise directement l'image Docker GHCR publiee.
+Pour eviter les problemes de permissions sur les bind mounts Cosmos, ce service s'execute en root uniquement dans ce contexte.
 
 Configuration utilisee :
 
@@ -93,6 +94,7 @@ Configuration utilisee :
 image : ghcr.io/probatou/webapp:latest
 data  : /cosmos-storage/webapp-v2/data -> /app/data
 db    : /app/data/webapp.db
+user  : root (compatibilite bind mount Cosmos)
 port  : 3004
 ```
 
