@@ -1,0 +1,14 @@
+node_modules
+apps/*/node_modules
+apps/web/dist
+apps/api/dist
+apps/api/data
+*.db
+.env
+.env.*
+.git
+.gitignore
+README.md
+README/
+*.log
+.DS_Store
