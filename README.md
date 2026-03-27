@@ -1,67 +1,71 @@
 # WebApp V2
 
-WebApp est un agregateur d'applications web personnel. Cette V2 remplace l'ancienne base PHP/JavaScript par un monorepo TypeScript avec un frontend React/Vite et une API Fastify.
+WebApp V2 est un portail personnel pour centraliser ses applications web dans une interface unique.
+Le projet remplace l'ancienne version PHP/JavaScript par un monorepo TypeScript compose d'un frontend React/Vite et d'une API Fastify.
 
 ![Apercu WebApp V2](./docs/webapp-v2-preview.png)
 
-## Apercu
+## Fonctionnalites
 
-WebApp centralise tes services dans une interface unique avec :
-
-- authentification par session HTTP only
-- ouverture des apps en iframe ou dans un onglet externe
+- authentification par session HTTP-only
+- ouverture des applications en iframe ou dans un onglet externe
 - reorganisation par glisser-deposer
 - import et export JSON
-- stockage local SQLite
-- deploiement simple en local ou via Docker/Cosmos
+- stockage local avec SQLite
+- deploiement simple en local, via Docker ou dans un environnement homelab
 
-## Stack
+## Stack technique
 
-- Frontend : React 19 + Vite + TypeScript
-- Backend : Fastify 5 + TypeScript
-- Base de donnees : SQLite
-- Validation : Zod
-- Auth : cookies httpOnly + sessions serveur
-- Workspace : npm workspaces
+- frontend : React 19 + Vite + TypeScript
+- backend : Fastify 5 + TypeScript
+- base de donnees : SQLite avec `better-sqlite3`
+- validation : Zod
+- authentification : cookies HTTP-only + sessions serveur
+- monorepo : npm workspaces
+
+## Structure du projet
+
+```text
+apps/
+  api/   # API Fastify + SQLite
+  web/   # Frontend React/Vite
+package.json
+package-lock.json
+tsconfig.base.json
+Dockerfile
+docker-compose.yml
+cosmos-service.json
+start.sh
+```
 
 ## Prerequis
 
-- Node.js >= 20
+- Node.js 20 ou plus recent
 - npm
 
-## Installation
+## Installation locale
 
 ```bash
 git clone https://github.com/ProBatou/WebApp.git
 cd WebApp
 npm install
-npm run build
 ```
 
-## Developpement local
+## Developpement
+
+Pour lancer le frontend et l'API ensemble :
 
 ```bash
 npm run dev
 ```
 
-Services disponibles en developpement :
+Services disponibles :
 
-- Frontend : `http://localhost:5173`
+- frontend : `http://localhost:5173`
 - API : `http://localhost:3001`
-- Healthcheck API : `http://localhost:3001/api/health`
+- healthcheck : `http://localhost:3001/api/health`
 
-Le frontend Vite proxy automatiquement les requetes `/api` vers le backend Fastify sur le port `3001`.
-
-## Preview frontend
-
-```bash
-npm run build --workspace apps/web
-npm --workspace apps/web run preview
-```
-
-Service disponible :
-
-- Preview Vite : `http://localhost:4173`
+En developpement, Vite proxy automatiquement les requetes `/api` vers Fastify.
 
 ## Build de production
 
@@ -69,14 +73,22 @@ Service disponible :
 npm run build
 ```
 
-Le build frontend est genere dans `apps/web/dist/`.
-Si le build frontend existe, l'API Fastify sert aussi les fichiers statiques de l'application.
-Par defaut, le serveur de production tourne sur `http://localhost:3001` sauf si `PORT` est surcharge.
+Le build du frontend est genere dans `apps/web/dist`.
+Si ce build est present, l'API Fastify sert directement l'application web via `@fastify/static`.
+
+Pour lancer l'API en mode production apres compilation :
+
+```bash
+npm --workspace apps/api run start
+```
+
+Par defaut, le serveur ecoute sur `http://localhost:3001`.
+Le port peut etre surcharge avec la variable `PORT`.
 
 ## Installation via Docker
 
-Le conteneur publie sur GHCR embarque l'API Fastify et le build frontend statique dans une seule image `node:20-slim`.
-Le seul point de persistance a conserver est le volume `/app/data` pour la base SQLite.
+L'image Docker embarque l'API Fastify et le frontend statique dans un seul conteneur.
+Le point de persistance unique a conserver est `/app/data`, qui contient la base SQLite.
 
 ### Demarrage rapide
 
@@ -88,9 +100,9 @@ docker run -d \
   ghcr.io/probatou/webapp:latest
 ```
 
-Puis ouvrir `http://localhost:3004` et creer le premier compte.
+Ensuite, ouvrir `http://localhost:3004`.
 
-### docker-compose.yml
+### Exemple `docker-compose.yml`
 
 ```yaml
 services:
@@ -106,71 +118,84 @@ services:
       - NODE_ENV=production
 ```
 
-### Tags disponibles
+### Variables d'environnement utiles
+
+- `NODE_ENV=production`
+- `PORT=3004`
+- `DATABASE_PATH=/app/data/webapp.db`
+
+### Tags d'image
 
 | Tag | Description |
 |-----|-------------|
-| `latest` | Derniere version stable (branche main) |
-| `v1.0.0` | Version specifique |
-| `1.0` | Derniere patch de la version mineure |
+| `latest` | Derniere version stable issue de `main` |
+| `v1.0.0` | Version precise |
+| `1.0` | Dernier patch de la serie mineure |
 
 ### Publication GHCR
 
-Apres le premier push, rendre le package public dans GitHub :
+L'image est publiee via GitHub Actions sur `ghcr.io/probatou/webapp`.
+Apres le premier push, il faut rendre le package public dans GitHub :
 
 `GitHub -> Packages -> webapp -> Package settings -> Change visibility -> Public`
 
-## Cosmos
+## Donnees et persistance
 
-Le fichier `cosmos-service.json` est fourni pour un deploiement Cosmos direct.
+En local, la base SQLite est creee automatiquement dans `apps/api/data/webapp-v2.db`.
+
+Dans le conteneur Docker, la base est stockee dans :
+
+- `/app/data/webapp.db`
+
+Les fichiers `*.db` sont ignores par Git.
+
+## Verification rapide
+
+- healthcheck API : `/api/health`
+- port par defaut en local : `3001`
+- port par defaut dans l'image Docker : `3004`
+
+## Preview frontend
+
+Si tu veux seulement verifier le build frontend :
+
+```bash
+npm run build --workspace apps/web
+npm --workspace apps/web run preview
+```
+
+Le service de preview Vite est alors disponible sur `http://localhost:4173`.
+
+## Deploiement Cosmos
+
+Le fichier `cosmos-service.json` est fourni pour un deploiement direct dans Cosmos.
 
 Chemins utilises :
 
 - code : `/cosmos-storage/webapp-v2`
 - base SQLite : `/app/data/webapp-v2.db`
 
-## Structure
-
-```text
-apps/
-  api/
-  web/
-package.json
-package-lock.json
-tsconfig.base.json
-docker-compose.yml
-start.sh
-cosmos-service.json
-```
-
-## Donnees
-
-- la base SQLite locale est creee automatiquement dans `apps/api/data/` en local
-- dans le conteneur Docker, la base est stockee dans `/app/data/webapp.db`
-- les fichiers `*.db` sont ignores par Git
-- l'API expose un endpoint de sante sur `/api/health`
-
-## Version legacy PHP
-
-L'ancienne version PHP reste accessible dans :
-
-- la branche `php-legacy`
-- le tag `php-legacy`
-
 ## Demo
 
 Une demo publique est disponible ici :
 
-- Demo : `https://webapp-34fd.onrender.com`
-- Username : `Administrator`
-- Password : `Administrator`
+- URL : `https://webapp-34fd.onrender.com`
+- utilisateur : `Administrator`
+- mot de passe : `Administrator`
 
-Le mode le plus simple pour tester le projet en local reste :
+Pour tester rapidement le projet en local, la commande la plus simple reste :
 
 ```bash
 npm install
 npm run dev
 ```
+
+## Version legacy PHP
+
+L'ancienne version reste accessible dans :
+
+- la branche `php-legacy`
+- le tag `php-legacy`
 
 ## Licence
 
