@@ -4,6 +4,7 @@ import { fileURLToPath } from "node:url";
 import Fastify from "fastify";
 import cors from "@fastify/cors";
 import cookie from "@fastify/cookie";
+import rateLimit from "@fastify/rate-limit";
 import staticPlugin from "@fastify/static";
 import "./lib/db.js";
 import { registerAuthRoutes } from "./routes/auth.js";
@@ -24,6 +25,9 @@ await server.register(cors, {
 });
 
 await server.register(cookie);
+await server.register(rateLimit, {
+  global: false,
+});
 
 server.get("/api/health", async () => {
   return {

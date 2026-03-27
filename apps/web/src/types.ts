@@ -1,0 +1,86 @@
+export type AuthUser = {
+  id: number;
+  username: string;
+};
+
+export type AppMode = "iframe" | "external";
+export type IconVariantMode = "auto" | "base";
+
+export type WebAppEntry = {
+  id: number;
+  name: string;
+  description: string;
+  url: string;
+  icon: string;
+  icon_variant_mode: IconVariantMode;
+  icon_variant_inverted: boolean;
+  accent: string;
+  open_mode: AppMode;
+  sort_order: number;
+  created_at: string;
+  updated_at: string;
+};
+
+export type BootstrapResponse = {
+  needsSetup: boolean;
+  user: AuthUser | null;
+};
+
+export type AppsResponse = {
+  items: WebAppEntry[];
+};
+
+export type ImportAppsResponse = {
+  items: WebAppEntry[];
+  importedIds: number[];
+};
+
+export type AppPayload = {
+  name: string;
+  description: string;
+  url: string;
+  icon: string;
+  iconVariantMode: IconVariantMode;
+  iconVariantInverted: boolean;
+  accent: string;
+  openMode: AppMode;
+};
+
+export type AppEditorState = AppPayload;
+export type JsonImportMode = "merge" | "replace";
+export type JsonModalMode = "import" | "export" | null;
+
+export type JsonTransferItem = Partial<AppPayload> & {
+  name?: unknown;
+  description?: unknown;
+  url?: unknown;
+  icon?: unknown;
+  iconVariantMode?: unknown;
+  iconVariantInverted?: unknown;
+  accent?: unknown;
+  openMode?: unknown;
+};
+
+export type EditorMode = "create" | "edit";
+export type SidebarMode = "compact" | "expanded";
+export type ThemeMode = "light" | "dark";
+
+export type DashboardIconMetadata = {
+  colors?: {
+    light?: string;
+    dark?: string;
+  };
+};
+
+export type DashboardIconResolution = {
+  icon: string;
+  appliedVariant: "light" | "dark" | null;
+};
+
+export type DashboardIconsMetadataMap = Record<string, DashboardIconMetadata>;
+
+export type ContextMenuState = {
+  x: number;
+  y: number;
+  app: WebAppEntry | null;
+} | null;

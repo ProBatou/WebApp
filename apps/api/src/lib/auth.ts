@@ -38,6 +38,27 @@ export function createUser(username: string, passwordHash: string) {
   } satisfies SessionUser;
 }
 
+export function createInitialUser(username: string, passwordHash: string) {
+  const createInitialUserTransaction = db.transaction((nextUsername: string, nextPasswordHash: string) => {
+    const row = db.prepare("SELECT COUNT(*) as count FROM users").get() as { count: number };
+    if (row.count > 0) {
+      return null;
+    }
+
+    const now = new Date().toISOString();
+    const result = db
+      .prepare("INSERT INTO users (username, password_hash, created_at) VALUES (?, ?, ?)")
+      .run(nextUsername, nextPasswordHash, now);
+
+    return {
+      id: Number(result.lastInsertRowid),
+      username: nextUsername,
+    } satisfies SessionUser;
+  });
+
+  return createInitialUserTransaction(username, passwordHash);
+}
+
 export function findUserByUsername(username: string) {
   return db.prepare("SELECT id, username, password_hash FROM users WHERE username = ?").get(username) as
     | { id: number; username: string; password_hash: string }
