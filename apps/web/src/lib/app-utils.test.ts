@@ -70,6 +70,78 @@ test("parseImportedApps supports object payloads with items and defaults invalid
   ]);
 });
 
+test("parseImportedApps supports Homarr-like JSON exports", () => {
+  const result = parseImportedApps(
+    JSON.stringify({
+      sections: [
+        {
+          name: "Media",
+          apps: [
+            {
+              name: "Jellyfin",
+              url: "https://jellyfin.example.com",
+              icon: "jellyfin",
+            },
+          ],
+        },
+      ],
+    })
+  );
+
+  assert.deepEqual(result, [
+    {
+      name: "Jellyfin",
+      description: "",
+      url: "https://jellyfin.example.com",
+      icon: "jellyfin",
+      iconVariantMode: "auto",
+      iconVariantInverted: false,
+      accent: "#cf5c36",
+      openMode: "iframe",
+      isShared: true,
+      groupId: null,
+    },
+  ]);
+});
+
+test("parseImportedApps supports Homepage YAML exports", () => {
+  const result = parseImportedApps(`
+- Media:
+  - Plex:
+      href: https://plex.example.com
+      icon: plex
+  - Grafana:
+      url: https://grafana.example.com
+`);
+
+  assert.deepEqual(result, [
+    {
+      name: "Plex",
+      description: "",
+      url: "https://plex.example.com",
+      icon: "plex",
+      iconVariantMode: "auto",
+      iconVariantInverted: false,
+      accent: "#cf5c36",
+      openMode: "iframe",
+      isShared: true,
+      groupId: null,
+    },
+    {
+      name: "Grafana",
+      description: "",
+      url: "https://grafana.example.com",
+      icon: "G",
+      iconVariantMode: "auto",
+      iconVariantInverted: false,
+      accent: "#cf5c36",
+      openMode: "iframe",
+      isShared: true,
+      groupId: null,
+    },
+  ]);
+});
+
 test("parseImportedApps rejects non-http protocols", () => {
   assert.throws(
     () =>
