@@ -1,10 +1,12 @@
 import Database from "better-sqlite3";
 import { mkdirSync } from "node:fs";
 import { dirname, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
 
+const currentDir = dirname(fileURLToPath(import.meta.url));
 const databasePath = process.env.DATABASE_PATH
   ? resolve(process.env.DATABASE_PATH)
-  : resolve(process.cwd(), "apps/api/data/webapp-v2.db");
+  : resolve(currentDir, "../../data/webapp-v2.db");
 mkdirSync(dirname(databasePath), { recursive: true });
 
 export const db = new Database(databasePath);
@@ -50,4 +52,3 @@ if (!appColumns.some((column) => column.name === "icon_variant_mode")) {
 if (!appColumns.some((column) => column.name === "icon_variant_inverted")) {
   db.exec("ALTER TABLE apps ADD COLUMN icon_variant_inverted INTEGER NOT NULL DEFAULT 0 CHECK(icon_variant_inverted IN (0, 1))");
 }
-
