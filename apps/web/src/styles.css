@@ -86,6 +86,12 @@ body {
     linear-gradient(145deg, var(--bg-top) 0%, var(--bg-bottom) 54%, var(--bg-end) 100%);
 }
 
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 button,
 a,
 input,
@@ -103,6 +109,93 @@ button {
   display: grid;
   place-items: center;
   padding: 24px;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.busy-indicator {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  z-index: 2500;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--panel-strong);
+  box-shadow: var(--menu-shadow);
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(-8px);
+  transition:
+    opacity 180ms ease,
+    transform 180ms ease;
+}
+
+.busy-indicator.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.busy-spinner {
+  width: 14px;
+  height: 14px;
+  border-radius: 999px;
+  border: 2px solid var(--border);
+  border-top-color: var(--accent);
+  animation: spin 700ms linear infinite;
+}
+
+.toast-stack {
+  position: fixed;
+  right: 20px;
+  bottom: 20px;
+  z-index: 2600;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: min(360px, calc(100vw - 24px));
+}
+
+.toast-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 12px 12px 12px 14px;
+  border-radius: 20px;
+  border: 1px solid var(--border);
+  background: var(--panel-strong);
+  box-shadow: var(--menu-shadow);
+}
+
+.toast-card.error {
+  border-color: rgba(180, 35, 24, 0.18);
+  background: linear-gradient(135deg, rgba(180, 35, 24, 0.08), var(--panel-strong));
+}
+
+.toast-card p {
+  margin: 0;
+  flex: 1;
+}
+
+.toast-dismiss {
+  min-width: 40px;
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  border-radius: 14px;
 }
 
 .auth-shell {
@@ -525,6 +618,15 @@ textarea {
   margin-top: 22px;
 }
 
+.sidebar-search {
+  display: block;
+  margin-bottom: 12px;
+}
+
+.sidebar-search input {
+  width: 100%;
+}
+
 .sidebar-bottom-actions {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
@@ -580,6 +682,12 @@ textarea {
   user-select: none;
   scrollbar-width: none;
   -ms-overflow-style: none;
+}
+
+.sidebar-empty-state {
+  margin: 8px 4px 0;
+  color: var(--muted);
+  font-size: 0.92rem;
 }
 
 .app-list::-webkit-scrollbar {
@@ -688,10 +796,34 @@ textarea {
 }
 
 .app-meta strong {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
   font-size: 0.98rem;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.app-status-dot {
+  width: 10px;
+  height: 10px;
+  flex: 0 0 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.32);
+  box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.06);
+}
+
+.app-status-dot.online {
+  background: #12b76a;
+}
+
+.app-status-dot.offline {
+  background: #f04438;
+}
+
+.app-status-dot.unknown {
+  background: #98a2b3;
 }
 
 .app-meta small {
@@ -876,6 +1008,11 @@ textarea {
 }
 
 .sidebar-context-item:hover {
+  background: var(--accent-soft);
+}
+
+.sidebar-context-item:focus-visible {
+  outline: none;
   background: var(--accent-soft);
 }
 
@@ -1301,6 +1438,35 @@ textarea {
   margin-left: auto;
 }
 
+.shortcut-modal {
+  width: min(560px, 100%);
+}
+
+.shortcut-list {
+  display: grid;
+  gap: 10px;
+}
+
+.shortcut-item {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 12px 14px;
+  border-radius: 18px;
+  border: 1px solid var(--border);
+  background: var(--preview-surface);
+}
+
+kbd {
+  min-width: 72px;
+  padding: 8px 12px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: var(--panel-strong);
+  font-family: "SFMono-Regular", "Cascadia Code", "Menlo", monospace;
+  text-align: center;
+}
+
 input[type="color"] {
   min-height: 48px;
   padding: 6px;
@@ -1405,6 +1571,12 @@ a[aria-disabled="true"] {
   .editor-modal {
     padding: 18px;
     border-radius: 24px;
+  }
+
+  .toast-stack {
+    right: 12px;
+    bottom: 12px;
+    width: min(360px, calc(100vw - 24px));
   }
 
   .form-row {

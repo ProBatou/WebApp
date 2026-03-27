@@ -1,8 +1,8 @@
-import type { Dispatch, MouseEvent, RefObject, SetStateAction } from "react";
+import { useMemo, useState, type Dispatch, type MouseEvent, type RefObject, type SetStateAction } from "react";
 import { SortableContext, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { AppIcon } from "./AppIcon";
-import type { ContextMenuState, DashboardIconsMetadataMap, SidebarMode, ThemeMode, WebAppEntry } from "../types";
+import type { AppStatusEntry, ContextMenuState, DashboardIconsMetadataMap, SidebarMode, ThemeMode, WebAppEntry } from "../types";
 
 function SortableAppTile({
   app,
@@ -13,6 +13,7 @@ function SortableAppTile({
   onContextMenu,
   themeMode,
   dashboardIconsMetadata,
+  appStatus,
 }: {
   app: WebAppEntry;
   active: boolean;
@@ -22,6 +23,7 @@ function SortableAppTile({
   onContextMenu: (event: MouseEvent<HTMLDivElement>, app: WebAppEntry) => void;
   themeMode: ThemeMode;
   dashboardIconsMetadata: DashboardIconsMetadataMap;
+  appStatus?: AppStatusEntry;
 }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: app.id });
   const constrainedTransform = transform ? { ...transform, x: 0 } : null;
@@ -66,7 +68,30 @@ function SortableAppTile({
         />
         {!compact ? (
           <span className="app-meta">
-            <strong>{app.name}</strong>
+            <strong>
+              {app.name}
+              <span
+                className={appStatus?.status === "online"
+                  ? "app-status-dot online"
+                  : appStatus?.status === "offline"
+                    ? "app-status-dot offline"
+                    : "app-status-dot unknown"}
+                aria-label={
+                  appStatus?.status === "online"
+                    ? "Application en ligne"
+                    : appStatus?.status === "offline"
+                      ? "Application hors ligne"
+                      : "Statut inconnu"
+                }
+                title={
+                  appStatus?.status === "online"
+                    ? "En ligne"
+                    : appStatus?.status === "offline"
+                      ? "Hors ligne"
+                      : "Statut inconnu"
+                }
+              />
+            </strong>
             <small>{app.open_mode === "iframe" ? "Integree" : "Externe"}</small>
           </span>
         ) : null}
@@ -144,6 +169,7 @@ export function Sidebar({
   dashboardIconsMetadata,
   busy,
   contextMenu,
+  appStatuses,
   onOpenSidebarContextMenu,
   onOpenCreateEditor,
   onOpenJsonImport,
@@ -167,6 +193,7 @@ export function Sidebar({
   dashboardIconsMetadata: DashboardIconsMetadataMap;
   busy: boolean;
   contextMenu: ContextMenuState;
+  appStatuses: Record<number, AppStatusEntry>;
   onOpenSidebarContextMenu: (event: MouseEvent<HTMLElement>) => void;
   onOpenCreateEditor: () => void;
   onOpenJsonImport: () => void;
@@ -176,6 +203,16 @@ export function Sidebar({
   onEditApp: (app: WebAppEntry) => void;
   onOpenContextMenu: (event: MouseEvent<HTMLDivElement>, app: WebAppEntry) => void;
 }) {
+  const [filterQuery, setFilterQuery] = useState("");
+  const normalizedFilterQuery = filterQuery.trim().toLowerCase();
+  const filteredApps = useMemo(() => {
+    if (draggingAppId !== null || !normalizedFilterQuery) {
+      return apps;
+    }
+
+    return apps.filter((app) => app.name.toLowerCase().includes(normalizedFilterQuery));
+  }, [apps, draggingAppId, normalizedFilterQuery]);
+
   return (
     <>
       <button
@@ -194,9 +231,15 @@ export function Sidebar({
         className={sidebarOpen ? `sidebar drawer-open ${sidebarMode}` : `sidebar ${sidebarMode}`}
         onContextMenu={onOpenSidebarContextMenu}
         onMouseLeave={() => {
-          if (!contextMenu && draggingAppId === null) {
-            setSidebarOpen(false);
+          if (draggingAppId !== null) {
+            return;
           }
+
+          window.setTimeout(() => {
+            if (!document.querySelector(".sidebar-context-menu") && !contextMenu) {
+              setSidebarOpen(false);
+            }
+          }, 0);
         }}
       >
         <div className="brand-block">
@@ -237,9 +280,21 @@ export function Sidebar({
 
         <div className="sidebar-section">
           {sidebarMode === "expanded" ? <p className="section-title">Applications</p> : null}
-          <SortableContext items={apps.map((item) => item.id)} strategy={verticalListSortingStrategy}>
+          {sidebarMode === "expanded" ? (
+            <label className="sidebar-search">
+              <span className="sr-only">Rechercher une application</span>
+              <input
+                type="search"
+                value={filterQuery}
+                onChange={(event) => setFilterQuery(event.target.value)}
+                placeholder={draggingAppId !== null ? "Recherche indisponible pendant le tri" : "Rechercher une app"}
+                disabled={draggingAppId !== null}
+              />
+            </label>
+          ) : null}
+          <SortableContext items={filteredApps.map((item) => item.id)} strategy={verticalListSortingStrategy}>
             <div className="app-list">
-              {apps.map((app) => (
+              {filteredApps.map((app) => (
                 <SortableAppTile
                   key={app.id}
                   app={app}
@@ -250,8 +305,10 @@ export function Sidebar({
                   onContextMenu={onOpenContextMenu}
                   themeMode={themeMode}
                   dashboardIconsMetadata={dashboardIconsMetadata}
+                  appStatus={appStatuses[app.id]}
                 />
               ))}
+              {filteredApps.length === 0 ? <p className="sidebar-empty-state">Aucune application ne correspond a la recherche.</p> : null}
             </div>
           </SortableContext>
         </div>

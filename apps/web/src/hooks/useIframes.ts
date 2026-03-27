@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useState } from "react";
 import type { WebAppEntry } from "../types";
 
+const maxMountedIframes = 5;
+
 export function useIframes({
   apps,
   selectedApp,
@@ -18,7 +20,7 @@ export function useIframes({
 
     setMountedIframeIds((current) => {
       const nextIds = current.filter((iframeId) => iframeId !== selectedApp.id);
-      return [...nextIds, selectedApp.id];
+      return [...nextIds, selectedApp.id].slice(-maxMountedIframes);
     });
   }, [selectedApp]);
 
@@ -38,7 +40,10 @@ export function useIframes({
       return;
     }
 
-    setMountedIframeIds((current) => (current.includes(app.id) ? current : [...current, app.id]));
+    setMountedIframeIds((current) => {
+      const nextIds = current.filter((iframeId) => iframeId !== app.id);
+      return [...nextIds, app.id].slice(-maxMountedIframes);
+    });
     setIframeReloadTokens((current) => ({
       ...current,
       [app.id]: (current[app.id] ?? 0) + 1,

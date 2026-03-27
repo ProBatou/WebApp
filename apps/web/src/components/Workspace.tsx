@@ -1,12 +1,10 @@
-import type { DashboardIconsMetadataMap, ThemeMode, WebAppEntry } from "../types";
+import type { WebAppEntry } from "../types";
 
 export function Workspace({
-  error,
   selectedApp,
   mountedIframeApps,
   iframeReloadTokens,
 }: {
-  error: string | null;
   selectedApp: WebAppEntry | null;
   mountedIframeApps: WebAppEntry[];
   iframeReloadTokens: Record<number, number>;
@@ -15,8 +13,6 @@ export function Workspace({
     <main className="workspace immersive-workspace">
       <div className="workspace-grid">
         <section className="viewer-panel">
-          {error ? <div className="inline-banner error-state floating-banner">{error}</div> : null}
-
           {!selectedApp ? <div className="empty-state">Selectionne ou cree une application.</div> : null}
           {selectedApp?.open_mode === "iframe" ? (
             <div className="iframe-stack">
