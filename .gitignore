@@ -1,6 +1,7 @@
 node_modules/
 dist/
 apps/api/data/
+data/.runtime-state/
 *.db
 .env
 .DS_Store
