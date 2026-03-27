@@ -1,19 +1,9 @@
 import { serializeAppRecord, type SerializedAppRecord } from "./apps.js";
 import type { SqliteDatabase } from "./db.js";
 import type { AppRecord, UserRole } from "./types.js";
+import type { SharedAppPayload } from "@webapp-v2/shared";
 
-export type AppPayload = {
-  name: string;
-  description: string;
-  url: string;
-  icon: string;
-  iconVariantMode: "auto" | "base";
-  iconVariantInverted: boolean;
-  accent: string;
-  openMode: "iframe" | "external";
-  isShared?: boolean;
-  groupId?: number | null;
-};
+export type AppPayload = SharedAppPayload;
 
 export type ImportMode = "merge" | "replace";
 export type ReorderAppItem = {

@@ -1,11 +1,18 @@
+import type {
+  AppMode as SharedAppMode,
+  IconVariantMode as SharedIconVariantMode,
+  SharedAppPayload,
+  UserRole as SharedUserRole,
+} from "@webapp-v2/shared";
+
 export type AuthUser = {
   id: number;
   username: string;
-  role: "admin" | "viewer";
+  role: SharedUserRole;
 };
 
-export type AppMode = "iframe" | "external";
-export type IconVariantMode = "auto" | "base";
+export type AppMode = SharedAppMode;
+export type IconVariantMode = SharedIconVariantMode;
 
 export type WebAppEntry = {
   id: number;
@@ -49,7 +56,7 @@ export type GroupsResponse = {
 export type UserEntry = {
   id: number;
   username: string;
-  role: "admin" | "viewer";
+  role: SharedUserRole;
   created_at: string;
 };
 
@@ -59,13 +66,13 @@ export type UsersResponse = {
 
 export type InvitationResponse = {
   token: string;
-  role: "admin" | "viewer";
+  role: SharedUserRole;
   expiresAt: string;
   inviteUrl: string;
 };
 
 export type InvitationInfoResponse = {
-  role: "admin" | "viewer";
+  role: SharedUserRole;
   expiresAt: string;
 };
 
@@ -86,18 +93,7 @@ export type AppStatusEntry = {
   checkedAt: string | null;
 };
 
-export type AppPayload = {
-  name: string;
-  description: string;
-  url: string;
-  icon: string;
-  iconVariantMode: IconVariantMode;
-  iconVariantInverted: boolean;
-  accent: string;
-  openMode: AppMode;
-  isShared: boolean;
-  groupId?: number | null;
-};
+export type AppPayload = SharedAppPayload;
 
 export type AppEditorState = AppPayload;
 export type JsonImportMode = "merge" | "replace";

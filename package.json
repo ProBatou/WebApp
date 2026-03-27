@@ -4,7 +4,8 @@
   "version": "0.1.0",
   "workspaces": [
     "apps/web",
-    "apps/api"
+    "apps/api",
+    "apps/shared"
   ],
   "scripts": {
     "dev": "concurrently -n web,api -c cyan,yellow \"npm run dev:web\" \"npm run dev:api\"",
