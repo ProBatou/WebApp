@@ -253,22 +253,54 @@ export function exportAppsToJson(apps: WebAppEntry[]) {
 }
 
 export function parseImportedApps(rawValue: string) {
-  let parsed: unknown;
+  const trimmed = rawValue.trim();
+  let items: unknown[] | null = null;
 
-  try {
-    parsed = JSON.parse(rawValue);
-  } catch {
-    throw new Error("JSON invalide.");
-  }
+  if (trimmed.startsWith("{") || trimmed.startsWith("[")) {
+    let parsed: unknown;
 
-  const items = Array.isArray(parsed)
-    ? parsed
-    : parsed && typeof parsed === "object" && Array.isArray((parsed as { items?: unknown }).items)
-      ? (parsed as { items: unknown[] }).items
-      : null;
+    try {
+      parsed = JSON.parse(rawValue);
+    } catch {
+      throw new Error("JSON invalide.");
+    }
 
-  if (!items) {
-    throw new Error("Le JSON doit etre un tableau ou un objet avec items.");
+    items = Array.isArray(parsed)
+      ? parsed
+      : parsed && typeof parsed === "object" && Array.isArray((parsed as { items?: unknown }).items)
+        ? (parsed as { items: unknown[] }).items
+        : parsed && typeof parsed === "object" && Array.isArray((parsed as { apps?: unknown }).apps)
+          ? (parsed as { apps: unknown[] }).apps
+          : null;
+
+    // Homarr-like exports can wrap entries in sections.
+    if (!items && parsed && typeof parsed === "object" && Array.isArray((parsed as { sections?: unknown }).sections)) {
+      const sections = (parsed as { sections: unknown[] }).sections;
+      const flattened = sections.flatMap((section) => {
+        if (!section || typeof section !== "object") {
+          return [];
+        }
+
+        const nextSection = section as { apps?: unknown; items?: unknown };
+        if (Array.isArray(nextSection.apps)) {
+          return nextSection.apps;
+        }
+
+        if (Array.isArray(nextSection.items)) {
+          return nextSection.items;
+        }
+
+        return [];
+      });
+
+      items = flattened.length > 0 ? flattened : null;
+    }
+
+    if (!items) {
+      throw new Error("Format JSON non supporte.");
+    }
+  } else {
+    items = parseHomepageYaml(rawValue);
   }
 
   if (items.length === 0) {
@@ -324,4 +356,61 @@ export function parseImportedApps(rawValue: string) {
       groupId,
     };
   });
+}
+
+function parseHomepageYaml(rawValue: string) {
+  const lines = rawValue.split(/\r?\n/);
+  const entries: JsonTransferItem[] = [];
+  let currentEntry: JsonTransferItem | null = null;
+
+  const flushCurrentEntry = () => {
+    if (!currentEntry) {
+      return;
+    }
+
+    entries.push(currentEntry);
+    currentEntry = null;
+  };
+
+  lines.forEach((line) => {
+    const trimmed = line.trim();
+    if (!trimmed || trimmed.startsWith("#")) {
+      return;
+    }
+
+    const indent = line.search(/\S|$/);
+
+    // Homepage service entry: "  - Service Name:"
+    const serviceMatch = trimmed.match(/^-\s+(.+):\s*$/);
+    if (serviceMatch && indent >= 2) {
+      flushCurrentEntry();
+      currentEntry = {
+        name: serviceMatch[1].trim(),
+      };
+      return;
+    }
+
+    if (!currentEntry || indent < 4) {
+      return;
+    }
+
+    const fieldMatch = trimmed.match(/^([a-zA-Z0-9_]+):\s*(.+)\s*$/);
+    if (!fieldMatch) {
+      return;
+    }
+
+    const key = fieldMatch[1].toLowerCase();
+    const value = fieldMatch[2].replace(/^['"]|['"]$/g, "");
+
+    if (key === "href" || key === "url") {
+      currentEntry.url = value;
+    }
+
+    if (key === "icon") {
+      currentEntry.icon = value;
+    }
+  });
+
+  flushCurrentEntry();
+  return entries;
 }
