@@ -1,8 +1,24 @@
-import { startTransition, useCallback, useState } from "react";
+import { startTransition, useCallback, useEffect, useState } from "react";
 import { type DragEndEvent } from "@dnd-kit/core";
 import { arrayMove } from "@dnd-kit/sortable";
 import { apiFetch } from "../lib/api";
 import type { AppsResponse, WebAppEntry } from "../types";
+
+const recentAppsStorageKey = "webapp-v2-recent-app-ids";
+
+function readRecentAppIds() {
+  const rawValue = window.localStorage.getItem(recentAppsStorageKey);
+  if (!rawValue) {
+    return [];
+  }
+
+  try {
+    const parsedValue = JSON.parse(rawValue) as unknown;
+    return Array.isArray(parsedValue) ? parsedValue.filter((value): value is number => Number.isInteger(value) && value > 0).slice(0, 5) : [];
+  } catch {
+    return [];
+  }
+}
 
 export function useApps({
   setBusy,
@@ -13,6 +29,23 @@ export function useApps({
 }) {
   const [apps, setApps] = useState<WebAppEntry[]>([]);
   const [selectedAppId, setSelectedAppId] = useState<number | null>(null);
+  const [recentAppIds, setRecentAppIds] = useState<number[]>(() => readRecentAppIds());
+
+  useEffect(() => {
+    if (apps.length === 0) {
+      return;
+    }
+
+    setRecentAppIds((current) => {
+      const nextIds = current.filter((appId) => apps.some((item) => item.id === appId));
+      if (nextIds.length === current.length) {
+        return current;
+      }
+
+      window.localStorage.setItem(recentAppsStorageKey, JSON.stringify(nextIds));
+      return nextIds;
+    });
+  }, [apps]);
 
   const reloadApps = useCallback(async (preferSelectedId?: number | null) => {
     const appsResult = await apiFetch<AppsResponse>("/api/apps", { method: "GET" });
@@ -85,14 +118,36 @@ export function useApps({
     setSelectedAppId(null);
   }, []);
 
+  const selectApp = useCallback((appId: number | null) => {
+    startTransition(() => {
+      setSelectedAppId(appId);
+    });
+
+    if (appId === null) {
+      return;
+    }
+
+    setRecentAppIds((current) => {
+      const nextIds = [appId, ...current.filter((id) => id !== appId)].slice(0, 5);
+      window.localStorage.setItem(recentAppsStorageKey, JSON.stringify(nextIds));
+      return nextIds;
+    });
+  }, []);
+
+  const recentApps = recentAppIds
+    .map((appId) => apps.find((item) => item.id === appId) ?? null)
+    .filter((app): app is WebAppEntry => app !== null);
+
   return {
     apps,
     setApps,
     selectedAppId,
     setSelectedAppId,
+    selectApp,
     reloadApps,
     deleteApp,
     handleReorder,
     resetAppsState,
+    recentApps,
   };
 }
