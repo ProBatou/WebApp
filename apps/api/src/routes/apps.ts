@@ -84,14 +84,31 @@ export async function registerAppRoutes(server: FastifyInstance) {
       return reply.code(404).send({ message: "Application introuvable." });
     }
 
-    try {
+    const checkUrl = async (method: "HEAD" | "GET") => {
       const response = await fetch(app.url, {
-        method: "HEAD",
+        method,
         signal: AbortSignal.timeout(3000),
       });
 
+      return response.ok;
+    };
+
+    try {
+      const headOnline = await checkUrl("HEAD");
+      if (headOnline) {
+        return {
+          status: "online",
+          checkedAt: new Date().toISOString(),
+        };
+      }
+    } catch {
+      // Some services do not support HEAD reliably.
+    }
+
+    try {
+      const getOnline = await checkUrl("GET");
       return {
-        status: response.ok ? "online" : "offline",
+        status: getOnline ? "online" : "offline",
         checkedAt: new Date().toISOString(),
       };
     } catch {
