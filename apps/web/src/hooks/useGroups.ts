@@ -30,7 +30,7 @@ export function useGroups({
       setGroups(result.items);
       return result.item;
     } catch (groupError) {
-      setError(groupError instanceof Error ? groupError.message : "Erreur de groupe.");
+      setError(groupError instanceof Error ? groupError.message : "errors.group");
       throw groupError;
     } finally {
       setBusy(false);
@@ -50,7 +50,7 @@ export function useGroups({
       setGroups(result.items);
       return result.item;
     } catch (groupError) {
-      setError(groupError instanceof Error ? groupError.message : "Erreur de groupe.");
+      setError(groupError instanceof Error ? groupError.message : "errors.group");
       throw groupError;
     } finally {
       setBusy(false);
@@ -69,7 +69,7 @@ export function useGroups({
       setGroups(result.items);
       return result.items;
     } catch (groupError) {
-      setError(groupError instanceof Error ? groupError.message : "Erreur de groupe.");
+      setError(groupError instanceof Error ? groupError.message : "errors.group");
       throw groupError;
     } finally {
       setBusy(false);

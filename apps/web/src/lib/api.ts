@@ -17,8 +17,8 @@ export async function apiFetch<T>(input: string, init?: RequestInit) {
   const data = (await response.json().catch(() => null)) as T | { message?: string } | null;
 
   if (!response.ok) {
-    const message = data && typeof data === "object" && "message" in data ? data.message : "Erreur API.";
-    throw new Error(message ?? "Erreur API.");
+    const message = data && typeof data === "object" && "message" in data ? data.message : "errors.api";
+    throw new Error(message ?? "errors.api");
   }
 
   return data as T;

@@ -1,4 +1,5 @@
 import type { WebAppEntry } from "../types";
+import { useTranslation } from "../lib/i18n";
 
 export function Workspace({
   selectedApp,
@@ -9,11 +10,13 @@ export function Workspace({
   mountedIframeApps: WebAppEntry[];
   iframeReloadTokens: Record<number, number>;
 }) {
+  const { t } = useTranslation();
+
   return (
     <main className="workspace immersive-workspace">
       <div className="workspace-grid">
         <section className="viewer-panel">
-          {!selectedApp ? <div className="empty-state">Selectionne ou cree une application.</div> : null}
+          {!selectedApp ? <div className="empty-state">{t("workspace.selectApp")}</div> : null}
           {selectedApp?.open_mode === "iframe" ? (
             <div className="iframe-stack">
               {mountedIframeApps.map((app) => (
@@ -30,9 +33,9 @@ export function Workspace({
           ) : null}
           {selectedApp?.open_mode === "external" ? (
             <div className="empty-state external-state">
-              <p>Cette application est configuree pour s'ouvrir hors de WebApp.</p>
+              <p>{t("workspace.externalApp")}</p>
               <a className="primary-button" href={selectedApp.url} target="_blank" rel="noreferrer">
-                Lancer {selectedApp.name}
+                {t("workspace.launch", { name: selectedApp.name })}
               </a>
             </div>
           ) : null}

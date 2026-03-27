@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import type { GroupEntry } from "../types";
+import { useTranslation } from "../lib/i18n";
 
 export function GroupManagerModal({
   open,
@@ -18,6 +19,7 @@ export function GroupManagerModal({
   onRenameGroup: (groupId: number, name: string) => Promise<void>;
   onDeleteGroup: (groupId: number) => Promise<void>;
 }) {
+  const { t } = useTranslation();
   const [newGroupName, setNewGroupName] = useState("");
   const [editingGroupId, setEditingGroupId] = useState<number | null>(null);
   const [editingGroupName, setEditingGroupName] = useState("");
@@ -46,11 +48,11 @@ export function GroupManagerModal({
       <aside className="editor-modal group-modal" onClick={(event) => event.stopPropagation()} aria-modal="true" role="dialog">
         <div className="editor-header">
           <div>
-            <p className="eyebrow">Organisation</p>
-            <h3>Groupes</h3>
+            <p className="eyebrow">{t("modal.organization")}</p>
+            <h3>{t("modal.groups")}</h3>
           </div>
           <button className="ghost-icon-button" type="button" onClick={onClose}>
-            Fermer
+            {t("common.close")}
           </button>
         </div>
 
@@ -66,13 +68,13 @@ export function GroupManagerModal({
               type="text"
               value={newGroupName}
               onChange={(event) => setNewGroupName(event.target.value)}
-              placeholder="Nouveau groupe"
+              placeholder={t("modal.newGroup")}
               minLength={2}
               maxLength={40}
               required
             />
             <button className="primary-button" type="submit" disabled={busy}>
-              Ajouter
+              {t("common.add")}
             </button>
           </form>
 
@@ -99,7 +101,7 @@ export function GroupManagerModal({
                       required
                     />
                     <button className="secondary-button" type="submit" disabled={busy}>
-                      Enregistrer
+                      {t("common.save")}
                     </button>
                   </form>
                 ) : (
@@ -114,17 +116,17 @@ export function GroupManagerModal({
                           setEditingGroupName(group.name);
                         }}
                       >
-                        Renommer
+                        {t("common.rename")}
                       </button>
                       <button className="danger-button" type="button" onClick={() => void onDeleteGroup(group.id)} disabled={busy}>
-                        Supprimer
+                        {t("common.delete")}
                       </button>
                     </div>
                   </div>
                 )}
               </div>
             ))}
-            {groups.length === 0 ? <p className="json-summary">Aucun groupe pour le moment.</p> : null}
+            {groups.length === 0 ? <p className="json-summary">{t("modal.noGroups")}</p> : null}
           </div>
         </div>
       </aside>

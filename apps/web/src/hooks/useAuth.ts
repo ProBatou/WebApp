@@ -61,11 +61,11 @@ export function useAuth({
             setInviteToken(null);
             setInviteRole(null);
             clearInviteTokenFromUrl();
-            setAuthError("Invitation invalide ou expiree.");
+            setAuthError("errors.invalidInvite");
           }
         }
       } catch (bootstrapError) {
-        setError(bootstrapError instanceof Error ? bootstrapError.message : "Erreur de chargement.");
+        setError(bootstrapError instanceof Error ? bootstrapError.message : "errors.load");
       } finally {
         setLoading(false);
       }
@@ -101,7 +101,7 @@ export function useAuth({
       await reloadApps();
       setCredentials({ username: "", password: "" });
     } catch (submitError) {
-      setAuthError(submitError instanceof Error ? submitError.message : "Erreur de connexion.");
+      setAuthError(submitError instanceof Error ? submitError.message : "errors.signIn");
     } finally {
       setBusy(false);
     }
@@ -115,7 +115,7 @@ export function useAuth({
       clearAppState();
       clearUiState();
     } catch (logoutError) {
-      setError(logoutError instanceof Error ? logoutError.message : "Erreur de deconnexion.");
+      setError(logoutError instanceof Error ? logoutError.message : "errors.signOut");
     } finally {
       setBusy(false);
     }

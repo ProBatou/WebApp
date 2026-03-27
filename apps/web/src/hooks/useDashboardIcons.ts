@@ -41,7 +41,7 @@ export function useDashboardIcons({
 
         const response = await fetch(dashboardIconsMetadataUrl, { signal: controller.signal });
         if (!response.ok) {
-          throw new Error("Impossible de charger Dashboard Icons.");
+          throw new Error("errors.load");
         }
 
         const metadata = (await response.json()) as DashboardIconsMetadataMap;
@@ -52,7 +52,7 @@ export function useDashboardIcons({
           return;
         }
 
-        setDashboardIconsError(loadError instanceof Error ? loadError.message : "Impossible de charger Dashboard Icons.");
+        setDashboardIconsError(loadError instanceof Error ? loadError.message : "errors.load");
       } finally {
         if (!controller.signal.aborted) {
           setDashboardIconsLoading(false);

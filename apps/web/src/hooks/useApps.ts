@@ -48,7 +48,7 @@ export function useApps({
       await apiFetch<null>(`/api/apps/${appId}`, { method: "DELETE" });
       await reloadApps(selectedAppId === appId ? null : selectedAppId);
     } catch (deleteError) {
-      setError(deleteError instanceof Error ? deleteError.message : "Erreur de suppression.");
+      setError(deleteError instanceof Error ? deleteError.message : "errors.delete");
       throw deleteError;
     } finally {
       setBusy(false);
@@ -147,7 +147,7 @@ export function useApps({
         }),
       });
     } catch (reorderError) {
-      setError(reorderError instanceof Error ? reorderError.message : "Erreur de reorganisation.");
+      setError(reorderError instanceof Error ? reorderError.message : "errors.reorder");
       await reloadApps(selectedAppId);
     }
   }, [apps, deleteApp, reloadApps, selectedAppId, setError]);

@@ -6,6 +6,7 @@ import {
   getFallbackIconLabel,
   isDashboardIconSlug,
 } from "../lib/app-utils";
+import { useTranslation } from "../lib/i18n";
 import type {
   AppEditorState,
   AppMode,
@@ -58,6 +59,8 @@ export function AppEditor({
   onReset: () => void;
   onDelete: () => Promise<void>;
 }) {
+  const { t } = useTranslation();
+
   if (!open) {
     return null;
   }
@@ -74,11 +77,11 @@ export function AppEditor({
       <aside className="editor-modal app-editor-modal" onClick={(event) => event.stopPropagation()} aria-modal="true" role="dialog">
         <div className="editor-header">
           <div>
-            <p className="eyebrow">Administration</p>
-            <h3>{editorMode === "create" ? "Nouvelle app" : "Modifier l'app"}</h3>
+            <p className="eyebrow">{t("modal.admin")}</p>
+            <h3>{editorMode === "create" ? t("app.new") : t("app.edit")}</h3>
           </div>
           <button className="ghost-icon-button" type="button" onClick={onClose}>
-            Fermer
+            {t("common.close")}
           </button>
         </div>
 
@@ -87,7 +90,7 @@ export function AppEditor({
           onSubmit={(event) => void onSubmit(event, editorState.icon.trim() || getFallbackIconLabel(editorState.name, editorState.icon))}
         >
           <label>
-            <span>Nom</span>
+            <span>{t("app.name")}</span>
             <input
               type="text"
               value={editorState.name}
@@ -98,7 +101,7 @@ export function AppEditor({
             />
           </label>
           <label>
-            <span>URL</span>
+            <span>{t("app.url")}</span>
             <input
               type="url"
               value={editorState.url}
@@ -108,7 +111,7 @@ export function AppEditor({
           </label>
           <div className="form-row editor-logo-row">
             <label>
-              <span>Logo</span>
+            <span>{t("app.icon")}</span>
               <input
                 type="text"
                 value={iconQuery}
@@ -116,12 +119,12 @@ export function AppEditor({
                   setIconSelectionLocked(false);
                   setIconQuery(event.target.value.toLowerCase());
                 }}
-                placeholder="Chercher sur Dashboard Icons"
+                placeholder={t("app.searchDashboardIcons")}
                 autoComplete="off"
               />
               <div className="editor-field-note">
                 <a href="https://dashboardicons.com/icons" target="_blank" rel="noreferrer">
-                  Ouvrir le catalogue
+                  {t("app.openCatalog")}
                 </a>
               </div>
             </label>
@@ -132,14 +135,14 @@ export function AppEditor({
                   type="color"
                   value={editorState.accent}
                   onChange={(event) => setEditorState((current) => ({ ...current, accent: event.target.value }))}
-                  title="Couleur"
-                  aria-label="Couleur"
+                  title={t("app.color")}
+                  aria-label={t("app.color")}
                 />
               </label>
             </div>
           </div>
           <div className="icon-search-panel">
-            {dashboardIconsError ? <p className="form-error">{dashboardIconsError}</p> : null}
+            {dashboardIconsError ? <p className="form-error">{t(dashboardIconsError)}</p> : null}
 
             {!dashboardIconsLoading && filteredDashboardIcons.length > 0 ? (
               <div className="icon-search-results">
@@ -159,10 +162,10 @@ export function AppEditor({
                       }}
                     >
                       <span className="icon-search-preview-stack">
-                        <span className="icon-search-preview icon-search-preview-light" title="Version pour fond clair">
+                        <span className="icon-search-preview icon-search-preview-light" title={t("app.lightBackground")}>
                           <DashboardIconPreviewImage icon={previewVariants.lightBackgroundIcon} fallbackIcon={previewVariants.baseIcon} />
                         </span>
-                        <span className="icon-search-preview icon-search-preview-dark" title="Version pour fond sombre">
+                        <span className="icon-search-preview icon-search-preview-dark" title={t("app.darkBackground")}>
                           <DashboardIconPreviewImage icon={previewVariants.darkBackgroundIcon} fallbackIcon={previewVariants.baseIcon} />
                         </span>
                       </span>
@@ -170,7 +173,7 @@ export function AppEditor({
                         <strong>{formatDashboardIconLabel(icon)}</strong>
                         <small>{icon}</small>
                       </span>
-                      {previewVariants.hasVariants ? <span className="icon-variant-badge">light/dark</span> : null}
+                      {previewVariants.hasVariants ? <span className="icon-variant-badge">{t("app.lightDark")}</span> : null}
                     </button>
                   );
                 })}
@@ -178,17 +181,17 @@ export function AppEditor({
             ) : null}
           </div>
           <label>
-            <span>Mode d'ouverture</span>
+            <span>{t("app.openMode")}</span>
             <select
               value={editorState.openMode}
               onChange={(event) => setEditorState((current) => ({ ...current, openMode: event.target.value as AppMode }))}
             >
-              <option value="iframe">Iframe integree</option>
-              <option value="external">Nouvel onglet</option>
+              <option value="iframe">{t("app.openMode.embeddedIframe")}</option>
+              <option value="external">{t("app.openMode.newTab")}</option>
             </select>
           </label>
           <label>
-            <span>Visibilite</span>
+            <span>{t("app.visibility")}</span>
             <select
               value={editorState.isShared ? "shared" : "private"}
               onChange={(event) =>
@@ -198,12 +201,12 @@ export function AppEditor({
                 }))
               }
             >
-              <option value="shared">Shared</option>
-              <option value="private">Private</option>
+              <option value="shared">{t("app.visibility.shared")}</option>
+              <option value="private">{t("app.visibility.private")}</option>
             </select>
           </label>
           <label>
-            <span>Groupe</span>
+            <span>{t("app.group")}</span>
             <select
               value={editorState.groupId ?? ""}
               onChange={(event) =>
@@ -213,7 +216,7 @@ export function AppEditor({
                 }))
               }
             >
-              <option value="">Sans groupe</option>
+              <option value="">{t("app.noGroup")}</option>
               {groups.map((group) => (
                 <option key={group.id} value={group.id}>
                   {group.name}
@@ -238,7 +241,7 @@ export function AppEditor({
             <div className="preview-card-content">
               <div className="preview-card-top">
                 <div className="preview-card-copy">
-                  <strong>{editorState.name || "Nom de l'application"}</strong>
+                  <strong>{editorState.name || t("app.nameFallback")}</strong>
                 </div>
                 {editorState.icon ? (
                   <div className="preview-card-actions">
@@ -254,7 +257,7 @@ export function AppEditor({
                           }));
                         }}
                       >
-                        {editorState.iconVariantInverted ? "Normal" : "Inversé"}
+                        {editorState.iconVariantInverted ? t("app.normal") : t("app.inverted")}
                       </button>
                     ) : null}
                     <button
@@ -267,7 +270,7 @@ export function AppEditor({
                         setIconSelectionLocked(false);
                       }}
                     >
-                      Retirer le logo
+                      {t("app.removeIcon")}
                     </button>
                   </div>
                 ) : null}
@@ -282,7 +285,7 @@ export function AppEditor({
                       />
                     </span>
                     <div>
-                      <strong>Fond clair</strong>
+                      <strong>{t("app.lightBackground")}</strong>
                     </div>
                   </div>
                   <div className={themeMode === "dark" ? "selected-icon-variant-card active" : "selected-icon-variant-card"}>
@@ -293,7 +296,7 @@ export function AppEditor({
                       />
                     </span>
                     <div>
-                      <strong>Fond sombre</strong>
+                      <strong>{t("app.darkBackground")}</strong>
                     </div>
                   </div>
                 </div>
@@ -303,14 +306,14 @@ export function AppEditor({
 
           <div className="editor-actions">
             <button className="primary-button" type="submit" disabled={busy}>
-              {editorMode === "create" ? "Ajouter" : "Enregistrer"}
+              {editorMode === "create" ? t("common.add") : t("common.save")}
             </button>
             <button className="secondary-button" type="button" onClick={onReset}>
-              Reinitialiser
+              {t("common.reset")}
             </button>
             {editorMode === "edit" ? (
               <button className="danger-button" type="button" onClick={() => void onDelete()} disabled={busy}>
-                Supprimer
+                {t("common.delete")}
               </button>
             ) : null}
           </div>

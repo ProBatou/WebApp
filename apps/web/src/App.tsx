@@ -32,6 +32,7 @@ import { useEditor } from "./hooks/useEditor";
 import { useGroups } from "./hooks/useGroups";
 import { useIframes } from "./hooks/useIframes";
 import { useToast } from "./hooks/useToast";
+import { I18nProvider, useI18nContext, useTranslation } from "./lib/i18n";
 import type {
   ContextMenuState,
   ImportAppsResponse,
@@ -45,7 +46,10 @@ import type {
   WebAppEntry,
 } from "./types";
 
-export default function App() {
+function AppContent() {
+  const { t } = useTranslation();
+  const { lang, setLang } = useI18nContext();
+
   const sensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: {
@@ -354,10 +358,10 @@ export default function App() {
         selectApp(app.id);
       }
 
-      pushToast(app.is_default ? "App par defaut retiree." : `${app.name} definie comme app par defaut.`);
+      pushToast(app.is_default ? "toast.defaultRemoved" : t("toast.defaultSet", { name: app.name }));
       setContextMenu(null);
     } catch (toggleError) {
-      setError(toggleError instanceof Error ? toggleError.message : "Erreur de mise a jour.");
+      setError(toggleError instanceof Error ? toggleError.message : "errors.update");
     } finally {
       setBusy(false);
     }
@@ -432,9 +436,9 @@ export default function App() {
       const nextValue = await file.text();
       setJsonValue(nextValue);
       setJsonModalError(null);
-      setJsonModalInfo(`${file.name} charge.`);
+      setJsonModalInfo(t("toast.fileLoaded", { name: file.name }));
     } catch {
-      setJsonModalError("Impossible de lire le fichier JSON.");
+      setJsonModalError("errors.readJson");
       setJsonModalInfo(null);
     } finally {
       event.target.value = "";
@@ -445,10 +449,10 @@ export default function App() {
     try {
       await navigator.clipboard.writeText(jsonValue);
       setJsonModalError(null);
-      setJsonModalInfo("JSON copie.");
-      pushToast("JSON copie dans le presse-papiers.");
+      setJsonModalInfo("toast.jsonCopied");
+      pushToast("toast.jsonCopiedClipboard");
     } catch {
-      setJsonModalError("Impossible de copier le JSON.");
+      setJsonModalError("errors.copyJson");
       setJsonModalInfo(null);
     }
   };
@@ -473,11 +477,9 @@ export default function App() {
       const preferredId = result.importedIds.length > 0 ? result.importedIds[result.importedIds.length - 1] : result.items[0]?.id ?? null;
       selectApp(preferredId);
       closeJsonModal();
-      pushToast(
-        `${result.importedIds.length} application${result.importedIds.length > 1 ? "s" : ""} importee${result.importedIds.length > 1 ? "s" : ""}.`
-      );
+      pushToast(t("toast.importedApps", { count: result.importedIds.length, suffix: result.importedIds.length > 1 ? "s" : "" }));
     } catch (importError) {
-      setJsonModalError(importError instanceof Error ? importError.message : "Erreur d'import.");
+      setJsonModalError(importError instanceof Error ? importError.message : "errors.import");
     } finally {
       setBusy(false);
     }
@@ -489,7 +491,12 @@ export default function App() {
       if (jsonImportMode === "replace" && apps.length > 0) {
         setConfirmState({
           open: true,
-          message: `Remplacer ${apps.length} application${apps.length > 1 ? "s" : ""} par ${importedItems.length} nouvelle${importedItems.length > 1 ? "s" : ""} entree${importedItems.length > 1 ? "s" : ""} ?`,
+          message: t("confirm.replaceImport", {
+            existing: apps.length,
+            existingSuffix: apps.length > 1 ? "s" : "",
+            incoming: importedItems.length,
+            incomingSuffix: importedItems.length > 1 ? "s" : "",
+          }),
           onConfirm: () => {
             setConfirmState({ open: false, message: "", onConfirm: null });
             void executeImport();
@@ -500,7 +507,7 @@ export default function App() {
 
       await executeImport();
     } catch (importError) {
-      setJsonModalError(importError instanceof Error ? importError.message : "Erreur d'import.");
+      setJsonModalError(importError instanceof Error ? importError.message : "errors.import");
     }
   };
 
@@ -605,11 +612,11 @@ export default function App() {
   const draggedApp = draggingAppId === null ? null : apps.find((item) => item.id === draggingAppId) ?? null;
 
   if (loading) {
-    return <div className="full-screen-state">Chargement de WebApp V2...</div>;
+    return <div className="full-screen-state">{t("app.loadingWebapp")}</div>;
   }
 
   if (error && !user) {
-    return <div className="full-screen-state error-state">{error}</div>;
+    return <div className="full-screen-state error-state">{t(error)}</div>;
   }
 
   if (!user) {
@@ -642,7 +649,7 @@ export default function App() {
       <div className="app-shell" onClick={() => setContextMenu(null)} aria-busy={busy}>
         <div className={busy ? "busy-indicator visible" : "busy-indicator"} role="status" aria-live="polite">
           <span className="busy-spinner" aria-hidden="true" />
-          <span>Chargement...</span>
+          <span>{t("app.busy")}</span>
         </div>
 
         <Sidebar
@@ -688,6 +695,8 @@ export default function App() {
           }}
           onLogout={handleLogout}
           onToggleTheme={toggleThemeMode}
+          lang={lang}
+          setLang={setLang}
           onSelectApp={handleSelectApp}
           onEditApp={openEditEditorFromUi}
           onOpenContextMenu={openContextMenu}
@@ -791,17 +800,17 @@ export default function App() {
           onClose={() => setGroupManagerOpen(false)}
           onCreateGroup={async (name) => {
             const group = await createGroup(name);
-            pushToast(`${group.name} ajoute.`);
+            pushToast(t("toast.groupAdded", { name: group.name }));
           }}
           onRenameGroup={async (groupId, name) => {
             const group = await updateGroup(groupId, name);
-            pushToast(`${group.name} renomme.`);
+            pushToast(t("toast.groupRenamed", { name: group.name }));
           }}
           onDeleteGroup={async (groupId) => {
             const group = groups.find((item) => item.id === groupId);
             await deleteGroup(groupId);
             await reloadApps(selectedAppId);
-            pushToast(group ? `${group.name} supprime.` : "Groupe supprime.");
+            pushToast(group ? t("toast.groupDeleted", { name: group.name }) : "toast.groupDeletedFallback");
           }}
         />
         <UserManagerModal
@@ -818,7 +827,7 @@ export default function App() {
                 method: "POST",
                 body: JSON.stringify({ role }),
               });
-              pushToast("Lien d'invitation genere.");
+              pushToast("toast.inviteLinkCreated");
               return result.inviteUrl;
             } finally {
               setBusy(false);
@@ -833,7 +842,7 @@ export default function App() {
                 body: JSON.stringify({ role }),
               });
               setManagedUsers(result.items);
-              pushToast("Role utilisateur mis a jour.");
+              pushToast("toast.userRoleUpdated");
             } finally {
               setBusy(false);
             }
@@ -847,7 +856,7 @@ export default function App() {
                 method: "DELETE",
               });
               setManagedUsers(result.items);
-              pushToast(managedUser ? `${managedUser.username} supprime.` : "Utilisateur supprime.");
+              pushToast(managedUser ? t("toast.userDeleted", { name: managedUser.username }) : "toast.userDeletedFallback");
             } finally {
               setBusy(false);
             }
@@ -868,5 +877,13 @@ export default function App() {
         ) : null}
       </DragOverlay>
     </DndContext>
+  );
+}
+
+export default function App() {
+  return (
+    <I18nProvider>
+      <AppContent />
+    </I18nProvider>
   );
 }

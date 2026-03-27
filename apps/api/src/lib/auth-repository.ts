@@ -255,7 +255,7 @@ export function createAuthRepository(database: SqliteDatabase, createSessionId: 
   function requireSession(request: FastifyRequest, reply: FastifyReply) {
     const user = getSessionUser(request);
     if (!user) {
-      reply.code(401).send({ message: "Authentification requise." });
+      reply.code(401).send({ message: "errors.authRequired" });
       return null;
     }
 
@@ -264,7 +264,7 @@ export function createAuthRepository(database: SqliteDatabase, createSessionId: 
 
   function requireAdmin(user: SessionUser, reply: FastifyReply) {
     if (user.role !== "admin") {
-      reply.code(403).send({ message: "Acces administrateur requis." });
+      reply.code(403).send({ message: "errors.adminRequired" });
       return null;
     }
 

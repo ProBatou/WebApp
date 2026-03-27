@@ -731,6 +731,30 @@ textarea {
   padding: 0;
 }
 
+.lang-switcher {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+}
+
+.lang-switcher .lang-toggle {
+  min-height: 36px;
+  padding: 0;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+
+.lang-switcher .lang-toggle.active {
+  border-color: var(--accent);
+  color: var(--text-primary);
+}
+
+.user-lang-switcher {
+  margin-top: 10px;
+  width: 104px;
+}
+
 .sidebar-actions-menu {
   position: relative;
   width: 100%;
@@ -739,6 +763,13 @@ textarea {
 
 .sidebar-actions-trigger {
   width: 100%;
+  min-width: 0;
+  height: 46px;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.02rem;
 }
 
 .sidebar-actions-popover {
@@ -791,6 +822,8 @@ textarea {
 .sidebar.compact .sidebar-actions-trigger {
   width: 48px;
   min-width: 48px;
+  height: 46px;
+  padding: 0;
 }
 
 .sidebar.compact .sidebar-actions-popover .secondary-button {

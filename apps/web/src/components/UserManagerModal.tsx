@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import type { UserEntry } from "../types";
+import { useTranslation } from "../lib/i18n";
 
 export function UserManagerModal({
   open,
@@ -20,6 +21,7 @@ export function UserManagerModal({
   onChangeRole: (userId: number, role: "admin" | "viewer") => Promise<void>;
   onDeleteUser: (userId: number) => Promise<void>;
 }) {
+  const { t } = useTranslation();
   const [role, setRole] = useState<"admin" | "viewer">("viewer");
   const [inviteLink, setInviteLink] = useState("");
 
@@ -47,11 +49,11 @@ export function UserManagerModal({
       <aside className="editor-modal group-modal" onClick={(event) => event.stopPropagation()} aria-modal="true" role="dialog">
         <div className="editor-header">
           <div>
-            <p className="eyebrow">Administration</p>
-            <h3>Utilisateurs</h3>
+            <p className="eyebrow">{t("modal.admin")}</p>
+            <h3>{t("modal.users")}</h3>
           </div>
           <button className="ghost-icon-button" type="button" onClick={onClose}>
-            Fermer
+            {t("common.close")}
           </button>
         </div>
 
@@ -70,12 +72,12 @@ export function UserManagerModal({
               <option value="admin">admin</option>
             </select>
             <button className="primary-button" type="submit" disabled={busy}>
-              Generer un lien d'invitation
+              {t("modal.createInvitationLink")}
             </button>
           </form>
           {inviteLink ? (
             <div className="invitation-link-row">
-              <input type="text" readOnly value={inviteLink} aria-label="Lien d'invitation" />
+              <input type="text" readOnly value={inviteLink} aria-label={t("modal.invitationLink")} />
               <button
                 className="secondary-button"
                 type="button"
@@ -83,11 +85,11 @@ export function UserManagerModal({
                   void navigator.clipboard.writeText(inviteLink);
                 }}
               >
-                Copier
+                {t("common.copy")}
               </button>
             </div>
           ) : (
-            <p className="json-summary">Genere un lien, copie-le, puis envoie-le manuellement au futur utilisateur.</p>
+            <p className="json-summary">{t("modal.invitationHelp")}</p>
           )}
 
           <div className="group-list">
@@ -96,7 +98,7 @@ export function UserManagerModal({
                 <div className="user-row">
                   <div className="user-meta">
                     <strong>{user.username}</strong>
-                    <small>{user.id === currentUserId ? "Vous" : `Compte #${user.id}`}</small>
+                    <small>{user.id === currentUserId ? t("modal.you") : t("modal.accountId", { id: user.id })}</small>
                   </div>
                   <div className="user-actions">
                     <select
@@ -113,13 +115,13 @@ export function UserManagerModal({
                       onClick={() => void onDeleteUser(user.id)}
                       disabled={busy || user.id === currentUserId}
                     >
-                      Supprimer
+                      {t("common.delete")}
                     </button>
                   </div>
                 </div>
               </div>
             ))}
-            {users.length === 0 ? <p className="json-summary">Aucun utilisateur.</p> : null}
+            {users.length === 0 ? <p className="json-summary">{t("modal.noUsers")}</p> : null}
           </div>
         </div>
       </aside>

@@ -1,4 +1,5 @@
 import { useEffect } from "react";
+import { useTranslation } from "../lib/i18n";
 
 export function ConfirmModal({
   message,
@@ -11,6 +12,8 @@ export function ConfirmModal({
   onCancel: () => void;
   open: boolean;
 }) {
+  const { t } = useTranslation();
+
   useEffect(() => {
     if (!open) {
       return;
@@ -35,18 +38,18 @@ export function ConfirmModal({
       <aside className="editor-modal" onClick={(event) => event.stopPropagation()} aria-modal="true" role="dialog">
         <div className="editor-header">
           <div>
-            <p className="eyebrow">Confirmation</p>
-            <h3>Confirmer l'action</h3>
+            <p className="eyebrow">{t("modal.confirmation")}</p>
+            <h3>{t("modal.confirmAction")}</h3>
           </div>
         </div>
         <div className="json-panel">
           <p className="json-summary">{message}</p>
           <div className="editor-actions">
             <button className="danger-button" type="button" onClick={onConfirm}>
-              Confirmer
+              {t("common.confirm")}
             </button>
             <button className="secondary-button" type="button" onClick={onCancel}>
-              Annuler
+              {t("common.cancel")}
             </button>
           </div>
         </div>
