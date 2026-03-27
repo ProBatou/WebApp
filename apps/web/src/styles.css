@@ -862,6 +862,36 @@ textarea {
   gap: 10px;
 }
 
+.user-create-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) 140px auto;
+  gap: 10px;
+  align-items: center;
+}
+
+.user-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: center;
+}
+
+.user-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.user-meta small {
+  color: var(--muted);
+}
+
+.user-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
 .app-list::-webkit-scrollbar {
   display: none;
 }
@@ -1730,6 +1760,16 @@ a[aria-disabled="true"] {
   .json-toolbar-actions .secondary-button,
   .json-toolbar-actions .ghost-icon-button {
     width: 100%;
+  }
+
+  .user-create-grid,
+  .user-row {
+    grid-template-columns: 1fr;
+  }
+
+  .user-actions {
+    width: 100%;
+    justify-content: flex-start;
   }
 
   .workspace-grid {

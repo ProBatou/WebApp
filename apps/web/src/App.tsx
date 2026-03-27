@@ -20,6 +20,7 @@ import { JsonModal } from "./components/JsonModal";
 import { ShortcutHelpModal } from "./components/ShortcutHelpModal";
 import { DragOverlayTile, Sidebar } from "./components/Sidebar";
 import { ToastContainer } from "./components/ToastContainer";
+import { UserManagerModal } from "./components/UserManagerModal";
 import { Workspace } from "./components/Workspace";
 import { parseImportedApps, exportAppsToJson, getSuggestedDashboardIcon, themeStorageKey } from "./lib/app-utils";
 import { apiFetch } from "./lib/api";
@@ -31,7 +32,7 @@ import { useEditor } from "./hooks/useEditor";
 import { useGroups } from "./hooks/useGroups";
 import { useIframes } from "./hooks/useIframes";
 import { useToast } from "./hooks/useToast";
-import type { ContextMenuState, ImportAppsResponse, JsonImportMode, JsonModalMode, SidebarMode, ThemeMode, WebAppEntry } from "./types";
+import type { ContextMenuState, ImportAppsResponse, JsonImportMode, JsonModalMode, SidebarMode, ThemeMode, UserEntry, UsersResponse, WebAppEntry } from "./types";
 
 export default function App() {
   const sensors = useSensors(
@@ -56,6 +57,8 @@ export default function App() {
   const [jsonModalError, setJsonModalError] = useState<string | null>(null);
   const [jsonModalInfo, setJsonModalInfo] = useState<string | null>(null);
   const [groupManagerOpen, setGroupManagerOpen] = useState(false);
+  const [userManagerOpen, setUserManagerOpen] = useState(false);
+  const [managedUsers, setManagedUsers] = useState<UserEntry[]>([]);
   const [contextMenu, setContextMenu] = useState<ContextMenuState>(null);
   const [draggingAppId, setDraggingAppId] = useState<number | null>(null);
   const [dragOutProgress, setDragOutProgress] = useState(0);
@@ -156,6 +159,7 @@ export default function App() {
     setContextMenu(null);
     closeJsonModal();
     setGroupManagerOpen(false);
+    setUserManagerOpen(false);
     setShortcutHelpOpen(false);
   }, [closeEditor, closeJsonModal]);
 
@@ -225,7 +229,7 @@ export default function App() {
   }, [dashboardIconsState.dashboardIcons, editorOpen, editorState.icon, iconSelectionLocked, normalizedIconQuery, setEditorState]);
 
   useEffect(() => {
-    if (!editorOpen && !jsonModalMode && !shortcutHelpOpen && !groupManagerOpen) {
+    if (!editorOpen && !jsonModalMode && !shortcutHelpOpen && !groupManagerOpen && !userManagerOpen) {
       return undefined;
     }
 
@@ -246,12 +250,16 @@ export default function App() {
         if (groupManagerOpen) {
           setGroupManagerOpen(false);
         }
+
+        if (userManagerOpen) {
+          setUserManagerOpen(false);
+        }
       }
     };
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [closeEditor, editorOpen, jsonModalMode, shortcutHelpOpen, groupManagerOpen, closeJsonModal]);
+  }, [closeEditor, editorOpen, jsonModalMode, shortcutHelpOpen, groupManagerOpen, userManagerOpen, closeJsonModal]);
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -280,6 +288,7 @@ export default function App() {
         closeEditor();
         closeJsonModal();
         setGroupManagerOpen(false);
+        setUserManagerOpen(false);
         setShortcutHelpOpen(true);
       }
     };
@@ -287,6 +296,11 @@ export default function App() {
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [closeEditor, closeJsonModal, user]);
+
+  const reloadUsers = useCallback(async () => {
+    const result = await apiFetch<UsersResponse>("/api/users", { method: "GET" });
+    setManagedUsers(result.items);
+  }, []);
 
   const toggleThemeMode = () => {
     setThemeMode((current) => (current === "light" ? "dark" : "light"));
@@ -339,6 +353,7 @@ export default function App() {
     setContextMenu(null);
     closeJsonModal();
     setGroupManagerOpen(false);
+    setUserManagerOpen(false);
     setShortcutHelpOpen(false);
     openCreateEditor();
   };
@@ -347,6 +362,7 @@ export default function App() {
     setContextMenu(null);
     closeJsonModal();
     setGroupManagerOpen(false);
+    setUserManagerOpen(false);
     setShortcutHelpOpen(false);
     openEditEditor(app);
   };
@@ -355,6 +371,7 @@ export default function App() {
     setContextMenu(null);
     closeEditor();
     setGroupManagerOpen(false);
+    setUserManagerOpen(false);
     setShortcutHelpOpen(false);
     setJsonImportMode("merge");
     setJsonValue("");
@@ -367,6 +384,7 @@ export default function App() {
     setContextMenu(null);
     closeEditor();
     setGroupManagerOpen(false);
+    setUserManagerOpen(false);
     setShortcutHelpOpen(false);
     setJsonModalError(null);
     setJsonModalInfo(null);
@@ -459,6 +477,7 @@ export default function App() {
   const openContextMenu = (event: MouseEvent<HTMLDivElement>, app: WebAppEntry) => {
     event.preventDefault();
     setGroupManagerOpen(false);
+    setUserManagerOpen(false);
     setShortcutHelpOpen(false);
 
     const menuWidth = 190;
@@ -476,6 +495,7 @@ export default function App() {
   const openSidebarContextMenu = (event: MouseEvent<HTMLElement>) => {
     event.preventDefault();
     setGroupManagerOpen(false);
+    setUserManagerOpen(false);
     setShortcutHelpOpen(false);
 
     const menuWidth = 190;
@@ -592,6 +612,7 @@ export default function App() {
           sidebarMode={sidebarMode}
           setSidebarMode={setSidebarMode}
           userName={user.username}
+          userRole={user.role}
           groups={groups}
           apps={apps}
           selectedAppId={selectedAppId}
@@ -609,8 +630,20 @@ export default function App() {
             setContextMenu(null);
             closeEditor();
             closeJsonModal();
+            setUserManagerOpen(false);
             setShortcutHelpOpen(false);
             setGroupManagerOpen(true);
+          }}
+          onOpenUserManager={() => {
+            setContextMenu(null);
+            closeEditor();
+            closeJsonModal();
+            setGroupManagerOpen(false);
+            setShortcutHelpOpen(false);
+            setUserManagerOpen(true);
+            if (user.role === "admin") {
+              void reloadUsers();
+            }
           }}
           onLogout={handleLogout}
           onToggleTheme={toggleThemeMode}
@@ -727,6 +760,55 @@ export default function App() {
             await deleteGroup(groupId);
             await reloadApps(selectedAppId);
             pushToast(group ? `${group.name} supprime.` : "Groupe supprime.");
+          }}
+        />
+        <UserManagerModal
+          open={userManagerOpen && user.role === "admin"}
+          busy={busy}
+          currentUserId={user.id}
+          users={managedUsers}
+          onClose={() => setUserManagerOpen(false)}
+          onCreateUser={async (payload) => {
+            try {
+              setBusy(true);
+              setError(null);
+              const result = await apiFetch<UsersResponse>("/api/users", {
+                method: "POST",
+                body: JSON.stringify(payload),
+              });
+              setManagedUsers(result.items);
+              pushToast(`Utilisateur ${payload.username} ajoute.`);
+            } finally {
+              setBusy(false);
+            }
+          }}
+          onChangeRole={async (userId, role) => {
+            try {
+              setBusy(true);
+              setError(null);
+              const result = await apiFetch<UsersResponse>(`/api/users/${userId}/role`, {
+                method: "PUT",
+                body: JSON.stringify({ role }),
+              });
+              setManagedUsers(result.items);
+              pushToast("Role utilisateur mis a jour.");
+            } finally {
+              setBusy(false);
+            }
+          }}
+          onDeleteUser={async (userId) => {
+            const managedUser = managedUsers.find((item) => item.id === userId);
+            try {
+              setBusy(true);
+              setError(null);
+              const result = await apiFetch<UsersResponse>(`/api/users/${userId}`, {
+                method: "DELETE",
+              });
+              setManagedUsers(result.items);
+              pushToast(managedUser ? `${managedUser.username} supprime.` : "Utilisateur supprime.");
+            } finally {
+              setBusy(false);
+            }
           }}
         />
         <ToastContainer toasts={toasts} onDismiss={dismissToast} />

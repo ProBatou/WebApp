@@ -201,6 +201,7 @@ export function Sidebar({
   sidebarMode,
   setSidebarMode,
   userName,
+  userRole,
   groups,
   apps,
   selectedAppId,
@@ -215,6 +216,7 @@ export function Sidebar({
   onOpenCreateEditor,
   onOpenJsonImport,
   onOpenGroupManager,
+  onOpenUserManager,
   onLogout,
   onToggleTheme,
   onSelectApp,
@@ -227,6 +229,7 @@ export function Sidebar({
   sidebarMode: SidebarMode;
   setSidebarMode: Dispatch<SetStateAction<SidebarMode>>;
   userName: string;
+  userRole: "admin" | "viewer";
   groups: GroupEntry[];
   apps: WebAppEntry[];
   selectedAppId: number | null;
@@ -241,6 +244,7 @@ export function Sidebar({
   onOpenCreateEditor: () => void;
   onOpenJsonImport: () => void;
   onOpenGroupManager: () => void;
+  onOpenUserManager: () => void;
   onLogout: () => Promise<void>;
   onToggleTheme: () => void;
   onSelectApp: (app: WebAppEntry) => void;
@@ -514,6 +518,19 @@ export function Sidebar({
                 >
                   Groupes
                 </button>
+                {userRole === "admin" ? (
+                  <button
+                    className="secondary-button"
+                    type="button"
+                    onClick={() => {
+                      setActionsMenuOpen(false);
+                      onOpenUserManager();
+                    }}
+                    title="Gerer les utilisateurs"
+                  >
+                    Utilisateurs
+                  </button>
+                ) : null}
                 <button
                   className="secondary-button"
                   type="button"

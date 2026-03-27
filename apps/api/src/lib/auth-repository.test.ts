@@ -197,3 +197,27 @@ test("requireAdmin rejects viewer users and allows admin users", () => {
     database.close();
   }
 });
+
+test("updateUserRole prevents demoting the last admin", () => {
+  const { database, repository } = createTestAuthRepository();
+  try {
+    const admin = repository.createUser("admin", "hash", "admin");
+    const result = repository.updateUserRole(admin.id, "viewer", 9999);
+
+    assert.deepEqual(result, { error: "last_admin" });
+  } finally {
+    database.close();
+  }
+});
+
+test("deleteUser forbids self deletion", () => {
+  const { database, repository } = createTestAuthRepository();
+  try {
+    const admin = repository.createUser("admin", "hash", "admin");
+    const result = repository.deleteUser(admin.id, admin.id);
+
+    assert.deepEqual(result, { error: "self_delete_forbidden" });
+  } finally {
+    database.close();
+  }
+});

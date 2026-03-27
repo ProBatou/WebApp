@@ -17,8 +17,8 @@ export function hasUsers() {
   return authRepository.hasUsers();
 }
 
-export function createUser(username: string, passwordHash: string) {
-  return authRepository.createUser(username, passwordHash);
+export function createUser(...args: Parameters<typeof authRepository.createUser>) {
+  return authRepository.createUser(...args);
 }
 
 export function createInitialUser(username: string, passwordHash: string) {
@@ -27,6 +27,10 @@ export function createInitialUser(username: string, passwordHash: string) {
 
 export function findUserByUsername(username: string) {
   return authRepository.findUserByUsername(username);
+}
+
+export function listUsers(...args: Parameters<typeof authRepository.listUsers>) {
+  return authRepository.listUsers(...args);
 }
 
 export function createSession(...args: Parameters<typeof authRepository.createSession>) {
@@ -47,6 +51,14 @@ export function requireSession(...args: Parameters<typeof authRepository.require
 
 export function requireAdmin(...args: Parameters<typeof authRepository.requireAdmin>) {
   return authRepository.requireAdmin(...args);
+}
+
+export function updateUserRole(...args: Parameters<typeof authRepository.updateUserRole>) {
+  return authRepository.updateUserRole(...args);
+}
+
+export function deleteUser(...args: Parameters<typeof authRepository.deleteUser>) {
+  return authRepository.deleteUser(...args);
 }
 
 export { sessionCookieName };
