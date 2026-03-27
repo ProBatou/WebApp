@@ -1,19 +1,17 @@
 services:
   webapp-v2:
     container_name: webapp-v2
-    image: node:20-bookworm-slim
+    image: ghcr.io/probatou/webapp:latest
     environment:
       NODE_ENV: production
       PORT: "3004"
-      DATABASE_PATH: /app/data/webapp-v2.db
+      DATABASE_PATH: /app/data/webapp.db
     labels:
       cosmos-force-network-mode: bridge
     ports:
       - "3004:3004"
     volumes:
-      - /cosmos-storage/webapp-v2:/app
-    working_dir: /app
-    command: sh /app/start.sh
+      - /cosmos-storage/webapp-v2/data:/app/data
     healthcheck:
       test: ["CMD", "wget", "-qO-", "http://localhost:3004/api/health"]
       interval: 30s

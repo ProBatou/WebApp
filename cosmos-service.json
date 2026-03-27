@@ -2,11 +2,11 @@
   "services": {
     "webapp-v2": {
       "container_name": "webapp-v2",
-      "image": "node:20-bookworm-slim",
+      "image": "ghcr.io/probatou/webapp:latest",
       "environment": [
         "NODE_ENV=production",
         "PORT=3004",
-        "DATABASE_PATH=/app/data/webapp-v2.db"
+        "DATABASE_PATH=/app/data/webapp.db"
       ],
       "labels": {
         "cosmos-force-network-mode": "bridge"
@@ -18,8 +18,8 @@
       "volumes": [
         {
           "Type": "bind",
-          "Source": "/cosmos-storage/webapp-v2",
-          "Target": "/app"
+          "Source": "/cosmos-storage/webapp-v2/data",
+          "Target": "/app/data"
         }
       ],
       "networks": {
@@ -29,10 +29,7 @@
       "restart": "unless-stopped",
       "devices": null,
       "expose": [],
-      "command": "sh /app/start.sh",
-      "entrypoint": "docker-entrypoint.sh",
       "runtime": "runc",
-      "working_dir": "/app",
       "hostname": "webapp-v2",
       "network_mode": "bridge",
       "healthcheck": {
