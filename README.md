@@ -1,69 +1,67 @@
-<!-- CURRENT FEATURES -->
-## Current Features
+# WebApp V2
 
-![Product Screen Shot](./README/WebAPP.png)
+WebApp est un agregateur d'applications web. Cette branche `v2` remplace l'ancienne implementation PHP/JavaScript par un monorepo TypeScript avec un frontend React/Vite et une API Fastify.
 
-You are tired of typing urls all the time to go to your apps, the solution is HERE. WebApp a simple solution that only needs to evolve with you
+## Stack
 
-Features:
-* Adding app with iframe or not
-* Refresh a single application and not the entire site
-* Open in other tab without Webapp
-* Fast loading with lazy loading
-* No modification is to be made on the DB :smile:
+- Frontend: React + Vite + TypeScript
+- Backend: Fastify + TypeScript
+- Base de donnees: SQLite
+- Organisation: npm workspaces
 
+## Prerequis
 
+- Node.js >= 20
+- npm
 
-<!-- GETTING STARTED -->
-## Getting Started
-### Prerequisites
+## Installation
 
-* SQLite3
-  ```sh
-  apt install sqlite3
-  ```
-  
-* PHP
-  ```sh
-  apt install php php-sqlite3 
-  ```
-  
-* cURL
-  ```sh
-  apt install curl
-  ```
+```bash
+git clone <url-du-repo>
+cd WebApp
+npm install
+npm run build
+```
 
-### Installation
+## Developpement
 
-1. Go to folder
-   ```sh
-   cd /var/www/
-   ```
-2. Clone the repo
-   ```sh
-   git clone https://github.com/ProBatou/WebApp.git
-   ```
-3. Add permision
-   ```sh
-   chown -R www-data:www-data WebApp/
-   ```
-4. Go to you're favorite browser and configure WebApp
-   ```html
-   https://<IPOFDEVICE>
-   ```
-5. Enjoy and add App in interface
-  
-  ![Interface Screen Shot](./README/WebAPP%20interface.png)
+```bash
+npm run dev
+```
 
+- Frontend: `http://localhost:5173`
+- API: `http://localhost:3001`
 
+## Structure
 
-### Update
+```text
+apps/
+  api/
+  web/
+package.json
+package-lock.json
+tsconfig.base.json
+docker-compose.yml
+start.sh
+cosmos-service.json
+```
 
-Update with interface pop-up 
+## Docker
 
+Le projet peut etre demarre avec le `docker-compose.yml` fourni, prevu pour monter l'application dans `/app` et exposer le service sur le port `3004`.
 
+```bash
+docker compose up -d
+```
 
-<!-- CONTACT -->
-## Contact
+Le conteneur lance `start.sh`, installe les dependances si necessaire, build le frontend, build l'API puis demarre le serveur Fastify en servant aussi les fichiers statiques du frontend.
 
- webapp@probatou.com
+## Version legacy PHP
+
+L'ancienne version PHP reste accessible via la branche `php-legacy`, creee avant l'integration de la reecriture TypeScript.
+
+## Remarques
+
+- Le build frontend genere `apps/web/dist/`.
+- La base SQLite locale est creee automatiquement dans `apps/api/data/`.
+- Cette version est destinee a remplacer l'ancienne base PHP tout en conservant l'historique Git dans le depot d'origine.

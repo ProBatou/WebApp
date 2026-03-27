@@ -1,0 +1,47 @@
+{
+  "services": {
+    "webapp-v2": {
+      "container_name": "webapp-v2",
+      "image": "node:20-bookworm-slim",
+      "environment": [
+        "NODE_ENV=production",
+        "PORT=3004",
+        "DATABASE_PATH=/app/data/webapp-v2.db"
+      ],
+      "labels": {
+        "cosmos-force-network-mode": "bridge"
+      },
+      "ports": [
+        "0.0.0.0:3004:3004/tcp",
+        ":::3004:3004/tcp"
+      ],
+      "volumes": [
+        {
+          "Type": "bind",
+          "Source": "/cosmos-storage/webapp-v2",
+          "Target": "/app"
+        }
+      ],
+      "networks": {
+        "bridge": {}
+      },
+      "routes": null,
+      "restart": "unless-stopped",
+      "devices": null,
+      "expose": [],
+      "command": "sh /app/start.sh",
+      "entrypoint": "docker-entrypoint.sh",
+      "runtime": "runc",
+      "working_dir": "/app",
+      "hostname": "webapp-v2",
+      "network_mode": "bridge",
+      "healthcheck": {
+        "test": null,
+        "interval": 0,
+        "timeout": 0,
+        "retries": 0,
+        "start_period": 0
+      }
+    }
+  }
+}

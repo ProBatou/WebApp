@@ -1,0 +1,88 @@
+import type { FastifyInstance } from "fastify";
+import { z } from "zod";
+import {
+  clearSession,
+  createSession,
+  createUser,
+  findUserByUsername,
+  getSessionUser,
+  hasUsers,
+  hashPassword,
+  requireSession,
+  sessionCookieName,
+  verifyPassword,
+} from "../lib/auth.js";
+
+const authPayloadSchema = z.object({
+  username: z.string().trim().min(3).max(32),
+  password: z.string().min(8).max(128),
+});
+
+export async function registerAuthRoutes(server: FastifyInstance) {
+  server.get("/api/bootstrap", async (request) => {
+    const user = getSessionUser(request);
+
+    return {
+      needsSetup: !hasUsers(),
+      user,
+    };
+  });
+
+  server.get("/api/session", async (request, reply) => {
+    const user = requireSession(request, reply);
+    if (!user) {
+      return reply;
+    }
+
+    return { user };
+  });
+
+  server.post("/api/setup", async (request, reply) => {
+    if (hasUsers()) {
+      return reply.code(409).send({ message: "L'application est deja initialisee." });
+    }
+
+    const parsed = authPayloadSchema.safeParse(request.body);
+    if (!parsed.success) {
+      return reply.code(400).send({ message: "Identifiants invalides." });
+    }
+
+    const passwordHash = await hashPassword(parsed.data.password);
+    const user = createUser(parsed.data.username, passwordHash);
+    createSession(request, reply, user.id);
+
+    return reply.code(201).send({ user });
+  });
+
+  server.post("/api/login", async (request, reply) => {
+    const parsed = authPayloadSchema.safeParse(request.body);
+    if (!parsed.success) {
+      return reply.code(400).send({ message: "Identifiants invalides." });
+    }
+
+    const user = findUserByUsername(parsed.data.username);
+    if (!user) {
+      return reply.code(401).send({ message: "Utilisateur ou mot de passe incorrect." });
+    }
+
+    const isValid = await verifyPassword(parsed.data.password, user.password_hash);
+    if (!isValid) {
+      return reply.code(401).send({ message: "Utilisateur ou mot de passe incorrect." });
+    }
+
+    clearSession(request, reply, request.cookies[sessionCookieName]);
+    createSession(request, reply, user.id);
+
+    return {
+      user: {
+        id: user.id,
+        username: user.username,
+      },
+    };
+  });
+
+  server.post("/api/logout", async (request, reply) => {
+    clearSession(request, reply, request.cookies[sessionCookieName]);
+    return reply.code(204).send();
+  });
+}
