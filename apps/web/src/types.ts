@@ -45,6 +45,17 @@ export type GroupsResponse = {
   items: GroupEntry[];
 };
 
+export type UserEntry = {
+  id: number;
+  username: string;
+  role: "admin" | "viewer";
+  created_at: string;
+};
+
+export type UsersResponse = {
+  items: UserEntry[];
+};
+
 export type ImportAppsResponse = {
   items: WebAppEntry[];
   importedIds: number[];

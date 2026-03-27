@@ -16,18 +16,31 @@ function isSecureRequest(request: FastifyRequest) {
 }
 
 export function createAuthRepository(database: SqliteDatabase, createSessionId: () => string = () => randomBytes(24).toString("hex")) {
+  function listUsers() {
+    return database
+      .prepare("SELECT id, username, role, created_at FROM users ORDER BY id ASC")
+      .all() as Array<{ id: number; username: string; role: SessionUser["role"]; created_at: string }>;
+  }
+
+  function countAdmins() {
+    const row = database.prepare("SELECT COUNT(*) as count FROM users WHERE role = 'admin'").get() as { count: number };
+    return row.count;
+  }
+
   function hasUsers() {
     const row = database.prepare("SELECT COUNT(*) as count FROM users").get() as { count: number };
     return row.count > 0;
   }
 
-  function createUser(username: string, passwordHash: string) {
+  function createUser(username: string, passwordHash: string, role: SessionUser["role"] = "admin") {
     const now = new Date().toISOString();
-    const result = database.prepare("INSERT INTO users (username, password_hash, created_at) VALUES (?, ?, ?)").run(username, passwordHash, now);
+    const result = database
+      .prepare("INSERT INTO users (username, password_hash, role, created_at) VALUES (?, ?, ?, ?)")
+      .run(username, passwordHash, role, now);
     return {
       id: Number(result.lastInsertRowid),
       username,
-      role: "admin",
+      role,
     } satisfies SessionUser;
   }
 
@@ -96,6 +109,57 @@ export function createAuthRepository(database: SqliteDatabase, createSessionId: 
     });
   }
 
+  function updateUserRole(userId: number, role: SessionUser["role"], actorUserId: number) {
+    const existingUser = database
+      .prepare("SELECT id, username, role, created_at FROM users WHERE id = ?")
+      .get(userId) as
+      | { id: number; username: string; role: SessionUser["role"]; created_at: string }
+      | undefined;
+
+    if (!existingUser) {
+      return { error: "not_found" as const };
+    }
+
+    if (existingUser.id === actorUserId) {
+      return { error: "self_change_forbidden" as const };
+    }
+
+    if (existingUser.role === "admin" && role === "viewer" && countAdmins() <= 1) {
+      return { error: "last_admin" as const };
+    }
+
+    database.prepare("UPDATE users SET role = ? WHERE id = ?").run(role, userId);
+
+    const updatedUser = database
+      .prepare("SELECT id, username, role, created_at FROM users WHERE id = ?")
+      .get(userId) as { id: number; username: string; role: SessionUser["role"]; created_at: string };
+
+    return { user: updatedUser };
+  }
+
+  function deleteUser(userId: number, actorUserId: number) {
+    const existingUser = database
+      .prepare("SELECT id, username, role FROM users WHERE id = ?")
+      .get(userId) as
+      | { id: number; username: string; role: SessionUser["role"] }
+      | undefined;
+
+    if (!existingUser) {
+      return { error: "not_found" as const };
+    }
+
+    if (existingUser.id === actorUserId) {
+      return { error: "self_delete_forbidden" as const };
+    }
+
+    if (existingUser.role === "admin" && countAdmins() <= 1) {
+      return { error: "last_admin" as const };
+    }
+
+    database.prepare("DELETE FROM users WHERE id = ?").run(userId);
+    return { deleted: true as const };
+  }
+
   function getSessionUser(request: FastifyRequest) {
     const sessionId = request.cookies[sessionCookieName];
     if (!sessionId) {
@@ -145,10 +209,13 @@ export function createAuthRepository(database: SqliteDatabase, createSessionId: 
     createUser,
     createInitialUser,
     findUserByUsername,
+    listUsers,
     createSession,
     clearSession,
     getSessionUser,
     requireSession,
     requireAdmin,
+    updateUserRole,
+    deleteUser,
   };
 }
