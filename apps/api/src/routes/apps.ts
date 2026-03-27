@@ -37,6 +37,49 @@ function serializeApp(app: AppRecord) {
 
 type SerializedAppRecord = ReturnType<typeof serializeApp>;
 
+function getOrderedAppIds() {
+  return (db.prepare("SELECT id FROM apps ORDER BY sort_order ASC, id ASC").all() as Array<{ id: number }>).map((row) => row.id);
+}
+
+function hasExactOrderedIds(candidateIds: number[]) {
+  const uniqueIds = new Set(candidateIds);
+  if (uniqueIds.size !== candidateIds.length) {
+    return false;
+  }
+
+  const existingIds = getOrderedAppIds();
+  if (existingIds.length !== candidateIds.length) {
+    return false;
+  }
+
+  return existingIds.every((id) => uniqueIds.has(id));
+}
+
+const insertAppTransaction = db.transaction((payload: z.infer<typeof appSchema>) => {
+  const now = new Date().toISOString();
+  const sortRow = db.prepare("SELECT COALESCE(MAX(sort_order), 0) as maxOrder FROM apps").get() as { maxOrder: number };
+  const result = db
+    .prepare(
+      `INSERT INTO apps (name, description, url, icon, icon_variant_mode, icon_variant_inverted, accent, open_mode, sort_order, created_at, updated_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+    )
+    .run(
+      payload.name,
+      payload.description,
+      payload.url,
+      payload.icon.trim(),
+      payload.iconVariantMode,
+      payload.iconVariantInverted ? 1 : 0,
+      payload.accent,
+      payload.openMode,
+      sortRow.maxOrder + 1,
+      now,
+      now
+    );
+
+  return db.prepare("SELECT * FROM apps WHERE id = ?").get(Number(result.lastInsertRowid)) as AppRecord;
+});
+
 export async function registerAppRoutes(server: FastifyInstance) {
   server.get("/api/apps", async (request, reply) => {
     const user = requireSession(request, reply);
@@ -60,28 +103,7 @@ export async function registerAppRoutes(server: FastifyInstance) {
       return reply.code(400).send({ message: "Donnees invalides.", issues: parsed.error.flatten() });
     }
 
-    const now = new Date().toISOString();
-    const sortRow = db.prepare("SELECT COALESCE(MAX(sort_order), 0) as maxOrder FROM apps").get() as { maxOrder: number };
-    const result = db
-      .prepare(
-        `INSERT INTO apps (name, description, url, icon, icon_variant_mode, icon_variant_inverted, accent, open_mode, sort_order, created_at, updated_at)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
-      )
-      .run(
-        parsed.data.name,
-        parsed.data.description,
-        parsed.data.url,
-        parsed.data.icon.trim(),
-        parsed.data.iconVariantMode,
-        parsed.data.iconVariantInverted ? 1 : 0,
-        parsed.data.accent,
-        parsed.data.openMode,
-        sortRow.maxOrder + 1,
-        now,
-        now
-      );
-
-    const app = db.prepare("SELECT * FROM apps WHERE id = ?").get(Number(result.lastInsertRowid)) as AppRecord;
+    const app = insertAppTransaction(parsed.data);
     return reply.code(201).send({ item: serializeApp(app) });
   });
 
@@ -161,6 +183,10 @@ export async function registerAppRoutes(server: FastifyInstance) {
     const parsed = reorderSchema.safeParse(request.body);
     if (!parsed.success) {
       return reply.code(400).send({ message: "Ordre invalide." });
+    }
+
+    if (!hasExactOrderedIds(parsed.data.orderedIds)) {
+      return reply.code(400).send({ message: "Ordre invalide: la liste doit contenir chaque application une seule fois." });
     }
 
     const reorder = db.transaction((orderedIds: number[]) => {

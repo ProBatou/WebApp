@@ -2,8 +2,8 @@ import type { FastifyInstance } from "fastify";
 import { z } from "zod";
 import {
   clearSession,
+  createInitialUser,
   createSession,
-  createUser,
   findUserByUsername,
   getSessionUser,
   hasUsers,
@@ -37,24 +37,35 @@ export async function registerAuthRoutes(server: FastifyInstance) {
     return { user };
   });
 
-  server.post("/api/setup", async (request, reply) => {
-    if (hasUsers()) {
-      return reply.code(409).send({ message: "L'application est deja initialisee." });
-    }
-
+  server.post(
+    "/api/setup",
+    {
+      config: { rateLimit: { max: 5, timeWindow: "1 minute" } },
+    },
+    async (request, reply) => {
     const parsed = authPayloadSchema.safeParse(request.body);
     if (!parsed.success) {
       return reply.code(400).send({ message: "Identifiants invalides." });
     }
 
     const passwordHash = await hashPassword(parsed.data.password);
-    const user = createUser(parsed.data.username, passwordHash);
+    const user = createInitialUser(parsed.data.username, passwordHash);
+    if (!user) {
+      return reply.code(409).send({ message: "L'application est deja initialisee." });
+    }
+
     createSession(request, reply, user.id);
 
     return reply.code(201).send({ user });
-  });
+    }
+  );
 
-  server.post("/api/login", async (request, reply) => {
+  server.post(
+    "/api/login",
+    {
+      config: { rateLimit: { max: 10, timeWindow: "1 minute" } },
+    },
+    async (request, reply) => {
     const parsed = authPayloadSchema.safeParse(request.body);
     if (!parsed.success) {
       return reply.code(400).send({ message: "Identifiants invalides." });
@@ -79,7 +90,8 @@ export async function registerAuthRoutes(server: FastifyInstance) {
         username: user.username,
       },
     };
-  });
+    }
+  );
 
   server.post("/api/logout", async (request, reply) => {
     clearSession(request, reply, request.cookies[sessionCookieName]);
