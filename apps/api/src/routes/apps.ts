@@ -4,7 +4,7 @@ import { createAppRepository } from "../lib/app-repository.js";
 import { db } from "../lib/db.js";
 import { isDemoMode } from "../lib/demo.js";
 import { createGroupRepository } from "../lib/group-repository.js";
-import { requireSession } from "../lib/auth.js";
+import { requireAdmin, requireSession } from "../lib/auth.js";
 import type { AppRecord } from "../lib/types.js";
 
 const appSchema = z.object({
@@ -96,12 +96,16 @@ export async function registerAppRoutes(server: FastifyInstance) {
   });
 
   server.post("/api/apps/:id/default", writeRouteConfig, async (request, reply) => {
-    if (blockDemoWrites(reply)) {
+    const user = requireSession(request, reply);
+    if (!user) {
       return reply;
     }
 
-    const user = requireSession(request, reply);
-    if (!user) {
+    if (!requireAdmin(user, reply)) {
+      return reply;
+    }
+
+    if (blockDemoWrites(reply)) {
       return reply;
     }
 
@@ -121,12 +125,16 @@ export async function registerAppRoutes(server: FastifyInstance) {
   });
 
   server.delete("/api/apps/:id/default", writeRouteConfig, async (request, reply) => {
-    if (blockDemoWrites(reply)) {
+    const user = requireSession(request, reply);
+    if (!user) {
       return reply;
     }
 
-    const user = requireSession(request, reply);
-    if (!user) {
+    if (!requireAdmin(user, reply)) {
+      return reply;
+    }
+
+    if (blockDemoWrites(reply)) {
       return reply;
     }
 
@@ -146,12 +154,16 @@ export async function registerAppRoutes(server: FastifyInstance) {
   });
 
   server.post("/api/apps", writeRouteConfig, async (request, reply) => {
-    if (blockDemoWrites(reply)) {
+    const user = requireSession(request, reply);
+    if (!user) {
       return reply;
     }
 
-    const user = requireSession(request, reply);
-    if (!user) {
+    if (!requireAdmin(user, reply)) {
+      return reply;
+    }
+
+    if (blockDemoWrites(reply)) {
       return reply;
     }
 
@@ -169,12 +181,16 @@ export async function registerAppRoutes(server: FastifyInstance) {
   });
 
   server.put("/api/apps/:id", writeRouteConfig, async (request, reply) => {
-    if (blockDemoWrites(reply)) {
+    const user = requireSession(request, reply);
+    if (!user) {
       return reply;
     }
 
-    const user = requireSession(request, reply);
-    if (!user) {
+    if (!requireAdmin(user, reply)) {
+      return reply;
+    }
+
+    if (blockDemoWrites(reply)) {
       return reply;
     }
 
@@ -220,12 +236,16 @@ export async function registerAppRoutes(server: FastifyInstance) {
   });
 
   server.delete("/api/apps/:id", writeRouteConfig, async (request, reply) => {
-    if (blockDemoWrites(reply)) {
+    const user = requireSession(request, reply);
+    if (!user) {
       return reply;
     }
 
-    const user = requireSession(request, reply);
-    if (!user) {
+    if (!requireAdmin(user, reply)) {
+      return reply;
+    }
+
+    if (blockDemoWrites(reply)) {
       return reply;
     }
 
@@ -240,12 +260,16 @@ export async function registerAppRoutes(server: FastifyInstance) {
   });
 
   server.post("/api/apps/reorder", writeRouteConfig, async (request, reply) => {
-    if (blockDemoWrites(reply)) {
+    const user = requireSession(request, reply);
+    if (!user) {
       return reply;
     }
 
-    const user = requireSession(request, reply);
-    if (!user) {
+    if (!requireAdmin(user, reply)) {
+      return reply;
+    }
+
+    if (blockDemoWrites(reply)) {
       return reply;
     }
 
@@ -264,12 +288,16 @@ export async function registerAppRoutes(server: FastifyInstance) {
   });
 
   server.post("/api/apps/import", writeRouteConfig, async (request, reply) => {
-    if (blockDemoWrites(reply)) {
+    const user = requireSession(request, reply);
+    if (!user) {
       return reply;
     }
 
-    const user = requireSession(request, reply);
-    if (!user) {
+    if (!requireAdmin(user, reply)) {
+      return reply;
+    }
+
+    if (blockDemoWrites(reply)) {
       return reply;
     }
 

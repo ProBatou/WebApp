@@ -110,6 +110,7 @@ test("getSessionUser returns the linked user for an active session", () => {
     assert.deepEqual(repository.getSessionUser(request), {
       id: user.id,
       username: "alice",
+      role: "admin",
     });
   } finally {
     database.close();
@@ -148,6 +149,50 @@ test("requireSession returns 401 with the expected payload when unauthenticated"
     assert.equal(repository.requireSession(request, replyState.reply), null);
     assert.equal(replyState.getStatusCode(), 401);
     assert.deepEqual(replyState.getPayload(), { message: "Authentification requise." });
+  } finally {
+    database.close();
+  }
+});
+
+test("requireAdmin rejects viewer users and allows admin users", () => {
+  const { database, repository } = createTestAuthRepository();
+  try {
+    const viewer = repository.createUser("viewer", "hash");
+    database.prepare("UPDATE users SET role = 'viewer' WHERE id = ?").run(viewer.id);
+
+    const viewerReplyState = createReply();
+    assert.equal(
+      repository.requireAdmin(
+        {
+          id: viewer.id,
+          username: "viewer",
+          role: "viewer",
+        },
+        viewerReplyState.reply
+      ),
+      null
+    );
+    assert.equal(viewerReplyState.getStatusCode(), 403);
+    assert.deepEqual(viewerReplyState.getPayload(), { message: "Acces administrateur requis." });
+
+    const admin = repository.createUser("admin", "hash");
+    const adminReplyState = createReply();
+    assert.deepEqual(
+      repository.requireAdmin(
+        {
+          id: admin.id,
+          username: "admin",
+          role: "admin",
+        },
+        adminReplyState.reply
+      ),
+      {
+        id: admin.id,
+        username: "admin",
+        role: "admin",
+      }
+    );
+    assert.equal(adminReplyState.getStatusCode(), null);
   } finally {
     database.close();
   }
