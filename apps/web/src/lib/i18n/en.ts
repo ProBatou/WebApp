@@ -86,6 +86,8 @@ export const en = {
   "app.searchApps": "Search apps",
   "sidebar.apps": "Apps",
   "sidebar.language": "Language",
+  "settings.open": "Settings",
+  "settings.account": "Account",
   "app.searchUnavailableWhileSorting": "Search unavailable while sorting",
   "app.showGroup": "Show group {group}",
   "app.hideGroup": "Hide group {group}",
