@@ -8,7 +8,6 @@ export const demoPassword = process.env.DEMO_PASSWORD || "demo";
 const demoApps = [
   {
     name: "Plex",
-    description: "Media server",
     url: "https://app.plex.tv",
     icon: "plex",
     iconVariantMode: "auto",
@@ -18,7 +17,6 @@ const demoApps = [
   },
   {
     name: "Nextcloud",
-    description: "Cloud perso et partage de fichiers",
     url: "https://nextcloud.com",
     icon: "nextcloud",
     iconVariantMode: "auto",
@@ -28,7 +26,6 @@ const demoApps = [
   },
   {
     name: "Grafana",
-    description: "Dashboards et monitoring",
     url: "https://grafana.com",
     icon: "grafana",
     iconVariantMode: "auto",
@@ -38,7 +35,6 @@ const demoApps = [
   },
   {
     name: "Home Assistant",
-    description: "Domotique et automatisations",
     url: "https://www.home-assistant.io",
     icon: "home-assistant",
     iconVariantMode: "auto",
@@ -48,7 +44,6 @@ const demoApps = [
   },
   {
     name: "Portainer",
-    description: "Gestion Docker",
     url: "https://www.portainer.io",
     icon: "portainer",
     iconVariantMode: "auto",
@@ -58,7 +53,6 @@ const demoApps = [
   },
   {
     name: "Jellyfin",
-    description: "Media server open source",
     url: "https://jellyfin.org",
     icon: "jellyfin",
     iconVariantMode: "auto",
@@ -91,14 +85,13 @@ export async function ensureDemoState() {
     db.prepare("INSERT INTO users (username, password_hash, created_at) VALUES (?, ?, ?)").run(demoUsername, passwordHash, now);
 
     const insertApp = db.prepare(
-      `INSERT INTO apps (name, description, url, icon, icon_variant_mode, icon_variant_inverted, accent, open_mode, sort_order, created_at, updated_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+      `INSERT INTO apps (name, url, icon, icon_variant_mode, icon_variant_inverted, accent, open_mode, sort_order, created_at, updated_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
     );
 
     demoApps.forEach((app, index) => {
       insertApp.run(
         app.name,
-        app.description,
         app.url,
         app.icon,
         app.iconVariantMode,

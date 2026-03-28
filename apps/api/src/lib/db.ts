@@ -68,7 +68,6 @@ const migrations: Migration[] = [
         CREATE TABLE IF NOT EXISTS apps (
           id INTEGER PRIMARY KEY AUTOINCREMENT,
           name TEXT NOT NULL,
-          description TEXT NOT NULL DEFAULT '',
           url TEXT NOT NULL,
           icon TEXT NOT NULL,
           accent TEXT NOT NULL,
@@ -159,6 +158,14 @@ const migrations: Migration[] = [
     up: (database) => {
       if (!hasColumn(database, "apps", "is_shared")) {
         database.exec("ALTER TABLE apps ADD COLUMN is_shared INTEGER NOT NULL DEFAULT 1 CHECK(is_shared IN (0, 1))");
+      }
+    },
+  },
+  {
+    id: "010_drop_description",
+    up: (database) => {
+      if (hasColumn(database, "apps", "description")) {
+        database.exec("ALTER TABLE apps DROP COLUMN description");
       }
     },
   },

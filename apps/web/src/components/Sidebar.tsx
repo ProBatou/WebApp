@@ -563,9 +563,13 @@ export function Sidebar({
           <button
             className="ghost-icon-button sidebar-language-switch sidebar-bottom-button"
             type="button"
-            onClick={() => setLang(lang === "en" ? "fr" : "en")}
-            aria-label={lang === "en" ? t("lang.fr") : t("lang.en")}
-            title={lang === "en" ? t("lang.fr") : t("lang.en")}
+            onClick={() => {
+              const order = ["en", "fr", "de", "es"] as const;
+              const next = order[(order.indexOf(lang as typeof order[number]) + 1) % order.length];
+              setLang(next);
+            }}
+            aria-label={t("sidebar.language")}
+            title={t("sidebar.language")}
           >
             <span className="sidebar-language-trigger">{lang.toUpperCase()}</span>
           </button>
