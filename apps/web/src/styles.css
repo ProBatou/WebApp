@@ -73,8 +73,10 @@
 html,
 body,
 #root {
+  height: 100%;
   min-height: 100%;
   margin: 0;
+  overflow: hidden;
 }
 
 body {
@@ -240,15 +242,6 @@ button {
     linear-gradient(155deg, rgba(29, 24, 20, 0.94), rgba(18, 15, 12, 0.84)),
     radial-gradient(circle at top left, rgba(223, 122, 66, 0.16), transparent 34%),
     radial-gradient(circle at bottom right, rgba(60, 110, 120, 0.14), transparent 26%);
-}
-
-.auth-card::before {
-  content: "";
-  position: absolute;
-  inset: 18px;
-  border-radius: 26px;
-  border: 1px solid rgba(255, 255, 255, 0.42);
-  pointer-events: none;
 }
 
 .form-panel {
@@ -694,7 +687,7 @@ textarea {
 
 .sidebar-bottom-actions {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 8px;
   margin-top: auto;
   padding-top: 14px;
@@ -703,16 +696,14 @@ textarea {
 
 .sidebar-bottom-actions .primary-button,
 .sidebar-bottom-actions .secondary-button,
-.sidebar-bottom-actions .ghost-icon-button {
+.sidebar-bottom-actions .ghost-icon-button,
+.sidebar-bottom-button,
+.sidebar-language-switch {
   min-height: 46px;
   min-width: 0;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-}
-
-.sidebar-bottom-actions .primary-button {
-  grid-column: 1 / -1;
 }
 
 .sidebar-bottom-actions .primary-button,
@@ -731,28 +722,32 @@ textarea {
   padding: 0;
 }
 
-.lang-switcher {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
+.sidebar-language-switch {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   gap: 6px;
+  width: 100%;
+  padding: 0 8px;
 }
 
-.lang-switcher .lang-toggle {
-  min-height: 36px;
+.sidebar-language-option {
+  border: 0;
   padding: 0;
-  font-size: 0.78rem;
-  font-weight: 700;
-  letter-spacing: 0.04em;
+  background: transparent;
+  color: var(--muted);
+  font-size: 0.83rem;
+  line-height: 1;
+  cursor: pointer;
 }
 
-.lang-switcher .lang-toggle.active {
-  border-color: var(--accent);
-  color: var(--text-primary);
+.sidebar-language-option.active {
+  color: var(--text);
 }
 
-.user-lang-switcher {
-  margin-top: 10px;
-  width: 104px;
+.sidebar-language-separator {
+  color: var(--muted);
+  line-height: 1;
 }
 
 .sidebar-actions-menu {
@@ -824,6 +819,10 @@ textarea {
   min-width: 48px;
   height: 46px;
   padding: 0;
+}
+
+.sidebar.compact .sidebar-language-switch {
+  display: none;
 }
 
 .sidebar.compact .sidebar-actions-popover .secondary-button {
@@ -1031,8 +1030,6 @@ textarea {
 
 .app-meta {
   display: flex;
-  flex-direction: column;
-  gap: 2px;
   min-width: 0;
   flex: 1;
 }
@@ -1051,6 +1048,26 @@ textarea {
   color: #df9f55;
   font-size: 0.88rem;
   line-height: 1;
+}
+
+.app-external-icon {
+  color: var(--muted);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 8px;
+  height: 8px;
+  margin-left: 2px;
+  margin-right: 4px;
+  vertical-align: super;
+  opacity: 0.5;
+  line-height: 1;
+  flex: 0 0 auto;
+  pointer-events: none;
+}
+
+.app-external-icon svg {
+  display: block;
 }
 
 .app-status-dot {
@@ -1072,14 +1089,6 @@ textarea {
 
 .app-status-dot.unknown {
   background: #98a2b3;
-}
-
-.app-meta small {
-  color: var(--muted);
-  font-size: 0.78rem;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
 }
 
 .resolved-icon-debug {
@@ -1111,7 +1120,7 @@ textarea {
   display: flex;
   flex-direction: column;
   min-width: 0;
-  min-height: 100vh;
+  min-height: 100dvh;
   background: transparent;
   border: 0;
   box-shadow: none;
@@ -1145,7 +1154,7 @@ textarea {
 .viewer-panel {
   position: relative;
   overflow: hidden;
-  min-height: 100vh;
+  min-height: 100dvh;
   border-radius: 0;
   background: transparent;
   border: 0;
@@ -1169,7 +1178,8 @@ textarea {
 .iframe-stack {
   position: relative;
   width: 100%;
-  min-height: 100vh;
+  height: 100dvh;
+  min-height: 100dvh;
 }
 
 .app-frame {
@@ -1177,7 +1187,7 @@ textarea {
   inset: 0;
   width: 100%;
   height: 100%;
-  min-height: 100vh;
+  min-height: 100dvh;
   border: 0;
   background: var(--frame-bg);
 }
@@ -1196,7 +1206,7 @@ textarea {
 
 .empty-state,
 .external-state {
-  min-height: 100vh;
+  min-height: 100dvh;
   display: grid;
   place-items: center;
   text-align: center;
@@ -1211,8 +1221,8 @@ textarea {
 .edge-trigger {
   position: fixed;
   inset: 0 auto 0 0;
-  width: 14px;
-  z-index: 9;
+  width: 2px;
+  z-index: 20;
   border: 0;
   background: transparent;
   opacity: 0;
@@ -1825,11 +1835,27 @@ a[aria-disabled="true"] {
   .empty-state,
   .external-state,
   .app-frame {
-    min-height: 100vh;
+    min-height: 100dvh;
   }
 }
 
 @media (max-width: 960px) {
+  .edge-trigger {
+    display: block;
+    width: 32px;
+    padding: 0;
+    margin: 0;
+    border: 0;
+    background: transparent;
+    opacity: 0;
+    appearance: none;
+    -webkit-appearance: none;
+    -webkit-tap-highlight-color: transparent;
+    box-shadow: none;
+    outline: none;
+    touch-action: pan-y;
+  }
+
   .auth-shell,
   .app-shell {
     grid-template-columns: 1fr;
@@ -1881,16 +1907,19 @@ a[aria-disabled="true"] {
     gap: 12px;
   }
 
-  .auth-panel,
-  .workspace,
-  .sidebar {
+  .auth-panel {
     border-radius: 24px;
     padding: 18px;
   }
 
-  .auth-card::before {
-    inset: 12px;
-    border-radius: 20px;
+  .app-shell {
+    padding: 0;
+    gap: 0;
+  }
+
+  .app-shell .workspace,
+  .app-shell .sidebar {
+    border-radius: 0;
   }
 
   .json-toolbar,
@@ -1920,14 +1949,14 @@ a[aria-disabled="true"] {
   }
 
   .workspace-grid {
-    margin-top: 14px;
+    margin-top: 0;
   }
 
   .viewer-panel,
   .app-frame,
   .empty-state,
   .external-state {
-    min-height: 100vh;
+    min-height: 100dvh;
   }
 
   .editor-modal-overlay {
@@ -1984,9 +2013,5 @@ a[aria-disabled="true"] {
 
   .sidebar-tools {
     flex-direction: column;
-  }
-
-  .edge-trigger {
-    width: 16px;
   }
 }
