@@ -262,6 +262,43 @@ export function createAuthRepository(database: SqliteDatabase, createSessionId: 
     return user;
   }
 
+  function updateUsername(userId: number, newUsername: string) {
+    const existing = database.prepare("SELECT id FROM users WHERE username = ?").get(newUsername);
+    if (existing) {
+      return { error: "username_taken" as const };
+    }
+    database.prepare("UPDATE users SET username = ? WHERE id = ?").run(newUsername, userId);
+    return { ok: true as const };
+  }
+
+  function updatePassword(userId: number, currentPasswordHash: string, newPasswordHash: string) {
+    const user = database
+      .prepare("SELECT password_hash FROM users WHERE id = ?")
+      .get(userId) as { password_hash: string } | undefined;
+    if (!user) {
+      return { error: "not_found" as const };
+    }
+    return { ok: true as const, currentPasswordHash: user.password_hash, newPasswordHash };
+  }
+
+  function applyPasswordUpdate(userId: number, newPasswordHash: string) {
+    database.prepare("UPDATE users SET password_hash = ? WHERE id = ?").run(newPasswordHash, userId);
+  }
+
+  function deleteSelf(userId: number) {
+    const user = database
+      .prepare("SELECT role FROM users WHERE id = ?")
+      .get(userId) as { role: SessionUser["role"] } | undefined;
+    if (!user) {
+      return { error: "not_found" as const };
+    }
+    if (user.role === "admin" && countAdmins() <= 1) {
+      return { error: "last_admin" as const };
+    }
+    database.prepare("DELETE FROM users WHERE id = ?").run(userId);
+    return { deleted: true as const };
+  }
+
   function requireAdmin(user: SessionUser, reply: FastifyReply) {
     if (user.role !== "admin") {
       reply.code(403).send({ message: "errors.adminRequired" });
@@ -284,6 +321,10 @@ export function createAuthRepository(database: SqliteDatabase, createSessionId: 
     requireAdmin,
     updateUserRole,
     deleteUser,
+    updateUsername,
+    updatePassword,
+    applyPasswordUpdate,
+    deleteSelf,
     createInvitation,
     getInvitation,
     consumeInvitation,

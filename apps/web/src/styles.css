@@ -1068,6 +1068,50 @@ textarea {
   color: var(--danger);
 }
 
+.account-form {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.account-input {
+  padding: 8px 10px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: var(--field-bg);
+  color: var(--text);
+  font-size: 0.875rem;
+}
+
+.account-form-btn {
+  align-self: flex-start;
+  padding: 8px 14px;
+}
+
+.account-feedback {
+  font-size: 0.8rem;
+  padding: 6px 10px;
+  border-radius: 6px;
+  margin-top: 4px;
+}
+
+.account-error {
+  background: var(--banner-bg);
+  color: var(--danger);
+  border: 1px solid var(--banner-border);
+}
+
+.account-info {
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+.account-delete-warning {
+  font-size: 0.8rem;
+  color: var(--muted);
+  margin-bottom: 8px;
+}
+
 .about-list {
   display: flex;
   flex-direction: column;

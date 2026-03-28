@@ -18,6 +18,10 @@ import {
   sessionCookieName,
   updateUserRole,
   verifyPassword,
+  updateUsername,
+  updatePassword,
+  applyPasswordUpdate,
+  deleteSelf,
 } from "../lib/auth.js";
 import { isDemoMode } from "../lib/demo.js";
 import { getPreferences } from "../lib/preferences-repository.js";
@@ -331,6 +335,78 @@ export async function registerAuthRoutes(server: FastifyInstance) {
       }
 
       return { items: listUsers() };
+    }
+  );
+
+  const updateUsernameSchema = z.object({
+    username: z.string().trim().min(3).max(32),
+  });
+
+  const updatePasswordSchema = z.object({
+    currentPassword: z.string().min(1).max(128),
+    newPassword: z.string().min(8).max(128),
+  });
+
+  server.put(
+    "/api/user/username",
+    { config: { rateLimit: { max: 10, timeWindow: "1 minute" } } },
+    async (request, reply) => {
+      if (isDemoMode) return reply.code(403).send({ message: "errors.demoMode" });
+      const user = requireSession(request, reply);
+      if (!user) return reply;
+
+      const parsed = updateUsernameSchema.safeParse(request.body);
+      if (!parsed.success) return reply.code(400).send({ message: "errors.invalidData" });
+
+      const result = updateUsername(user.id, parsed.data.username);
+      if ("error" in result && result.error === "username_taken") {
+        return reply.code(409).send({ message: "errors.usernameTaken" });
+      }
+
+      return { username: parsed.data.username };
+    }
+  );
+
+  server.put(
+    "/api/user/password",
+    { config: { rateLimit: { max: 10, timeWindow: "1 minute" } } },
+    async (request, reply) => {
+      if (isDemoMode) return reply.code(403).send({ message: "errors.demoMode" });
+      const user = requireSession(request, reply);
+      if (!user) return reply;
+
+      const parsed = updatePasswordSchema.safeParse(request.body);
+      if (!parsed.success) return reply.code(400).send({ message: "errors.invalidData" });
+
+      const check = updatePassword(user.id, parsed.data.currentPassword, "");
+      if ("error" in check) return reply.code(404).send({ message: "errors.notFound" });
+
+      const valid = await verifyPassword(parsed.data.currentPassword, check.currentPasswordHash);
+      if (!valid) return reply.code(401).send({ message: "errors.invalidCredentials" });
+
+      const newHash = await hashPassword(parsed.data.newPassword);
+      applyPasswordUpdate(user.id, newHash);
+
+      return { ok: true };
+    }
+  );
+
+  server.delete(
+    "/api/user",
+    { config: { rateLimit: { max: 5, timeWindow: "1 minute" } } },
+    async (request, reply) => {
+      if (isDemoMode) return reply.code(403).send({ message: "errors.demoMode" });
+      const user = requireSession(request, reply);
+      if (!user) return reply;
+
+      const result = deleteSelf(user.id);
+      if ("error" in result) {
+        if (result.error === "last_admin") return reply.code(400).send({ message: "errors.lastAdmin" });
+        return reply.code(404).send({ message: "errors.notFound" });
+      }
+
+      clearSession(request, reply);
+      return { deleted: true };
     }
   );
 }

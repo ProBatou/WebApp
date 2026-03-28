@@ -43,9 +43,15 @@ function applyColors(prefs: UserPreferences) {
   if (prefs.sidebarColor) {
     root.style.setProperty("--panel", prefs.sidebarColor);
     root.style.setProperty("--panel-strong", darkenHex(prefs.sidebarColor, 0.05));
+    root.style.setProperty("--panel-muted", hexToRgba(prefs.sidebarColor, 0.56));
+    root.style.setProperty("--menu-bg", hexToRgba(prefs.sidebarColor, 0.96));
+    root.style.setProperty("--modal-surface", hexToRgba(prefs.sidebarColor, 0.92));
   } else {
     root.style.removeProperty("--panel");
     root.style.removeProperty("--panel-strong");
+    root.style.removeProperty("--panel-muted");
+    root.style.removeProperty("--menu-bg");
+    root.style.removeProperty("--modal-surface");
   }
 
   if (prefs.buttonColor) {

@@ -22,7 +22,7 @@ export function useAuth({
   setError,
   setBusy,
 }: {
-  reloadApps: () => Promise<void>;
+  reloadApps: (preferSelectedId?: number | null) => Promise<void>;
   clearAppState: () => void;
   clearUiState: () => void;
   setError: (value: string | null) => void;
@@ -54,7 +54,7 @@ export function useAuth({
           clearInviteTokenFromUrl();
           setInviteToken(null);
           setInviteRole(null);
-          await reloadApps();
+          await reloadApps(result.preferences?.defaultAppId ?? undefined);
         } else if (inviteToken) {
           try {
             const invitation = await apiFetch<InvitationInfoResponse>(`/api/invitations/${encodeURIComponent(inviteToken)}`, { method: "GET" });
@@ -125,6 +125,7 @@ export function useAuth({
 
   return {
     user,
+    setUser,
     preferences,
     needsSetup,
     demoMode,
