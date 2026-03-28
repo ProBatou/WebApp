@@ -16,7 +16,6 @@ export const dashboardIconsCdnBaseUrl = "https://cdn.jsdelivr.net/gh/homarr-labs
 export const jsonImportExample = `[
   {
     "name": "Plex",
-    "description": "Media server",
     "url": "https://plex.example.com",
     "icon": "plex",
     "iconVariantMode": "auto",
@@ -30,7 +29,6 @@ export const jsonImportExample = `[
 
 export const emptyEditorState: AppEditorState = {
   name: "",
-  description: "",
   url: "https://",
   icon: "",
   iconVariantMode: "auto",
@@ -240,7 +238,6 @@ export function exportAppsToJson(apps: WebAppEntry[]) {
   return JSON.stringify(
     apps.map((app) => ({
       name: app.name,
-      description: app.description,
       url: app.url,
       icon: app.icon,
       iconVariantMode: app.icon_variant_mode,
@@ -317,7 +314,6 @@ export function parseImportedApps(rawValue: string) {
 
     const item = entry as JsonTransferItem;
     const name = typeof item.name === "string" ? item.name.trim() : "";
-    const description = typeof item.description === "string" ? item.description.trim() : "";
     const url = typeof item.url === "string" ? item.url.trim() : "";
     const icon = typeof item.icon === "string" ? item.icon.trim() : "";
     const iconVariantMode = isIconVariantMode(item.iconVariantMode) ? item.iconVariantMode : "auto";
@@ -348,7 +344,6 @@ export function parseImportedApps(rawValue: string) {
 
     return {
       name,
-      description,
       url,
       icon: resolvedIcon,
       iconVariantMode,

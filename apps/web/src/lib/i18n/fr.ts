@@ -3,6 +3,8 @@ import type { TranslationKey } from "./en";
 export const fr: Record<TranslationKey, string> = {
   "lang.en": "EN",
   "lang.fr": "FR",
+  "lang.de": "DE",
+  "lang.es": "ES",
 
   "common.loading": "Chargement...",
   "common.demo": "Démo",
@@ -135,6 +137,7 @@ export const fr: Record<TranslationKey, string> = {
   "modal.appsInOrder": "{count} app{suffix} dans l'ordre actuel.",
   "modal.exportedJson": "JSON exporté",
   "modal.copyJson": "Copier JSON",
+  "modal.editJson": "Modifier le JSON",
   "modal.closeNotification": "Fermer la notification",
 
   "status.online": "En ligne",

@@ -4,7 +4,6 @@ export type UserRole = "admin" | "viewer";
 
 export type SharedAppPayload = {
   name: string;
-  description: string;
   url: string;
   icon: string;
   iconVariantMode: IconVariantMode;

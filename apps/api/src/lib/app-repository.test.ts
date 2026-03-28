@@ -17,7 +17,6 @@ function createTestAppRepository() {
 function createApp(name: string, overrides: Partial<AppPayload> = {}): AppPayload {
   return {
     name,
-    description: `${name} description`,
     url: `https://${name.toLowerCase()}.example.com`,
     icon: name.toLowerCase(),
     iconVariantMode: "auto",

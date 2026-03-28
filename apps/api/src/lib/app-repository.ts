@@ -47,12 +47,11 @@ export function createAppRepository(database: SqliteDatabase) {
     const sortRow = database.prepare("SELECT COALESCE(MAX(sort_order), 0) as maxOrder FROM apps").get() as { maxOrder: number };
     const result = database
       .prepare(
-        `INSERT INTO apps (name, description, url, icon, icon_variant_mode, icon_variant_inverted, accent, open_mode, is_default, is_shared, group_id, sort_order, created_at, updated_at)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0, ?, ?, ?, ?, ?)`
+        `INSERT INTO apps (name, url, icon, icon_variant_mode, icon_variant_inverted, accent, open_mode, is_default, is_shared, group_id, sort_order, created_at, updated_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?, 0, ?, ?, ?, ?, ?)`
       )
       .run(
         payload.name,
-        payload.description,
         payload.url,
         payload.icon.trim(),
         payload.iconVariantMode,
@@ -122,14 +121,13 @@ export function createAppRepository(database: SqliteDatabase) {
 
       const sortRow = database.prepare("SELECT COALESCE(MAX(sort_order), 0) as maxOrder FROM apps").get() as { maxOrder: number };
       const insertStatement = database.prepare(
-        `INSERT INTO apps (name, description, url, icon, icon_variant_mode, icon_variant_inverted, accent, open_mode, is_default, is_shared, group_id, sort_order, created_at, updated_at)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0, ?, ?, ?, ?, ?)`
+        `INSERT INTO apps (name, url, icon, icon_variant_mode, icon_variant_inverted, accent, open_mode, is_default, is_shared, group_id, sort_order, created_at, updated_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?, 0, ?, ?, ?, ?, ?)`
       );
 
       items.forEach((item, index) => {
         const result = insertStatement.run(
           item.name,
-          item.description,
           item.url,
           item.icon.trim(),
           item.iconVariantMode,

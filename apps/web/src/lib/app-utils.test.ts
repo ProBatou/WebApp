@@ -11,7 +11,6 @@ test("parseImportedApps parses a plain array payload", () => {
     JSON.stringify([
       {
         name: "Plex",
-        description: "Media",
         url: "https://plex.example.com",
         icon: "plex",
         iconVariantMode: "base",
@@ -25,7 +24,6 @@ test("parseImportedApps parses a plain array payload", () => {
   assert.deepEqual(result, [
     {
       name: "Plex",
-      description: "Media",
       url: "https://plex.example.com",
       icon: "plex",
       iconVariantMode: "base",
@@ -57,7 +55,6 @@ test("parseImportedApps supports object payloads with items and defaults invalid
   assert.deepEqual(result, [
     {
       name: "Grafana",
-      description: "",
       url: "https://grafana.example.com",
       icon: "G",
       iconVariantMode: "auto",
@@ -91,7 +88,6 @@ test("parseImportedApps supports Homarr-like JSON exports", () => {
   assert.deepEqual(result, [
     {
       name: "Jellyfin",
-      description: "",
       url: "https://jellyfin.example.com",
       icon: "jellyfin",
       iconVariantMode: "auto",
@@ -117,7 +113,6 @@ test("parseImportedApps supports Homepage YAML exports", () => {
   assert.deepEqual(result, [
     {
       name: "Plex",
-      description: "",
       url: "https://plex.example.com",
       icon: "plex",
       iconVariantMode: "auto",
@@ -129,7 +124,6 @@ test("parseImportedApps supports Homepage YAML exports", () => {
     },
     {
       name: "Grafana",
-      description: "",
       url: "https://grafana.example.com",
       icon: "G",
       iconVariantMode: "auto",
