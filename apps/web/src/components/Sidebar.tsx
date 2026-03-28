@@ -554,7 +554,7 @@ export function Sidebar({
           <button
             className="ghost-icon-button sidebar-bottom-button"
             type="button"
-            onClick={onOpenSettings}
+            onClick={() => onOpenSettings()}
             aria-label={t("settings.open")}
             title={t("settings.open")}
           >
