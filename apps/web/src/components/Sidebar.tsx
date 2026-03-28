@@ -1,8 +1,9 @@
-import { useEffect, useMemo, useRef, useState, type Dispatch, type MouseEvent, type ReactNode, type RefObject, type SetStateAction } from "react";
+import { useEffect, useMemo, useState, type Dispatch, type MouseEvent, type ReactNode, type RefObject, type SetStateAction } from "react";
 import { useDroppable } from "@dnd-kit/core";
 import { SortableContext, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { AppIcon } from "./AppIcon";
+import { Dropdown } from "./Dropdown";
 import { useTranslation, type SupportedLanguage } from "../lib/i18n";
 import type { AppStatusEntry, ContextMenuState, DashboardIconsMetadataMap, GroupEntry, SidebarMode, ThemeMode, WebAppEntry } from "../types";
 
@@ -110,7 +111,7 @@ function SortableAppTile({
         {!compact ? (
           <span className="app-meta">
             <strong>
-              {app.name}
+              <span className="app-name">{app.name}</span>
               {app.open_mode === "external" ? (
                 <span className="app-external-icon" aria-hidden="true">
                   <svg width="8" height="8" viewBox="0 0 8 8" fill="none" focusable="false" aria-hidden="true">
@@ -232,6 +233,7 @@ export function Sidebar({
   onSelectApp,
   onEditApp,
   onOpenContextMenu,
+  onReorderGroups,
 }: {
   sidebarRef: RefObject<HTMLElement | null>;
   sidebarOpen: boolean;
@@ -263,12 +265,13 @@ export function Sidebar({
   onSelectApp: (app: WebAppEntry) => void;
   onEditApp: (app: WebAppEntry) => void;
   onOpenContextMenu: (event: MouseEvent<HTMLDivElement>, app: WebAppEntry) => void;
+  onReorderGroups: (groupIds: number[]) => Promise<void>;
 }) {
   const { t } = useTranslation();
   const [filterQuery, setFilterQuery] = useState("");
-  const [actionsMenuOpen, setActionsMenuOpen] = useState(false);
   const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(() => readCollapsedGroups());
-  const actionsMenuRef = useRef<HTMLDivElement | null>(null);
+  const [draggingGroupId, setDraggingGroupId] = useState<number | null>(null);
+  const [dragOverGroupId, setDragOverGroupId] = useState<number | null>(null);
   const normalizedFilterQuery = filterQuery.trim().toLowerCase();
   const filteredApps = useMemo(() => {
     if (draggingAppId !== null || !normalizedFilterQuery) {
@@ -278,9 +281,15 @@ export function Sidebar({
     return apps.filter((app) => app.name.toLowerCase().includes(normalizedFilterQuery));
   }, [apps, draggingAppId, normalizedFilterQuery]);
   const groupedSections = useMemo(() => {
-    const groupedApps = groups
+    const groupedApps: Array<{
+      id: string;
+      groupId: number | null;
+      label: string;
+      apps: WebAppEntry[];
+    }> = groups
       .map((group) => ({
         id: `group:${group.id}`,
+        groupId: group.id,
         label: group.name,
         apps: filteredApps.filter((app) => app.group_id === group.id),
       }))
@@ -290,6 +299,7 @@ export function Sidebar({
     if (ungroupedApps.length > 0) {
       groupedApps.push({
         id: "group:none",
+        groupId: null,
         label: t("app.noGroup"),
         apps: ungroupedApps,
       });
@@ -305,30 +315,6 @@ export function Sidebar({
   }, [collapsedGroups, filteredApps]);
 
   useEffect(() => {
-    if (!actionsMenuOpen) {
-      return undefined;
-    }
-
-    const handlePointerDown = (event: PointerEvent) => {
-      const target = event.target;
-      if (!(target instanceof Node)) {
-        return;
-      }
-
-      if (!actionsMenuRef.current?.contains(target)) {
-        setActionsMenuOpen(false);
-      }
-    };
-
-    window.addEventListener("pointerdown", handlePointerDown);
-    return () => window.removeEventListener("pointerdown", handlePointerDown);
-  }, [actionsMenuOpen]);
-
-  useEffect(() => {
-    setActionsMenuOpen(false);
-  }, [sidebarMode]);
-
-  useEffect(() => {
     window.localStorage.setItem(collapsedGroupsStorageKey, JSON.stringify(Array.from(collapsedGroups)));
   }, [collapsedGroups]);
 
@@ -342,6 +328,78 @@ export function Sidebar({
       }
       return next;
     });
+  };
+
+  const actionItems = useMemo(() => {
+    const items: Array<{ label: string; value: string }> = [];
+
+    if (canManageApps) {
+      items.push({ label: t("common.json"), value: "json" });
+      items.push({ label: t("modal.groups"), value: "groups" });
+
+      if (userRole === "admin") {
+        items.push({ label: t("modal.users"), value: "users" });
+      }
+    }
+
+    items.push({ label: t("auth.signOut"), value: "logout" });
+    return items;
+  }, [canManageApps, t, userRole]);
+
+  const languageItems = useMemo(() => ([
+    { label: "EN", value: "en", active: lang === "en" },
+    { label: "FR", value: "fr", active: lang === "fr" },
+  ]), [lang]);
+
+  const handleSelectAction = (value: string) => {
+    if (value === "json") {
+      onOpenJsonImport();
+      return;
+    }
+
+    if (value === "groups") {
+      onOpenGroupManager();
+      return;
+    }
+
+    if (value === "users") {
+      onOpenUserManager();
+      return;
+    }
+
+    if (value === "logout") {
+      void onLogout();
+    }
+  };
+
+  const handleSelectLanguage = (value: string) => {
+    if (value === "en" || value === "fr") {
+      setLang(value);
+    }
+  };
+
+  const handleGroupDrop = async (targetGroupId: number) => {
+    if (draggingGroupId === null || draggingGroupId === targetGroupId) {
+      setDraggingGroupId(null);
+      setDragOverGroupId(null);
+      return;
+    }
+
+    const nextGroups = [...groups];
+    const fromIndex = nextGroups.findIndex((group) => group.id === draggingGroupId);
+    const toIndex = nextGroups.findIndex((group) => group.id === targetGroupId);
+    if (fromIndex === -1 || toIndex === -1) {
+      setDraggingGroupId(null);
+      setDragOverGroupId(null);
+      return;
+    }
+
+    const [movedGroup] = nextGroups.splice(fromIndex, 1);
+    nextGroups.splice(toIndex, 0, movedGroup);
+
+    setDraggingGroupId(null);
+    setDragOverGroupId(null);
+    await onReorderGroups(nextGroups.map((group) => group.id));
   };
 
   return (
@@ -429,10 +487,55 @@ export function Sidebar({
             {sidebarMode === "expanded" ? (
               <div className="app-section-list">
                 {groupedSections.map((section) => (
-                  <section key={section.id} className="grouped-app-section">
+                  <section
+                    key={section.id}
+                    className={
+                      section.groupId !== null && dragOverGroupId === section.groupId
+                        ? "grouped-app-section drag-over"
+                        : section.groupId !== null && draggingGroupId === section.groupId
+                          ? "grouped-app-section dragging"
+                          : "grouped-app-section"
+                    }
+                    onDragOver={(event) => {
+                      if (!canManageApps || section.groupId === null || draggingGroupId === null || draggingGroupId === section.groupId) {
+                        return;
+                      }
+
+                      event.preventDefault();
+                      setDragOverGroupId(section.groupId);
+                    }}
+                    onDragLeave={() => {
+                      if (section.groupId !== null && dragOverGroupId === section.groupId) {
+                        setDragOverGroupId(null);
+                      }
+                    }}
+                    onDrop={(event) => {
+                      if (!canManageApps || section.groupId === null) {
+                        return;
+                      }
+
+                      event.preventDefault();
+                      void handleGroupDrop(section.groupId);
+                    }}
+                  >
                     <button
                       className="group-section-toggle"
                       type="button"
+                      draggable={canManageApps && section.groupId !== null}
+                      onDragStart={(event) => {
+                        if (!canManageApps || section.groupId === null) {
+                          return;
+                        }
+
+                        setDraggingGroupId(section.groupId);
+                        setDragOverGroupId(null);
+                        event.dataTransfer.effectAllowed = "move";
+                        event.dataTransfer.setData("text/plain", String(section.groupId));
+                      }}
+                      onDragEnd={() => {
+                        setDraggingGroupId(null);
+                        setDragOverGroupId(null);
+                      }}
                       onClick={() => toggleGroupVisibility(section.id)}
                       aria-expanded={!collapsedGroups.has(section.id)}
                       aria-label={collapsedGroups.has(section.id) ? t("app.showGroup", { group: section.label }) : t("app.hideGroup", { group: section.label })}
@@ -494,101 +597,28 @@ export function Sidebar({
 
         <div className="sidebar-bottom-actions">
           {canManageApps ? (
-            <button className="primary-button sidebar-bottom-button" type="button" onClick={onOpenCreateEditor} title={t("app.new")}>
-              {sidebarMode === "expanded" ? t("common.new") : "+"}
+            <button
+              className="primary-button sidebar-bottom-button sidebar-icon-button"
+              type="button"
+              onClick={onOpenCreateEditor}
+              title={t("app.new")}
+              aria-label={t("app.new")}
+            >
+              +
             </button>
           ) : null}
-          <div ref={actionsMenuRef} className={actionsMenuOpen ? "sidebar-actions-menu open" : "sidebar-actions-menu"}>
-            <button
-              className="ghost-icon-button sidebar-actions-trigger sidebar-bottom-button"
-              type="button"
-              onClick={() => setActionsMenuOpen((current) => !current)}
-              title={t("common.actions")}
-              aria-haspopup="menu"
-              aria-expanded={actionsMenuOpen}
-              aria-label={t("common.actions")}
-            >
-              ⚙
-            </button>
-            {actionsMenuOpen ? (
-              <div className="sidebar-actions-popover" role="menu" aria-label={t("common.actions")}>
-                {canManageApps ? (
-                  <>
-                    <button
-                      className="secondary-button"
-                      type="button"
-                      onClick={() => {
-                        setActionsMenuOpen(false);
-                        onOpenJsonImport();
-                      }}
-                      title={t("app.importJson")}
-                    >
-                      {t("common.json")}
-                    </button>
-                    <button
-                      className="secondary-button"
-                      type="button"
-                      onClick={() => {
-                        setActionsMenuOpen(false);
-                        onOpenGroupManager();
-                      }}
-                      title={t("modal.groups")}
-                    >
-                      {t("modal.groups")}
-                    </button>
-                    {userRole === "admin" ? (
-                      <button
-                        className="secondary-button"
-                        type="button"
-                        onClick={() => {
-                          setActionsMenuOpen(false);
-                          onOpenUserManager();
-                        }}
-                        title={t("modal.users")}
-                      >
-                        {t("modal.users")}
-                      </button>
-                    ) : null}
-                  </>
-                ) : null}
-                <button
-                  className="secondary-button"
-                  type="button"
-                  onClick={() => {
-                    setActionsMenuOpen(false);
-                    void onLogout();
-                  }}
-                  disabled={busy}
-                  title={t("auth.signOut")}
-                >
-                  {t("auth.signOut")}
-                </button>
-              </div>
-            ) : null}
-          </div>
-          <div className="sidebar-language-switch" aria-label={t("sidebar.language")}>
-            <button
-              className={lang === "en" ? "sidebar-language-option active" : "sidebar-language-option"}
-              type="button"
-              onClick={() => setLang("en")}
-              aria-label={t("lang.en")}
-              title={t("lang.en")}
-            >
-              EN
-            </button>
-            <span className="sidebar-language-separator" aria-hidden="true">
-              ·
-            </span>
-            <button
-              className={lang === "fr" ? "sidebar-language-option active" : "sidebar-language-option"}
-              type="button"
-              onClick={() => setLang("fr")}
-              aria-label={t("lang.fr")}
-              title={t("lang.fr")}
-            >
-              FR
-            </button>
-          </div>
+          <Dropdown
+            trigger="⚙"
+            items={actionItems}
+            onSelect={handleSelectAction}
+            className="ghost-icon-button sidebar-bottom-button"
+          />
+          <Dropdown
+            trigger={<span className="sidebar-language-trigger">{lang.toUpperCase()}</span>}
+            items={languageItems}
+            onSelect={handleSelectLanguage}
+            className="ghost-icon-button sidebar-language-switch sidebar-bottom-button"
+          />
           <button className="ghost-icon-button theme-toggle sidebar-bottom-button" type="button" onClick={onToggleTheme} aria-label={t("app.themeToggleAria")} title={t("app.themeToggleTitle")}>
             {themeMode === "light" ? "◐" : "◑"}
           </button>

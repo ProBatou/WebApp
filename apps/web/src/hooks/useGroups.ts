@@ -57,6 +57,28 @@ export function useGroups({
     }
   }, [setBusy, setError]);
 
+  const reorderGroups = useCallback(async (groupIds: number[]) => {
+    try {
+      setBusy(true);
+      setError(null);
+
+      const result = await apiFetch<GroupsResponse>("/api/groups/reorder", {
+        method: "POST",
+        body: JSON.stringify({
+          items: groupIds.map((id) => ({ id })),
+        }),
+      });
+
+      setGroups(result.items);
+      return result.items;
+    } catch (groupError) {
+      setError(groupError instanceof Error ? groupError.message : "errors.group");
+      throw groupError;
+    } finally {
+      setBusy(false);
+    }
+  }, [setBusy, setError]);
+
   const deleteGroup = useCallback(async (groupId: number) => {
     try {
       setBusy(true);
@@ -86,6 +108,7 @@ export function useGroups({
     reloadGroups,
     createGroup,
     updateGroup,
+    reorderGroups,
     deleteGroup,
     resetGroups,
   };
