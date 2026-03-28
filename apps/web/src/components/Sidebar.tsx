@@ -3,7 +3,6 @@ import { useDroppable } from "@dnd-kit/core";
 import { SortableContext, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { AppIcon } from "./AppIcon";
-import { Dropdown } from "./Dropdown";
 import { useTranslation, type SupportedLanguage } from "../lib/i18n";
 import type { AppStatusEntry, ContextMenuState, DashboardIconsMetadataMap, GroupEntry, SidebarMode, ThemeMode, WebAppEntry } from "../types";
 
@@ -202,6 +201,7 @@ export function DragOverlayTile({
   );
 }
 
+
 export function Sidebar({
   sidebarRef,
   sidebarOpen,
@@ -209,7 +209,6 @@ export function Sidebar({
   sidebarMode,
   setSidebarMode,
   userName,
-  userRole,
   canManageApps,
   groups,
   apps,
@@ -223,10 +222,7 @@ export function Sidebar({
   appStatuses,
   onOpenSidebarContextMenu,
   onOpenCreateEditor,
-  onOpenJsonImport,
-  onOpenGroupManager,
-  onOpenUserManager,
-  onLogout,
+  onOpenSettings,
   onToggleTheme,
   lang,
   setLang,
@@ -241,7 +237,6 @@ export function Sidebar({
   sidebarMode: SidebarMode;
   setSidebarMode: Dispatch<SetStateAction<SidebarMode>>;
   userName: string;
-  userRole: "admin" | "viewer";
   canManageApps: boolean;
   groups: GroupEntry[];
   apps: WebAppEntry[];
@@ -255,10 +250,7 @@ export function Sidebar({
   appStatuses: Record<number, AppStatusEntry>;
   onOpenSidebarContextMenu: (event: MouseEvent<HTMLElement>) => void;
   onOpenCreateEditor: () => void;
-  onOpenJsonImport: () => void;
-  onOpenGroupManager: () => void;
-  onOpenUserManager: () => void;
-  onLogout: () => Promise<void>;
+  onOpenSettings: () => void;
   onToggleTheme: () => void;
   lang: SupportedLanguage;
   setLang: (lang: SupportedLanguage) => void;
@@ -328,54 +320,6 @@ export function Sidebar({
       }
       return next;
     });
-  };
-
-  const actionItems = useMemo(() => {
-    const items: Array<{ label: string; value: string }> = [];
-
-    if (canManageApps) {
-      items.push({ label: t("common.json"), value: "json" });
-      items.push({ label: t("modal.groups"), value: "groups" });
-
-      if (userRole === "admin") {
-        items.push({ label: t("modal.users"), value: "users" });
-      }
-    }
-
-    items.push({ label: t("auth.signOut"), value: "logout" });
-    return items;
-  }, [canManageApps, t, userRole]);
-
-  const languageItems = useMemo(() => ([
-    { label: "EN", value: "en", active: lang === "en" },
-    { label: "FR", value: "fr", active: lang === "fr" },
-  ]), [lang]);
-
-  const handleSelectAction = (value: string) => {
-    if (value === "json") {
-      onOpenJsonImport();
-      return;
-    }
-
-    if (value === "groups") {
-      onOpenGroupManager();
-      return;
-    }
-
-    if (value === "users") {
-      onOpenUserManager();
-      return;
-    }
-
-    if (value === "logout") {
-      void onLogout();
-    }
-  };
-
-  const handleSelectLanguage = (value: string) => {
-    if (value === "en" || value === "fr") {
-      setLang(value);
-    }
   };
 
   const handleGroupDrop = async (targetGroupId: number) => {
@@ -607,18 +551,24 @@ export function Sidebar({
               +
             </button>
           ) : null}
-          <Dropdown
-            trigger="⚙"
-            items={actionItems}
-            onSelect={handleSelectAction}
+          <button
             className="ghost-icon-button sidebar-bottom-button"
-          />
-          <Dropdown
-            trigger={<span className="sidebar-language-trigger">{lang.toUpperCase()}</span>}
-            items={languageItems}
-            onSelect={handleSelectLanguage}
+            type="button"
+            onClick={onOpenSettings}
+            aria-label={t("settings.open")}
+            title={t("settings.open")}
+          >
+            ⚙
+          </button>
+          <button
             className="ghost-icon-button sidebar-language-switch sidebar-bottom-button"
-          />
+            type="button"
+            onClick={() => setLang(lang === "en" ? "fr" : "en")}
+            aria-label={lang === "en" ? t("lang.fr") : t("lang.en")}
+            title={lang === "en" ? t("lang.fr") : t("lang.en")}
+          >
+            <span className="sidebar-language-trigger">{lang.toUpperCase()}</span>
+          </button>
           <button className="ghost-icon-button theme-toggle sidebar-bottom-button" type="button" onClick={onToggleTheme} aria-label={t("app.themeToggleAria")} title={t("app.themeToggleTitle")}>
             {themeMode === "light" ? "◐" : "◑"}
           </button>

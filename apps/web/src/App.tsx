@@ -15,12 +15,11 @@ import { AuthScreen } from "./components/AuthScreen";
 import { AppEditor } from "./components/AppEditor";
 import { ConfirmModal } from "./components/ConfirmModal";
 import { ContextMenu } from "./components/ContextMenu";
-import { GroupManagerModal } from "./components/GroupManagerModal";
 import { JsonModal } from "./components/JsonModal";
+import { SettingsModal } from "./components/SettingsModal";
 import { ShortcutHelpModal } from "./components/ShortcutHelpModal";
 import { DragOverlayTile, Sidebar } from "./components/Sidebar";
 import { ToastContainer } from "./components/ToastContainer";
-import { UserManagerModal } from "./components/UserManagerModal";
 import { Workspace } from "./components/Workspace";
 import { getSuggestedDashboardIcon, themeStorageKey } from "./lib/app-utils";
 import { apiFetch } from "./lib/api";
@@ -146,14 +145,11 @@ function AppContent() {
     .filter((app): app is WebAppEntry => app !== null);
 
   const {
-    groupManagerOpen,
-    userManagerOpen,
+    settingsOpen,
     shortcutHelpOpen,
     confirmState,
-    openGroupManager,
-    closeGroupManager,
-    openUserManager,
-    closeUserManager,
+    openSettings,
+    closeSettings,
     openShortcutHelp,
     closeShortcutHelp,
     closeAuxiliaryModals,
@@ -274,7 +270,7 @@ function AppContent() {
   }, [dashboardIconsState.dashboardIcons, editorOpen, editorState.icon, iconSelectionLocked, normalizedIconQuery, setEditorState]);
 
   useEffect(() => {
-    if (!editorOpen && !jsonModalMode && !shortcutHelpOpen && !groupManagerOpen && !userManagerOpen) {
+    if (!editorOpen && !jsonModalMode && !shortcutHelpOpen && !settingsOpen) {
       return undefined;
     }
 
@@ -292,19 +288,15 @@ function AppContent() {
           closeShortcutHelp();
         }
 
-        if (groupManagerOpen) {
-          closeGroupManager();
-        }
-
-        if (userManagerOpen) {
-          closeUserManager();
+        if (settingsOpen) {
+          closeSettings();
         }
       }
     };
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [closeEditor, editorOpen, jsonModalMode, shortcutHelpOpen, groupManagerOpen, userManagerOpen, closeGroupManager, closeJsonModal, closeShortcutHelp, closeUserManager]);
+  }, [closeEditor, editorOpen, jsonModalMode, shortcutHelpOpen, settingsOpen, closeSettings, closeJsonModal, closeShortcutHelp]);
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -332,15 +324,14 @@ function AppContent() {
         setContextMenu(null);
         closeEditor();
         closeJsonModal();
-        closeGroupManager();
-        closeUserManager();
+        closeSettings();
         openShortcutHelp();
       }
     };
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [canManageApps, closeEditor, closeGroupManager, closeJsonModal, closeUserManager, openShortcutHelp, user]);
+  }, [canManageApps, closeEditor, closeSettings, closeJsonModal, openShortcutHelp, user]);
 
   const reloadUsers = useCallback(async () => {
     const result = await apiFetch<UsersResponse>("/api/users", { method: "GET" });
@@ -510,26 +501,16 @@ function AppContent() {
     await handleReorder(event, isDroppedOutsideSidebar, groups);
   }, [groups, handleReorder, isDroppedOutsideSidebar]);
 
-  const handleOpenGroupManager = useCallback(() => {
+  const handleOpenSettings = useCallback(() => {
     setContextMenu(null);
     closeEditor();
     closeJsonModal();
-    closeUserManager();
     closeShortcutHelp();
-    openGroupManager();
-  }, [closeEditor, closeJsonModal, closeShortcutHelp, closeUserManager, openGroupManager]);
-
-  const handleOpenUserManager = useCallback(() => {
-    setContextMenu(null);
-    closeEditor();
-    closeJsonModal();
-    closeGroupManager();
-    closeShortcutHelp();
-    openUserManager();
+    openSettings();
     if (user?.role === "admin") {
       void reloadUsers();
     }
-  }, [closeEditor, closeGroupManager, closeJsonModal, closeShortcutHelp, openUserManager, reloadUsers, user?.role]);
+  }, [closeEditor, closeJsonModal, closeShortcutHelp, openSettings, reloadUsers, user?.role]);
 
   const handleCloseContextMenu = useCallback(() => {
     setContextMenu(null);
@@ -711,7 +692,6 @@ function AppContent() {
           sidebarMode={sidebarMode}
           setSidebarMode={setSidebarMode}
           userName={user.username}
-          userRole={user.role}
           canManageApps={canManageApps}
           groups={groups}
           apps={apps}
@@ -725,10 +705,7 @@ function AppContent() {
           appStatuses={appStatuses}
           onOpenSidebarContextMenu={openSidebarContextMenu}
           onOpenCreateEditor={openCreateEditorFromUi}
-          onOpenJsonImport={openJsonImport}
-          onOpenGroupManager={handleOpenGroupManager}
-          onOpenUserManager={handleOpenUserManager}
-          onLogout={handleLogout}
+          onOpenSettings={handleOpenSettings}
           onToggleTheme={toggleThemeMode}
           lang={lang}
           setLang={setLang}
@@ -809,27 +786,27 @@ function AppContent() {
         />
 
         <ShortcutHelpModal open={shortcutHelpOpen} onClose={closeShortcutHelp} />
-        <GroupManagerModal
-          open={groupManagerOpen}
+        <SettingsModal
+          open={settingsOpen}
           busy={busy}
+          canManageApps={canManageApps}
+          currentUserId={user.id}
+          userName={user.username}
           groups={groups}
-          onClose={closeGroupManager}
+          users={managedUsers}
+          onClose={closeSettings}
           onCreateGroup={handleCreateGroup}
           onRenameGroup={handleRenameGroup}
           onMoveGroup={handleMoveGroup}
           onReorderGroups={handleReorderGroups}
           onDeleteGroup={handleDeleteGroup}
-        />
-        <UserManagerModal
-          open={userManagerOpen && user.role === "admin"}
-          busy={busy}
-          currentUserId={user.id}
-          users={managedUsers}
-          onClose={closeUserManager}
           onCreateInvitation={handleCreateInvitation}
           onCopyInvitationLink={handleCopyInvitationLink}
           onChangeRole={handleChangeUserRole}
           onDeleteUser={handleDeleteUser}
+          onOpenJsonImport={openJsonImport}
+          onOpenJsonExport={openJsonExport}
+          onLogout={handleLogout}
         />
         <ToastContainer toasts={toasts} onDismiss={dismissToast} />
       </div>

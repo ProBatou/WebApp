@@ -88,6 +88,8 @@ export const fr: Record<TranslationKey, string> = {
   "app.searchApps": "Rechercher des apps",
   "sidebar.apps": "Apps",
   "sidebar.language": "Langue",
+  "settings.open": "Paramètres",
+  "settings.account": "Compte",
   "app.searchUnavailableWhileSorting": "Recherche indisponible pendant le tri",
   "app.showGroup": "Afficher le groupe {group}",
   "app.hideGroup": "Masquer le groupe {group}",
