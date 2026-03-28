@@ -46,7 +46,7 @@ export async function registerIconRoutes(server: FastifyInstance) {
     try {
       const response = await fetch(upstreamUrl, { signal: AbortSignal.timeout(5000) });
       if (!response.ok) {
-        return reply.redirect(upstreamUrl);
+        return reply.code(404).send({ message: "errors.iconNotFound" });
       }
 
       const iconSvg = await response.text();
@@ -56,7 +56,7 @@ export async function registerIconRoutes(server: FastifyInstance) {
       reply.header("Cache-Control", "public, max-age=86400");
       return reply.send(iconSvg);
     } catch {
-      return reply.redirect(upstreamUrl);
+      return reply.code(404).send({ message: "errors.iconNotFound" });
     }
   });
 }
