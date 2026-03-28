@@ -34,7 +34,7 @@ export function ConfirmModal({
   }
 
   return (
-    <div className="editor-modal-overlay" onClick={onCancel} role="presentation">
+    <div className="editor-modal-overlay confirm-modal-overlay" onClick={onCancel} role="presentation">
       <aside className="editor-modal" onClick={(event) => event.stopPropagation()} aria-modal="true" role="dialog">
         <div className="editor-header">
           <div>
