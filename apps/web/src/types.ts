@@ -108,6 +108,7 @@ export type JsonTransferItem = Partial<AppPayload> & {
   openMode?: unknown;
   isShared?: unknown;
   groupId?: unknown;
+  groupName?: unknown;
 };
 
 export type EditorMode = "create" | "edit";

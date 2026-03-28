@@ -2,10 +2,11 @@ import { useCallback, useRef, useState, type ChangeEvent } from "react";
 import { exportAppsToJson, parseImportedApps } from "../lib/app-utils";
 import { apiFetch } from "../lib/api";
 import { useTranslation } from "../lib/i18n";
-import type { ImportAppsResponse, JsonImportMode, JsonModalMode, WebAppEntry } from "../types";
+import type { GroupEntry, ImportAppsResponse, JsonImportMode, JsonModalMode, WebAppEntry } from "../types";
 
 type UseJsonImportParams = {
   apps: WebAppEntry[];
+  groups: GroupEntry[];
   canManageApps: boolean;
   closeEditor: () => void;
   closeAuxiliaryModals: () => void;
@@ -21,6 +22,7 @@ type UseJsonImportParams = {
 
 export function useJsonImport({
   apps,
+  groups,
   canManageApps,
   closeEditor,
   closeAuxiliaryModals,
@@ -72,9 +74,9 @@ export function useJsonImport({
     closeAuxiliaryModals();
     setJsonModalError(null);
     setJsonModalInfo(null);
-    setJsonValue(exportAppsToJson(apps));
+    setJsonValue(exportAppsToJson(apps, groups));
     setJsonModalMode("export");
-  }, [apps, canManageApps, closeAuxiliaryModals, closeEditor, setContextMenu]);
+  }, [apps, groups, canManageApps, closeAuxiliaryModals, closeEditor, setContextMenu]);
 
   const handleJsonFileChange = useCallback(async (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -163,8 +165,8 @@ export function useJsonImport({
   const prepareExport = useCallback(() => {
     setJsonModalError(null);
     setJsonModalInfo(null);
-    setJsonValue(exportAppsToJson(apps));
-  }, [apps]);
+    setJsonValue(exportAppsToJson(apps, groups));
+  }, [apps, groups]);
 
   const resetImport = useCallback(() => {
     setJsonImportMode("merge");

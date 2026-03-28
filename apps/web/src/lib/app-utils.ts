@@ -3,6 +3,7 @@ import type {
   AppMode,
   DashboardIconResolution,
   DashboardIconsMetadataMap,
+  GroupEntry,
   IconVariantMode,
   JsonTransferItem,
   ThemeMode,
@@ -234,7 +235,8 @@ export function parseHttpUrl(url: string) {
   return parsedUrl;
 }
 
-export function exportAppsToJson(apps: WebAppEntry[]) {
+export function exportAppsToJson(apps: WebAppEntry[], groups: GroupEntry[] = []) {
+  const groupMap = new Map(groups.map((g) => [g.id, g.name]));
   return JSON.stringify(
     apps.map((app) => ({
       name: app.name,
@@ -246,6 +248,7 @@ export function exportAppsToJson(apps: WebAppEntry[]) {
       openMode: app.open_mode,
       isShared: app.is_shared,
       groupId: app.group_id,
+      groupName: app.group_id != null ? (groupMap.get(app.group_id) ?? null) : null,
     })),
     null,
     2
@@ -322,6 +325,7 @@ export function parseImportedApps(rawValue: string) {
     const openMode = isAppMode(item.openMode) ? item.openMode : emptyEditorState.openMode;
     const isShared = typeof item.isShared === "boolean" ? item.isShared : true;
     const groupId = typeof item.groupId === "number" && Number.isInteger(item.groupId) && item.groupId > 0 ? item.groupId : null;
+    const groupName = typeof item.groupName === "string" && item.groupName.trim().length > 0 ? item.groupName.trim() : null;
 
     if (name.length < 2) {
       throw new Error(`Entree ${index + 1}: nom invalide.`);
@@ -352,6 +356,7 @@ export function parseImportedApps(rawValue: string) {
       openMode,
       isShared,
       groupId,
+      groupName,
     };
   });
 }

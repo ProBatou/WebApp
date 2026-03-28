@@ -1483,6 +1483,10 @@ textarea {
   z-index: 20;
 }
 
+.confirm-modal-overlay {
+  z-index: 40;
+}
+
 .editor-modal {
   width: min(680px, 100%);
   max-height: min(88vh, 920px);
