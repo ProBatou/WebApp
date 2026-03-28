@@ -1,6 +1,20 @@
 import { useEffect, useState } from "react";
+import { Dropdown } from "./Dropdown";
 import type { UserEntry } from "../types";
 import { useTranslation } from "../lib/i18n";
+
+function formatCreatedAt(value: string) {
+  const parsedDate = new Date(value);
+  if (Number.isNaN(parsedDate.getTime())) {
+    return value;
+  }
+
+  return new Intl.DateTimeFormat(undefined, {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+  }).format(parsedDate);
+}
 
 export function UserManagerModal({
   open,
@@ -9,6 +23,7 @@ export function UserManagerModal({
   users,
   onClose,
   onCreateInvitation,
+  onCopyInvitationLink,
   onChangeRole,
   onDeleteUser,
 }: {
@@ -18,12 +33,16 @@ export function UserManagerModal({
   users: UserEntry[];
   onClose: () => void;
   onCreateInvitation: (role: "admin" | "viewer") => Promise<string>;
+  onCopyInvitationLink: (inviteLink: string) => Promise<void>;
   onChangeRole: (userId: number, role: "admin" | "viewer") => Promise<void>;
   onDeleteUser: (userId: number) => Promise<void>;
 }) {
   const { t } = useTranslation();
-  const [role, setRole] = useState<"admin" | "viewer">("viewer");
   const [inviteLink, setInviteLink] = useState("");
+  const roleItems = [
+    { label: "viewer", value: "viewer" },
+    { label: "admin", value: "admin" },
+  ] as const;
 
   useEffect(() => {
     if (!open) {
@@ -59,18 +78,14 @@ export function UserManagerModal({
 
         <div className="json-panel">
           <form
-            className="user-create-grid"
+            className="user-invite-row"
             onSubmit={(event) => {
               event.preventDefault();
-              void onCreateInvitation(role).then((nextInviteLink) => {
+              void onCreateInvitation("viewer").then((nextInviteLink) => {
                 setInviteLink(nextInviteLink);
               });
             }}
           >
-            <select value={role} onChange={(event) => setRole(event.target.value === "admin" ? "admin" : "viewer")}>
-              <option value="viewer">viewer</option>
-              <option value="admin">admin</option>
-            </select>
             <button className="primary-button" type="submit" disabled={busy}>
               {t("modal.createInvitationLink")}
             </button>
@@ -82,7 +97,7 @@ export function UserManagerModal({
                 className="secondary-button"
                 type="button"
                 onClick={() => {
-                  void navigator.clipboard.writeText(inviteLink);
+                  void onCopyInvitationLink(inviteLink);
                 }}
               >
                 {t("common.copy")}
@@ -98,17 +113,19 @@ export function UserManagerModal({
                 <div className="user-row">
                   <div className="user-meta">
                     <strong>{user.username}</strong>
-                    <small>{user.id === currentUserId ? t("modal.you") : t("modal.accountId", { id: user.id })}</small>
+                    <small>{user.id === currentUserId ? t("modal.you") : t("modal.createdOn", { date: formatCreatedAt(user.created_at) })}</small>
                   </div>
                   <div className="user-actions">
-                    <select
-                      value={user.role}
-                      onChange={(event) => void onChangeRole(user.id, event.target.value === "admin" ? "admin" : "viewer")}
+                    <Dropdown
+                      trigger={user.role}
+                      items={roleItems.map((item) => ({
+                        ...item,
+                        active: item.value === user.role,
+                      }))}
+                      onSelect={(value) => void onChangeRole(user.id, value === "admin" ? "admin" : "viewer")}
+                      className="secondary-button user-role-dropdown"
                       disabled={busy || user.id === currentUserId}
-                    >
-                      <option value="viewer">viewer</option>
-                      <option value="admin">admin</option>
-                    </select>
+                    />
                     <button
                       className="danger-button"
                       type="button"
