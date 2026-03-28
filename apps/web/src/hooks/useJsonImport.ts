@@ -160,6 +160,19 @@ export function useJsonImport({
     }
   }, [apps.length, closeConfirm, executeImport, jsonImportMode, jsonValue, openConfirm, t]);
 
+  const prepareExport = useCallback(() => {
+    setJsonModalError(null);
+    setJsonModalInfo(null);
+    setJsonValue(exportAppsToJson(apps));
+  }, [apps]);
+
+  const resetImport = useCallback(() => {
+    setJsonImportMode("merge");
+    setJsonValue("");
+    setJsonModalError(null);
+    setJsonModalInfo(null);
+  }, []);
+
   return {
     jsonModalMode,
     jsonImportMode,
@@ -176,5 +189,7 @@ export function useJsonImport({
     handleCopyExportJson,
     executeImport,
     handleImportJson,
+    prepareExport,
+    resetImport,
   };
 }

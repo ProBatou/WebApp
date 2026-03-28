@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type ChangeEvent, type RefObject } from "react";
 import {
   DndContext,
   PointerSensor,
@@ -10,10 +10,11 @@ import {
 import { SortableContext, useSortable, verticalListSortingStrategy, arrayMove } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { Dropdown } from "./Dropdown";
-import type { GroupEntry, UserEntry } from "../types";
+import { jsonImportExample } from "../lib/app-utils";
+import type { GroupEntry, JsonImportMode, UserEntry, WebAppEntry } from "../types";
 import { useTranslation } from "../lib/i18n";
 
-type SettingsTab = "groups" | "users" | "json" | "account";
+export type SettingsTab = "groups" | "users" | "json" | "account";
 
 function formatCreatedAt(value: string) {
   const parsedDate = new Date(value);
@@ -313,6 +314,140 @@ function UsersTabContent({
   );
 }
 
+function JsonTabContent({
+  apps,
+  busy,
+  jsonMode,
+  onSwitchMode,
+  jsonImportMode,
+  setJsonImportMode,
+  jsonValue,
+  setJsonValue,
+  jsonModalError,
+  jsonModalInfo,
+  jsonFileInputRef,
+  onFileChange,
+  onCopyExport,
+  onImport,
+}: {
+  apps: WebAppEntry[];
+  busy: boolean;
+  jsonMode: "import" | "export";
+  onSwitchMode: (mode: "import" | "export") => void;
+  jsonImportMode: JsonImportMode;
+  setJsonImportMode: (mode: JsonImportMode) => void;
+  jsonValue: string;
+  setJsonValue: (value: string) => void;
+  jsonModalError: string | null;
+  jsonModalInfo: string | null;
+  jsonFileInputRef: RefObject<HTMLInputElement | null>;
+  onFileChange: (event: ChangeEvent<HTMLInputElement>) => Promise<void>;
+  onCopyExport: () => Promise<void>;
+  onImport: () => Promise<void>;
+}) {
+  const { t } = useTranslation();
+
+  return (
+    <div className="json-panel">
+      <div className="json-toolbar">
+        <div className="json-segmented" role="tablist" aria-label={t("modal.importMode")}>
+          <button
+            className={jsonMode === "import" ? "icon-variant-option active" : "icon-variant-option"}
+            type="button"
+            onClick={() => onSwitchMode("import")}
+          >
+            {t("modal.importApps")}
+          </button>
+          <button
+            className={jsonMode === "export" ? "icon-variant-option active" : "icon-variant-option"}
+            type="button"
+            onClick={() => onSwitchMode("export")}
+          >
+            {t("modal.exportApps")}
+          </button>
+        </div>
+      </div>
+
+      {jsonMode === "import" ? (
+        <div className="json-toolbar">
+          <div className="json-segmented" role="tablist">
+            <button
+              className={jsonImportMode === "merge" ? "icon-variant-option active" : "icon-variant-option"}
+              type="button"
+              onClick={() => setJsonImportMode("merge")}
+            >
+              {t("common.merge")}
+            </button>
+            <button
+              className={jsonImportMode === "replace" ? "icon-variant-option active" : "icon-variant-option"}
+              type="button"
+              onClick={() => setJsonImportMode("replace")}
+            >
+              {t("common.replace")}
+            </button>
+          </div>
+          <div className="json-toolbar-actions">
+            <input
+              ref={jsonFileInputRef}
+              className="json-file-input"
+              type="file"
+              accept="application/json,.json"
+              onChange={(event) => void onFileChange(event)}
+            />
+            <button className="secondary-button" type="button" onClick={() => jsonFileInputRef.current?.click()}>
+              {t("modal.loadFile")}
+            </button>
+            <button
+              className="ghost-icon-button"
+              type="button"
+              onClick={() => setJsonValue(jsonImportExample)}
+              title={t("modal.jsonExample")}
+            >
+              {t("common.example")}
+            </button>
+          </div>
+        </div>
+      ) : (
+        <div className="json-toolbar export-toolbar">
+          <p className="json-summary">{t("modal.appsInOrder", { count: apps.length, suffix: apps.length > 1 ? "s" : "" })}</p>
+          <div className="json-toolbar-actions">
+            <button className="secondary-button" type="button" onClick={() => void onCopyExport()}>
+              {t("common.copy")}
+            </button>
+          </div>
+        </div>
+      )}
+
+      {jsonModalError ? <p className="form-error">{t(jsonModalError)}</p> : null}
+      {jsonModalInfo ? <p className="json-summary">{t(jsonModalInfo)}</p> : null}
+
+      <label>
+        <span>{jsonMode === "import" ? t("common.json") : t("modal.exportedJson")}</span>
+        <textarea
+          className="json-textarea"
+          value={jsonValue}
+          onChange={(event) => setJsonValue(event.target.value)}
+          placeholder={jsonMode === "import" ? jsonImportExample : "[]"}
+          readOnly={jsonMode === "export"}
+          spellCheck={false}
+        />
+      </label>
+
+      <div className="editor-actions">
+        {jsonMode === "import" ? (
+          <button className="primary-button" type="button" onClick={() => void onImport()} disabled={busy}>
+            {t("app.importJson")}
+          </button>
+        ) : (
+          <button className="primary-button" type="button" onClick={() => void onCopyExport()}>
+            {t("modal.copyJson")}
+          </button>
+        )}
+      </div>
+    </div>
+  );
+}
+
 export function SettingsModal({
   open,
   busy,
@@ -321,6 +456,16 @@ export function SettingsModal({
   userName,
   groups,
   users,
+  apps,
+  initialTab,
+  initialJsonMode,
+  jsonImportMode,
+  setJsonImportMode,
+  jsonValue,
+  setJsonValue,
+  jsonModalError,
+  jsonModalInfo,
+  jsonFileInputRef,
   onClose,
   onCreateGroup,
   onRenameGroup,
@@ -331,8 +476,11 @@ export function SettingsModal({
   onCopyInvitationLink,
   onChangeRole,
   onDeleteUser,
-  onOpenJsonImport,
-  onOpenJsonExport,
+  onJsonFileChange,
+  onCopyExport,
+  onImport,
+  onPrepareExport,
+  onResetImport,
   onLogout,
 }: {
   open: boolean;
@@ -342,6 +490,16 @@ export function SettingsModal({
   userName: string;
   groups: GroupEntry[];
   users: UserEntry[];
+  apps: WebAppEntry[];
+  initialTab?: SettingsTab;
+  initialJsonMode?: "import" | "export";
+  jsonImportMode: JsonImportMode;
+  setJsonImportMode: (mode: JsonImportMode) => void;
+  jsonValue: string;
+  setJsonValue: (value: string) => void;
+  jsonModalError: string | null;
+  jsonModalInfo: string | null;
+  jsonFileInputRef: RefObject<HTMLInputElement | null>;
   onClose: () => void;
   onCreateGroup: (name: string) => Promise<void>;
   onRenameGroup: (groupId: number, name: string) => Promise<void>;
@@ -352,18 +510,33 @@ export function SettingsModal({
   onCopyInvitationLink: (inviteLink: string) => Promise<void>;
   onChangeRole: (userId: number, role: "admin" | "viewer") => Promise<void>;
   onDeleteUser: (userId: number) => Promise<void>;
-  onOpenJsonImport: () => void;
-  onOpenJsonExport: () => void;
+  onJsonFileChange: (event: ChangeEvent<HTMLInputElement>) => Promise<void>;
+  onCopyExport: () => Promise<void>;
+  onImport: () => Promise<void>;
+  onPrepareExport: () => void;
+  onResetImport: () => void;
   onLogout: () => Promise<void>;
 }) {
   const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState<SettingsTab>(canManageApps ? "groups" : "account");
+  const [jsonMode, setJsonMode] = useState<"import" | "export">("import");
 
   useEffect(() => {
     if (open) {
-      setActiveTab(canManageApps ? "groups" : "account");
+      setActiveTab(initialTab ?? (canManageApps ? "groups" : "account"));
+      const nextJsonMode = initialJsonMode ?? "import";
+      setJsonMode(nextJsonMode);
     }
-  }, [open, canManageApps]);
+  }, [open, canManageApps, initialTab, initialJsonMode]);
+
+  const handleSwitchJsonMode = (mode: "import" | "export") => {
+    setJsonMode(mode);
+    if (mode === "export") {
+      onPrepareExport();
+    } else {
+      onResetImport();
+    }
+  };
 
   useEffect(() => {
     if (!open) {
@@ -463,30 +636,22 @@ export function SettingsModal({
             />
           ) : null}
           {activeTab === "json" ? (
-            <div className="json-panel settings-json-tab">
-              <div className="settings-json-actions">
-                <button
-                  className="primary-button"
-                  type="button"
-                  onClick={() => {
-                    onClose();
-                    onOpenJsonImport();
-                  }}
-                >
-                  {t("modal.importApps")}
-                </button>
-                <button
-                  className="secondary-button"
-                  type="button"
-                  onClick={() => {
-                    onClose();
-                    onOpenJsonExport();
-                  }}
-                >
-                  {t("modal.exportApps")}
-                </button>
-              </div>
-            </div>
+            <JsonTabContent
+              apps={apps}
+              busy={busy}
+              jsonMode={jsonMode}
+              onSwitchMode={handleSwitchJsonMode}
+              jsonImportMode={jsonImportMode}
+              setJsonImportMode={setJsonImportMode}
+              jsonValue={jsonValue}
+              setJsonValue={setJsonValue}
+              jsonModalError={jsonModalError}
+              jsonModalInfo={jsonModalInfo}
+              jsonFileInputRef={jsonFileInputRef}
+              onFileChange={onJsonFileChange}
+              onCopyExport={onCopyExport}
+              onImport={onImport}
+            />
           ) : null}
           {activeTab === "account" ? (
             <div className="json-panel settings-account-tab">
