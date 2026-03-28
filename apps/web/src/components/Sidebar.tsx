@@ -49,7 +49,6 @@ function SortableAppTile({
   active,
   compact,
   onSelect,
-  onEdit,
   onContextMenu,
   themeMode,
   dashboardIconsMetadata,
@@ -60,7 +59,6 @@ function SortableAppTile({
   active: boolean;
   compact: boolean;
   onSelect: (app: WebAppEntry) => void;
-  onEdit: (app: WebAppEntry) => void;
   onContextMenu: (event: MouseEvent<HTMLDivElement>, app: WebAppEntry) => void;
   themeMode: ThemeMode;
   dashboardIconsMetadata: DashboardIconsMetadataMap;
@@ -113,6 +111,18 @@ function SortableAppTile({
           <span className="app-meta">
             <strong>
               {app.name}
+              {app.open_mode === "external" ? (
+                <span className="app-external-icon" aria-hidden="true">
+                  <svg width="8" height="8" viewBox="0 0 8 8" fill="none" focusable="false" aria-hidden="true">
+                    <path
+                      d="M2 1h5v5M7 1L1 7"
+                      stroke="currentColor"
+                      strokeWidth="1.2"
+                      strokeLinecap="round"
+                    />
+                  </svg>
+                </span>
+              ) : null}
               {app.is_default ? <span className="default-app-badge" title={t("app.default")}>★</span> : null}
               <span
                 className={appStatus?.status === "online"
@@ -136,23 +146,9 @@ function SortableAppTile({
                 }
               />
             </strong>
-            <small>{app.open_mode === "iframe" ? t("app.openMode.embedded") : t("app.openMode.external")}</small>
           </span>
         ) : null}
       </button>
-      {!compact && canManageApps ? (
-        <div className="app-tile-actions">
-          <button
-            className="ghost-icon-button"
-            type="button"
-            onClick={() => onEdit(app)}
-            aria-label={t("app.editAppAria", { name: app.name })}
-            title={t("common.edit")}
-          >
-            ✎
-          </button>
-        </div>
-      ) : null}
     </div>
   );
 }
@@ -365,16 +361,15 @@ export function Sidebar({
         ref={sidebarRef}
         className={sidebarOpen ? `sidebar drawer-open ${sidebarMode}` : `sidebar ${sidebarMode}`}
         onContextMenu={onOpenSidebarContextMenu}
+        onMouseEnter={() => setSidebarOpen(true)}
         onMouseLeave={() => {
           if (draggingAppId !== null) {
             return;
           }
 
-          window.setTimeout(() => {
-            if (!document.querySelector(".sidebar-context-menu") && !contextMenu) {
-              setSidebarOpen(false);
-            }
-          }, 0);
+          if (!document.querySelector(".sidebar-context-menu") && !contextMenu) {
+            setSidebarOpen(false);
+          }
         }}
       >
         <div className="brand-block">
@@ -382,24 +377,6 @@ export function Sidebar({
             <div className="brand-copy">
               <p className="eyebrow">{t("auth.signedInAs")}</p>
               <h1>{userName}</h1>
-              <div className="lang-switcher user-lang-switcher" aria-label={t("sidebar.language")}>
-                <button
-                  className={lang === "en" ? "ghost-icon-button lang-toggle active" : "ghost-icon-button lang-toggle"}
-                  type="button"
-                  onClick={() => setLang("en")}
-                  aria-label={t("lang.en")}
-                >
-                  EN
-                </button>
-                <button
-                  className={lang === "fr" ? "ghost-icon-button lang-toggle active" : "ghost-icon-button lang-toggle"}
-                  type="button"
-                  onClick={() => setLang("fr")}
-                  aria-label={t("lang.fr")}
-                >
-                  FR
-                </button>
-              </div>
             </div>
           ) : (
             <div className="compact-header-stack">
@@ -474,7 +451,6 @@ export function Sidebar({
                                 active={app.id === selectedAppId}
                                 compact={false}
                                 onSelect={onSelectApp}
-                                onEdit={onEditApp}
                                 onContextMenu={onOpenContextMenu}
                                 themeMode={themeMode}
                               dashboardIconsMetadata={dashboardIconsMetadata}
@@ -499,7 +475,6 @@ export function Sidebar({
                     active={app.id === selectedAppId}
                     compact
                     onSelect={onSelectApp}
-                    onEdit={onEditApp}
                     onContextMenu={onOpenContextMenu}
                     themeMode={themeMode}
                     dashboardIconsMetadata={dashboardIconsMetadata}
@@ -519,15 +494,13 @@ export function Sidebar({
 
         <div className="sidebar-bottom-actions">
           {canManageApps ? (
-            <>
-              <button className="primary-button" type="button" onClick={onOpenCreateEditor} title={t("app.new")}>
-                {sidebarMode === "expanded" ? t("common.new") : "+"}
-              </button>
-            </>
+            <button className="primary-button sidebar-bottom-button" type="button" onClick={onOpenCreateEditor} title={t("app.new")}>
+              {sidebarMode === "expanded" ? t("common.new") : "+"}
+            </button>
           ) : null}
           <div ref={actionsMenuRef} className={actionsMenuOpen ? "sidebar-actions-menu open" : "sidebar-actions-menu"}>
             <button
-              className="ghost-icon-button sidebar-actions-trigger"
+              className="ghost-icon-button sidebar-actions-trigger sidebar-bottom-button"
               type="button"
               onClick={() => setActionsMenuOpen((current) => !current)}
               title={t("common.actions")}
@@ -593,7 +566,30 @@ export function Sidebar({
               </div>
             ) : null}
           </div>
-          <button className="ghost-icon-button theme-toggle" type="button" onClick={onToggleTheme} aria-label={t("app.themeToggleAria")} title={t("app.themeToggleTitle")}>
+          <div className="sidebar-language-switch" aria-label={t("sidebar.language")}>
+            <button
+              className={lang === "en" ? "sidebar-language-option active" : "sidebar-language-option"}
+              type="button"
+              onClick={() => setLang("en")}
+              aria-label={t("lang.en")}
+              title={t("lang.en")}
+            >
+              EN
+            </button>
+            <span className="sidebar-language-separator" aria-hidden="true">
+              ·
+            </span>
+            <button
+              className={lang === "fr" ? "sidebar-language-option active" : "sidebar-language-option"}
+              type="button"
+              onClick={() => setLang("fr")}
+              aria-label={t("lang.fr")}
+              title={t("lang.fr")}
+            >
+              FR
+            </button>
+          </div>
+          <button className="ghost-icon-button theme-toggle sidebar-bottom-button" type="button" onClick={onToggleTheme} aria-label={t("app.themeToggleAria")} title={t("app.themeToggleTitle")}>
             {themeMode === "light" ? "◐" : "◑"}
           </button>
         </div>
