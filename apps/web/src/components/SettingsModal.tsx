@@ -14,7 +14,7 @@ import { jsonImportExample } from "../lib/app-utils";
 import type { GroupEntry, JsonImportMode, UserEntry, WebAppEntry } from "../types";
 import { useTranslation } from "../lib/i18n";
 
-export type SettingsTab = "groups" | "users" | "json" | "account";
+export type SettingsTab = "groups" | "users" | "json" | "account" | "about";
 
 function formatCreatedAt(value: string) {
   const parsedDate = new Date(value);
@@ -616,6 +616,13 @@ export function SettingsModal({
           >
             {t("settings.account")}
           </button>
+          <button
+            type="button"
+            className={activeTab === "about" ? "settings-modal-tab active" : "settings-modal-tab"}
+            onClick={() => setActiveTab("about")}
+          >
+            {t("settings.about")}
+          </button>
         </div>
 
         <div className="settings-tab-content">
@@ -659,6 +666,28 @@ export function SettingsModal({
               onImport={onImport}
               onEditExport={handleEditExport}
             />
+          ) : null}
+          {activeTab === "about" ? (
+            <div className="json-panel settings-about-tab">
+              <dl className="about-list">
+                <div className="about-row">
+                  <dt>{t("about.version")}</dt>
+                  <dd>v{__APP_VERSION__}</dd>
+                </div>
+                <div className="about-row">
+                  <dt>{t("about.buildDate")}</dt>
+                  <dd>{new Intl.DateTimeFormat(undefined, { dateStyle: "medium", timeStyle: "short" }).format(new Date(__BUILD_DATE__))}</dd>
+                </div>
+                <div className="about-row">
+                  <dt>{t("about.sourceCode")}</dt>
+                  <dd><a href="https://github.com/ProBatou/WebApp" target="_blank" rel="noreferrer">GitHub</a></dd>
+                </div>
+                <div className="about-row">
+                  <dt>{t("about.techStack")}</dt>
+                  <dd>React · TypeScript · Vite · Fastify · SQLite</dd>
+                </div>
+              </dl>
+            </div>
           ) : null}
           {activeTab === "account" ? (
             <div className="json-panel settings-account-tab">
