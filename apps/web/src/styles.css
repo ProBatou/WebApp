@@ -173,7 +173,7 @@ button {
 
 .toast-card {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   gap: 10px;
   padding: 12px 12px 12px 14px;
   border-radius: 20px;
@@ -193,11 +193,16 @@ button {
 }
 
 .toast-dismiss {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   min-width: 40px;
   width: 40px;
   height: 40px;
   padding: 0;
   border-radius: 14px;
+  font-size: 1.2rem;
+  line-height: 1;
 }
 
 .auth-shell {
@@ -640,6 +645,14 @@ textarea {
   gap: 8px;
 }
 
+.grouped-app-section.dragging {
+  opacity: 0.72;
+}
+
+.grouped-app-section.drag-over .group-section-toggle {
+  background: var(--accent-soft);
+}
+
 .group-section-toggle {
   display: flex;
   align-items: center;
@@ -687,11 +700,19 @@ textarea {
 
 .sidebar-bottom-actions {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(0, 1fr));
   gap: 8px;
   margin-top: auto;
   padding-top: 14px;
   align-items: stretch;
+}
+
+.sidebar-bottom-actions > * {
+  min-width: 0;
+}
+
+.sidebar-bottom-actions .sidebar-actions-menu {
+  width: 100%;
 }
 
 .sidebar-bottom-actions .primary-button,
@@ -715,6 +736,7 @@ textarea {
   font-size: 0.88rem;
 }
 
+.sidebar-icon-button,
 .sidebar-bottom-actions .theme-toggle {
   width: 100%;
   min-width: 0;
@@ -726,27 +748,15 @@ textarea {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 6px;
   width: 100%;
-  padding: 0 8px;
-}
-
-.sidebar-language-option {
-  border: 0;
+  height: 46px;
   padding: 0;
-  background: transparent;
-  color: var(--muted);
-  font-size: 0.83rem;
-  line-height: 1;
-  cursor: pointer;
 }
 
-.sidebar-language-option.active {
-  color: var(--text);
-}
-
-.sidebar-language-separator {
-  color: var(--muted);
+.sidebar-language-trigger {
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
   line-height: 1;
 }
 
@@ -769,13 +779,15 @@ textarea {
 
 .sidebar-actions-popover {
   position: absolute;
-  left: 0;
   right: 0;
   bottom: calc(100% + 8px);
   z-index: 30;
   display: flex;
   flex-direction: column;
   gap: 6px;
+  min-width: 168px;
+  width: max-content;
+  max-width: min(240px, calc(100vw - 24px));
   padding: 8px;
   border-radius: 14px;
   border: 1px solid var(--border);
@@ -784,8 +796,18 @@ textarea {
 }
 
 .sidebar-actions-popover .secondary-button {
-  min-height: 40px;
-  font-size: 0.84rem;
+  width: 100%;
+  min-height: 42px;
+  font-size: 0.92rem;
+  font-weight: 600;
+  line-height: 1.2;
+  white-space: nowrap;
+  overflow: visible;
+  text-overflow: clip;
+}
+
+.sidebar-actions-popover .dropdown-item.active {
+  background: var(--accent-soft);
 }
 
 .sidebar.compact .sidebar-bottom-actions {
@@ -828,14 +850,15 @@ textarea {
 .sidebar.compact .sidebar-actions-popover .secondary-button {
   width: 100%;
   min-width: 0;
-  min-height: 40px;
-  height: 40px;
+  min-height: 42px;
+  height: 42px;
   padding: 0 12px;
   border-radius: 12px;
   display: flex;
   align-items: center;
   justify-content: flex-start;
-  font-size: 0.86rem;
+  font-size: 0.92rem;
+  font-weight: 600;
   white-space: nowrap;
 }
 
@@ -889,9 +912,23 @@ textarea {
   background: var(--preview-surface);
 }
 
+.group-item.dragging {
+  opacity: 0.72;
+}
+
+.group-item-row {
+  cursor: grab;
+  user-select: none;
+}
+
+.group-item-row:active {
+  cursor: grabbing;
+}
+
 .group-item-actions {
   display: flex;
   gap: 10px;
+  flex-wrap: wrap;
 }
 
 .user-create-grid {
@@ -899,6 +936,14 @@ textarea {
   grid-template-columns: 180px minmax(0, 1fr);
   gap: 10px;
   align-items: center;
+}
+
+.user-invite-row {
+  display: flex;
+}
+
+.user-invite-row .primary-button {
+  width: 100%;
 }
 
 .invitation-link-row {
@@ -931,6 +976,18 @@ textarea {
   gap: 10px;
 }
 
+.user-create-grid .sidebar-actions-menu,
+.user-actions .sidebar-actions-menu {
+  width: 100%;
+}
+
+.user-role-dropdown {
+  justify-content: space-between;
+  padding: 0 14px;
+  font-size: 0.88rem;
+  text-transform: lowercase;
+}
+
 .app-list::-webkit-scrollbar {
   display: none;
 }
@@ -948,6 +1005,7 @@ textarea {
   border-radius: 18px;
   background: var(--tile-surface);
   border: 1px solid transparent;
+  overflow: visible;
 }
 
 .sidebar.compact .app-tile {
@@ -1038,7 +1096,14 @@ textarea {
   display: inline-flex;
   align-items: center;
   gap: 6px;
+  min-width: 0;
   font-size: 0.9rem;
+  overflow: visible;
+  white-space: nowrap;
+}
+
+.app-name {
+  min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -1103,11 +1168,6 @@ textarea {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-}
-
-.app-tile-actions {
-  display: flex;
-  gap: 8px;
 }
 
 .app-main-hitbox:active {

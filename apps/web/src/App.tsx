@@ -91,6 +91,7 @@ function AppContent() {
     reloadGroups,
     createGroup,
     updateGroup,
+    reorderGroups,
     deleteGroup,
     resetGroups,
   } = useGroups({
@@ -589,6 +590,27 @@ function AppContent() {
     pushToast(group ? t("toast.groupDeleted", { name: group.name }) : "toast.groupDeletedFallback");
   }, [deleteGroup, groups, pushToast, reloadApps, selectedAppId, t]);
 
+  const handleMoveGroup = useCallback(async (groupId: number, direction: "up" | "down") => {
+    const currentIndex = groups.findIndex((group) => group.id === groupId);
+    if (currentIndex === -1) {
+      return;
+    }
+
+    const targetIndex = direction === "up" ? currentIndex - 1 : currentIndex + 1;
+    if (targetIndex < 0 || targetIndex >= groups.length) {
+      return;
+    }
+
+    const nextGroups = [...groups];
+    const [movedGroup] = nextGroups.splice(currentIndex, 1);
+    nextGroups.splice(targetIndex, 0, movedGroup);
+    await reorderGroups(nextGroups.map((group) => group.id));
+  }, [groups, reorderGroups]);
+
+  const handleReorderGroups = useCallback(async (groupIds: number[]) => {
+    await reorderGroups(groupIds);
+  }, [reorderGroups]);
+
   const handleCreateInvitation = useCallback(async (role: "admin" | "viewer") => {
     try {
       setBusy(true);
@@ -633,6 +655,11 @@ function AppContent() {
       setBusy(false);
     }
   }, [managedUsers, pushToast, t]);
+
+  const handleCopyInvitationLink = useCallback(async (inviteLink: string) => {
+    await navigator.clipboard.writeText(inviteLink);
+    pushToast("toast.inviteLinkCopied");
+  }, [pushToast]);
 
   const draggedApp = draggingAppId === null ? null : apps.find((item) => item.id === draggingAppId) ?? null;
 
@@ -708,6 +735,7 @@ function AppContent() {
           onSelectApp={handleSelectApp}
           onEditApp={openEditEditorFromUi}
           onOpenContextMenu={openContextMenu}
+          onReorderGroups={handleReorderGroups}
         />
 
         <Workspace
@@ -788,6 +816,8 @@ function AppContent() {
           onClose={closeGroupManager}
           onCreateGroup={handleCreateGroup}
           onRenameGroup={handleRenameGroup}
+          onMoveGroup={handleMoveGroup}
+          onReorderGroups={handleReorderGroups}
           onDeleteGroup={handleDeleteGroup}
         />
         <UserManagerModal
@@ -797,6 +827,7 @@ function AppContent() {
           users={managedUsers}
           onClose={closeUserManager}
           onCreateInvitation={handleCreateInvitation}
+          onCopyInvitationLink={handleCopyInvitationLink}
           onChangeRole={handleChangeUserRole}
           onDeleteUser={handleDeleteUser}
         />

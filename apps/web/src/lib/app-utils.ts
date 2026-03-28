@@ -16,12 +16,15 @@ export const dashboardIconsCdnBaseUrl = "https://cdn.jsdelivr.net/gh/homarr-labs
 export const jsonImportExample = `[
   {
     "name": "Plex",
+    "description": "Media server",
     "url": "https://plex.example.com",
     "icon": "plex",
     "iconVariantMode": "auto",
     "iconVariantInverted": false,
     "accent": "#cf5c36",
-    "openMode": "iframe"
+    "openMode": "iframe",
+    "isShared": true,
+    "groupId": null
   }
 ]`;
 

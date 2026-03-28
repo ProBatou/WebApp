@@ -6,6 +6,18 @@ export function createGroupRepository(database: SqliteDatabase) {
     return database.prepare("SELECT * FROM groups ORDER BY sort_order ASC, id ASC").all() as GroupRecord[];
   }
 
+  function reorderGroups(groupIds: number[]) {
+    const reorder = database.transaction((items: number[]) => {
+      const statement = database.prepare("UPDATE groups SET sort_order = ? WHERE id = ?");
+      items.forEach((groupId, index) => {
+        statement.run(index + 1, groupId);
+      });
+    });
+
+    reorder(groupIds);
+    return listGroups();
+  }
+
   function createGroup(name: string) {
     const now = new Date().toISOString();
     const sortRow = database.prepare("SELECT COALESCE(MAX(sort_order), 0) as maxOrder FROM groups").get() as { maxOrder: number };
@@ -41,6 +53,7 @@ export function createGroupRepository(database: SqliteDatabase) {
 
   return {
     listGroups,
+    reorderGroups,
     createGroup,
     updateGroup,
     deleteGroup,
