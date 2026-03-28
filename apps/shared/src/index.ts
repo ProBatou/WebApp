@@ -12,4 +12,5 @@ export type SharedAppPayload = {
   openMode: AppMode;
   isShared: boolean;
   groupId?: number | null;
+  groupName?: string | null;
 };
