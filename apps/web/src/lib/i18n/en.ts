@@ -100,8 +100,9 @@ export const en = {
   "settings.themeDark": "Dark",
   "settings.startupPage": "Startup page",
   "settings.startupPageNone": "None",
-  "settings.accentColor": "Accent color",
-  "settings.sidebarColor": "Sidebar color",
+  "settings.colors": "Colors",
+  "settings.accentColor": "Secondary (accent & buttons)",
+  "settings.sidebarColor": "Interface (sidebar & panels)",
   "settings.buttonColor": "Button color",
   "account.changeUsername": "Change username",
   "account.changePassword": "Change password",
@@ -185,6 +186,8 @@ export const en = {
   "toast.userRoleUpdated": "User role updated.",
   "toast.userDeleted": "{name} deleted.",
   "toast.userDeletedFallback": "User deleted.",
+  "toast.usernameUpdated": "Username updated.",
+  "toast.passwordUpdated": "Password updated.",
 
   "confirm.replaceImport": "Replace {existing} app{existingSuffix} with {incoming} new entr{incomingSuffix}?",
 

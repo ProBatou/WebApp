@@ -11,10 +11,10 @@ import { SortableContext, useSortable, verticalListSortingStrategy, arrayMove } 
 import { CSS } from "@dnd-kit/utilities";
 import { Dropdown } from "./Dropdown";
 import { jsonImportExample } from "../lib/app-utils";
-import type { GroupEntry, JsonImportMode, UserEntry, UserPreferences, WebAppEntry } from "../types";
+import type { GroupEntry, JsonImportMode, ThemeMode, UserEntry, UserPreferences, WebAppEntry } from "../types";
 import { useTranslation, type SupportedLanguage } from "../lib/i18n";
 
-export type SettingsTab = "groups" | "users" | "json" | "account" | "about";
+export type SettingsTab = "groups" | "users" | "json" | "personalization" | "account" | "about";
 
 function formatCreatedAt(value: string) {
   const parsedDate = new Date(value);
@@ -450,56 +450,197 @@ function JsonTabContent({
   );
 }
 
-function AccountTabContent({
-  userName,
+const colorDefs = [
+  {
+    lightKey: "sidebarColor" as keyof UserPreferences,
+    darkKey: "sidebarColorDark" as keyof UserPreferences,
+    labelKey: "settings.sidebarColor" as const,
+    fallbackLight: "#fffaf4",
+    fallbackDark: "#181411",
+  },
+  {
+    lightKey: "accentColor" as keyof UserPreferences,
+    darkKey: "accentColorDark" as keyof UserPreferences,
+    labelKey: "settings.accentColor" as const,
+    fallbackLight: "#c65c31",
+    fallbackDark: "#df7a42",
+  },
+];
+
+function PersonalizationTabContent({
   apps,
   preferences,
+  themeMode,
   onUpdatePreferences,
+  onPreviewTheme,
+}: {
+  apps: WebAppEntry[];
+  preferences: UserPreferences;
+  themeMode: ThemeMode;
+  onUpdatePreferences: (patch: Partial<UserPreferences>) => void;
+  onPreviewTheme: (mode: "light" | "dark") => void;
+}) {
+  const { t } = useTranslation();
+  const [colorMode, setColorMode] = useState<"light" | "dark">(themeMode);
+  const languageItems = [
+    { label: t("settings.languageAuto"), value: "auto", active: preferences.language === "auto" },
+    ...(["en", "fr", "de", "es"] as SupportedLanguage[]).map((language) => ({
+      label: t(`lang.${language}`),
+      value: language,
+      active: preferences.language === language,
+    })),
+  ];
+  const themeItems = [
+    { label: t("settings.themeAuto"), value: "auto", active: preferences.theme === "auto" },
+    { label: t("settings.themeLight"), value: "light", active: preferences.theme === "light" },
+    { label: t("settings.themeDark"), value: "dark", active: preferences.theme === "dark" },
+  ];
+  const startupPageItems = [
+    { label: t("settings.startupPageNone"), value: "", active: preferences.defaultAppId == null },
+    ...apps.map((app) => ({
+      label: app.name,
+      value: String(app.id),
+      active: preferences.defaultAppId === app.id,
+    })),
+  ];
+  const activeLanguageLabel = languageItems.find((item) => item.active)?.label ?? t("settings.languageAuto");
+  const activeThemeLabel = themeItems.find((item) => item.active)?.label ?? t("settings.themeAuto");
+  const activeStartupPageLabel = startupPageItems.find((item) => item.active)?.label ?? t("settings.startupPageNone");
+
+  useEffect(() => {
+    setColorMode(themeMode);
+  }, [themeMode]);
+
+  const handleColorModeChange = (mode: "light" | "dark") => {
+    setColorMode(mode);
+    onPreviewTheme(mode);
+  };
+
+  return (
+    <div className="json-panel">
+      <div className="personalization-section">
+        <div className="personalization-row">
+          <label className="personalization-label">{t("settings.language")}</label>
+          <Dropdown
+            trigger={activeLanguageLabel}
+            items={languageItems}
+            onSelect={(value) => onUpdatePreferences({ language: value })}
+            className="secondary-button personalization-select"
+          />
+        </div>
+
+        <div className="personalization-row">
+          <label className="personalization-label">{t("settings.theme")}</label>
+          <Dropdown
+            trigger={activeThemeLabel}
+            items={themeItems}
+            onSelect={(value) => onUpdatePreferences({ theme: value as UserPreferences["theme"] })}
+            className="secondary-button personalization-select"
+          />
+        </div>
+
+        <div className="personalization-row">
+          <label className="personalization-label">{t("settings.startupPage")}</label>
+          <Dropdown
+            trigger={activeStartupPageLabel}
+            items={startupPageItems}
+            onSelect={(value) => onUpdatePreferences({ defaultAppId: value ? Number(value) : null })}
+            className="secondary-button personalization-select"
+          />
+        </div>
+      </div>
+
+      <div className="personalization-section">
+        <div className="personalization-colors-header">
+          <span className="personalization-label">{t("settings.colors")}</span>
+          <div className="json-segmented" role="tablist">
+            <button
+              type="button"
+              className={colorMode === "light" ? "icon-variant-option active" : "icon-variant-option"}
+              onClick={() => handleColorModeChange("light")}
+            >
+              {t("settings.themeLight")}
+            </button>
+            <button
+              type="button"
+              className={colorMode === "dark" ? "icon-variant-option active" : "icon-variant-option"}
+              onClick={() => handleColorModeChange("dark")}
+            >
+              {t("settings.themeDark")}
+            </button>
+          </div>
+        </div>
+
+        <div className="personalization-colors">
+          {colorDefs.map(({ lightKey, darkKey, labelKey, fallbackLight, fallbackDark }) => {
+            const activeKey = colorMode === "light" ? lightKey : darkKey;
+            const fallback = colorMode === "light" ? fallbackLight : fallbackDark;
+            return (
+              <div key={String(activeKey)} className="personalization-color-row">
+                <label className="personalization-label">{t(labelKey)}</label>
+                <div className="personalization-color-field">
+                  <input
+                    type="color"
+                    value={(preferences[activeKey] as string | null) ?? fallback}
+                    onChange={(e) => onUpdatePreferences({ [activeKey]: e.target.value })}
+                  />
+                  {preferences[activeKey] && (
+                    <button type="button" className="personalization-reset-color" onClick={() => onUpdatePreferences({ [activeKey]: null })}>
+                      ×
+                    </button>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function AccountTabContent({
+  userName,
   onUpdateUsername,
   onUpdatePassword,
   onDeleteSelf,
   onLogout,
+  onSuccess,
+  onError,
 }: {
   userName: string;
-  apps: WebAppEntry[];
-  preferences: UserPreferences;
-  onUpdatePreferences: (patch: Partial<UserPreferences>) => void;
   onUpdateUsername: (newUsername: string) => Promise<void>;
   onUpdatePassword: (currentPassword: string, newPassword: string) => Promise<void>;
   onDeleteSelf: () => Promise<void>;
   onLogout: () => Promise<void>;
+  onSuccess: (msg: string) => void;
+  onError: (msg: string) => void;
 }) {
   const { t } = useTranslation();
   const [newUsername, setNewUsername] = useState("");
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
-  const [accountError, setAccountError] = useState<string | null>(null);
-  const [accountInfo, setAccountInfo] = useState<string | null>(null);
 
   const handleUpdateUsername = async (e: React.FormEvent) => {
     e.preventDefault();
-    setAccountError(null);
-    setAccountInfo(null);
     try {
       await onUpdateUsername(newUsername.trim());
       setNewUsername("");
-      setAccountInfo(t("toast.userRoleUpdated"));
+      onSuccess(t("toast.usernameUpdated"));
     } catch (err) {
-      setAccountError(err instanceof Error ? err.message : "errors.save");
+      onError(err instanceof Error ? err.message : "errors.save");
     }
   };
 
   const handleUpdatePassword = async (e: React.FormEvent) => {
     e.preventDefault();
-    setAccountError(null);
-    setAccountInfo(null);
     try {
       await onUpdatePassword(currentPassword, newPassword);
       setCurrentPassword("");
       setNewPassword("");
-      setAccountInfo(t("toast.userRoleUpdated"));
+      onSuccess(t("toast.passwordUpdated"));
     } catch (err) {
-      setAccountError(err instanceof Error ? err.message : "errors.save");
+      onError(err instanceof Error ? err.message : "errors.save");
     }
   };
 
@@ -511,80 +652,6 @@ function AccountTabContent({
       <button className="danger-button settings-logout-button" type="button" onClick={() => void onLogout()}>
         {t("auth.signOut")}
       </button>
-
-      <div className="personalization-section">
-        <h3 className="personalization-title">{t("settings.personalization")}</h3>
-
-        <div className="personalization-row">
-          <label className="personalization-label">{t("settings.language")}</label>
-          <select
-            className="personalization-select"
-            value={preferences.language}
-            onChange={(e) => onUpdatePreferences({ language: e.target.value })}
-          >
-            <option value="auto">{t("settings.languageAuto")}</option>
-            {(["en", "fr", "de", "es"] as SupportedLanguage[]).map((l) => (
-              <option key={l} value={l}>{t(`lang.${l}`)}</option>
-            ))}
-          </select>
-        </div>
-
-        <div className="personalization-row">
-          <label className="personalization-label">{t("settings.theme")}</label>
-          <select
-            className="personalization-select"
-            value={preferences.theme}
-            onChange={(e) => onUpdatePreferences({ theme: e.target.value as UserPreferences["theme"] })}
-          >
-            <option value="auto">{t("settings.themeAuto")}</option>
-            <option value="light">{t("settings.themeLight")}</option>
-            <option value="dark">{t("settings.themeDark")}</option>
-          </select>
-        </div>
-
-        <div className="personalization-row">
-          <label className="personalization-label">{t("settings.startupPage")}</label>
-          <select
-            className="personalization-select"
-            value={preferences.defaultAppId ?? ""}
-            onChange={(e) => onUpdatePreferences({ defaultAppId: e.target.value ? Number(e.target.value) : null })}
-          >
-            <option value="">{t("settings.startupPageNone")}</option>
-            {apps.map((app) => (
-              <option key={app.id} value={app.id}>{app.name}</option>
-            ))}
-          </select>
-        </div>
-
-        <div className="personalization-colors">
-          {(
-            [
-              { key: "accentColor", label: t("settings.accentColor"), fallback: "#c65c31" },
-              { key: "sidebarColor", label: t("settings.sidebarColor"), fallback: "#fffaf4" },
-              { key: "buttonColor", label: t("settings.buttonColor"), fallback: "#c65c31" },
-            ] as { key: keyof UserPreferences; label: string; fallback: string }[]
-          ).map(({ key, label, fallback }) => (
-            <div key={key} className="personalization-color-row">
-              <label className="personalization-label">{label}</label>
-              <div className="personalization-color-field">
-                <input
-                  type="color"
-                  value={(preferences[key] as string | null) ?? fallback}
-                  onChange={(e) => onUpdatePreferences({ [key]: e.target.value })}
-                />
-                {preferences[key] && (
-                  <button type="button" className="personalization-reset-color" onClick={() => onUpdatePreferences({ [key]: null })}>
-                    ×
-                  </button>
-                )}
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {accountError && <p className="account-feedback account-error">{t(accountError)}</p>}
-      {accountInfo && <p className="account-feedback account-info">{accountInfo}</p>}
 
       <div className="personalization-section">
         <h3 className="personalization-title">{t("account.changeUsername")}</h3>
@@ -673,10 +740,14 @@ export function SettingsModal({
   onResetImport,
   onLogout,
   preferences,
+  themeMode,
   onUpdatePreferences,
   onUpdateUsername,
   onUpdatePassword,
   onDeleteSelf,
+  onAccountSuccess,
+  onAccountError,
+  onPreviewTheme,
 }: {
   open: boolean;
   busy: boolean;
@@ -712,10 +783,14 @@ export function SettingsModal({
   onResetImport: () => void;
   onLogout: () => Promise<void>;
   preferences: UserPreferences;
+  themeMode: ThemeMode;
   onUpdatePreferences: (patch: Partial<UserPreferences>) => void;
   onUpdateUsername: (newUsername: string) => Promise<void>;
   onUpdatePassword: (currentPassword: string, newPassword: string) => Promise<void>;
   onDeleteSelf: () => Promise<void>;
+  onAccountSuccess: (msg: string) => void;
+  onAccountError: (msg: string) => void;
+  onPreviewTheme: (mode: "light" | "dark") => void;
 }) {
   const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState<SettingsTab>(canManageApps ? "groups" : "account");
@@ -809,6 +884,13 @@ export function SettingsModal({
           ) : null}
           <button
             type="button"
+            className={activeTab === "personalization" ? "settings-modal-tab active" : "settings-modal-tab"}
+            onClick={() => setActiveTab("personalization")}
+          >
+            {t("settings.personalization")}
+          </button>
+          <button
+            type="button"
             className={activeTab === "account" ? "settings-modal-tab active" : "settings-modal-tab"}
             onClick={() => setActiveTab("account")}
           >
@@ -887,16 +969,24 @@ export function SettingsModal({
               </dl>
             </div>
           ) : null}
+          {activeTab === "personalization" ? (
+            <PersonalizationTabContent
+              apps={apps}
+              preferences={preferences}
+              themeMode={themeMode}
+              onUpdatePreferences={onUpdatePreferences}
+              onPreviewTheme={onPreviewTheme}
+            />
+          ) : null}
           {activeTab === "account" ? (
             <AccountTabContent
               userName={userName}
-              apps={apps}
-              preferences={preferences}
-              onUpdatePreferences={onUpdatePreferences}
               onUpdateUsername={onUpdateUsername}
               onUpdatePassword={onUpdatePassword}
               onDeleteSelf={onDeleteSelf}
               onLogout={onLogout}
+              onSuccess={onAccountSuccess}
+              onError={onAccountError}
             />
           ) : null}
         </div>

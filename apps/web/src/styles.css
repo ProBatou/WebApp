@@ -769,45 +769,98 @@ textarea {
 .sidebar-actions-trigger {
   width: 100%;
   min-width: 0;
-  height: 46px;
-  padding: 0;
+  min-height: 46px;
+  padding: 0 16px;
   display: inline-flex;
   align-items: center;
-  justify-content: center;
-  font-size: 1.02rem;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 0.94rem;
+  font-weight: 600;
+  line-height: 1.2;
+  text-align: left;
+}
+
+.dropdown-trigger-label {
+  min-width: 0;
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.dropdown-trigger-icon {
+  flex: 0 0 auto;
+  color: var(--muted);
+  font-size: 0.82rem;
+  line-height: 1;
+  transition: transform 140ms ease, color 140ms ease;
+}
+
+.dropdown-trigger-icon.open {
+  transform: rotate(180deg);
+  color: var(--accent);
+}
+
+.sidebar-actions-menu.open .sidebar-actions-trigger {
+  background: linear-gradient(180deg, var(--panel-strong), var(--menu-bg));
+  border-color: color-mix(in srgb, var(--accent) 20%, var(--border));
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 10%, transparent);
 }
 
 .sidebar-actions-popover {
   position: absolute;
   right: 0;
-  bottom: calc(100% + 8px);
   z-index: 30;
   display: flex;
   flex-direction: column;
-  gap: 6px;
-  min-width: 168px;
+  gap: 4px;
+  min-width: 188px;
   width: max-content;
-  max-width: min(240px, calc(100vw - 24px));
-  padding: 8px;
-  border-radius: 14px;
+  max-width: min(280px, calc(100vw - 24px));
+  padding: 6px;
+  border-radius: 18px;
   border: 1px solid var(--border);
-  background: var(--menu-bg);
+  background: linear-gradient(180deg, var(--panel-strong), var(--menu-bg));
   box-shadow: var(--menu-shadow);
+}
+
+.sidebar-actions-popover.open-above {
+  bottom: calc(100% + 8px);
+  top: auto;
+}
+
+.sidebar-actions-popover.open-below {
+  top: calc(100% + 8px);
+  bottom: auto;
 }
 
 .sidebar-actions-popover .secondary-button {
   width: 100%;
-  min-height: 42px;
-  font-size: 0.92rem;
+  min-height: 40px;
+  padding: 10px 14px;
+  border-radius: 12px;
+  justify-content: flex-start;
+  font-size: 0.9rem;
   font-weight: 600;
   line-height: 1.2;
-  white-space: nowrap;
-  overflow: visible;
-  text-overflow: clip;
+  white-space: normal;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  background: transparent;
+  border-color: transparent;
+  box-shadow: none;
+  transform: none;
 }
 
 .sidebar-actions-popover .dropdown-item.active {
   background: var(--accent-soft);
+  color: var(--accent);
+}
+
+.sidebar-actions-popover .secondary-button:hover {
+  background: color-mix(in srgb, var(--ghost-surface) 70%, transparent);
+  border-color: transparent;
 }
 
 .sidebar.compact .sidebar-bottom-actions {
@@ -931,6 +984,7 @@ textarea {
 /* Settings modal */
 .settings-modal {
   width: min(680px, 100%);
+  overflow: visible;
 }
 
 .settings-modal-tabs {
@@ -970,7 +1024,7 @@ textarea {
 
 .settings-tab-content {
   flex: 1;
-  overflow: auto;
+  overflow: visible;
 }
 
 .settings-json-tab .settings-json-actions {
@@ -981,7 +1035,17 @@ textarea {
 }
 
 .settings-account-tab .settings-logout-button {
-  margin-top: 8px;
+  margin-top: 4px;
+}
+
+.settings-account-tab .personalization-section {
+  margin-top: 10px;
+  padding-top: 10px;
+  gap: 8px;
+}
+
+.settings-account-tab .json-panel {
+  gap: 6px;
 }
 
 .personalization-section {
@@ -991,6 +1055,12 @@ textarea {
   display: flex;
   flex-direction: column;
   gap: 12px;
+}
+
+.personalization-section:first-child {
+  margin-top: 0;
+  border-top: none;
+  padding-top: 0;
 }
 
 .personalization-title {
@@ -1016,13 +1086,37 @@ textarea {
 }
 
 .personalization-select {
+  min-width: 188px;
+  width: auto;
+  min-height: 38px;
+  padding: 0 14px;
   font-size: 0.875rem;
-  padding: 4px 8px;
-  border-radius: 6px;
-  border: 1px solid var(--border);
-  background: var(--field-bg);
-  color: var(--text);
-  min-width: 140px;
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--field-bg) 72%, var(--panel-strong));
+  border-color: color-mix(in srgb, var(--border) 88%, transparent);
+}
+
+.personalization-row .sidebar-actions-menu {
+  width: auto;
+  min-width: 188px;
+  flex: 0 0 auto;
+}
+
+.personalization-row .sidebar-actions-popover {
+  right: 0;
+  left: auto;
+  z-index: 60;
+  max-height: min(180px, 22vh);
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.personalization-colors-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
 }
 
 .personalization-colors {
@@ -1070,12 +1164,15 @@ textarea {
 
 .account-form {
   display: flex;
-  flex-direction: column;
-  gap: 8px;
+  flex-direction: row;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
 }
 
 .account-input {
-  padding: 8px 10px;
+  flex: 1 1 130px;
+  padding: 7px 10px;
   border-radius: 6px;
   border: 1px solid var(--border);
   background: var(--field-bg);
@@ -1084,8 +1181,8 @@ textarea {
 }
 
 .account-form-btn {
-  align-self: flex-start;
-  padding: 8px 14px;
+  flex: 0 0 auto;
+  padding: 7px 14px;
 }
 
 .account-feedback {
@@ -1761,16 +1858,6 @@ textarea {
 
 .editor-logo-row {
   align-items: start;
-}
-
-.editor-logo-side {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.editor-logo-side label {
-  flex: 0 0 auto;
 }
 
 .editor-field-note {

@@ -102,8 +102,9 @@ export const es: Record<TranslationKey, string> = {
   "settings.themeDark": "Oscuro",
   "settings.startupPage": "Página de inicio",
   "settings.startupPageNone": "Ninguna",
-  "settings.accentColor": "Color de acento",
-  "settings.sidebarColor": "Color de la barra lateral",
+  "settings.colors": "Colores",
+  "settings.accentColor": "Secundario (acento & botones)",
+  "settings.sidebarColor": "Interfaz (sidebar & paneles)",
   "settings.buttonColor": "Color de los botones",
   "account.changeUsername": "Cambiar nombre de usuario",
   "account.changePassword": "Cambiar contraseña",
@@ -187,6 +188,8 @@ export const es: Record<TranslationKey, string> = {
   "toast.userRoleUpdated": "Rol de usuario actualizado.",
   "toast.userDeleted": "{name} eliminado.",
   "toast.userDeletedFallback": "Usuario eliminado.",
+  "toast.usernameUpdated": "Nombre de usuario actualizado.",
+  "toast.passwordUpdated": "Contraseña actualizada.",
 
   "confirm.replaceImport": "¿Reemplazar {existing} app{existingSuffix} con {incoming} nueva{incomingSuffix} entrada{incomingSuffix}?",
 

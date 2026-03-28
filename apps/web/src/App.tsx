@@ -193,7 +193,7 @@ function AppContent() {
     setBusy,
   });
 
-  const { preferences, updatePreferences } = usePreferences({
+  const { preferences, updatePreferences, previewTheme, clearPreviewTheme } = usePreferences({
     initialPreferences,
     onThemeChange: setThemeMode,
     onLanguageChange: setLang,
@@ -204,6 +204,9 @@ function AppContent() {
     enabled: Boolean(user),
   });
   const canManageApps = user?.role === "admin";
+  const inheritedEditorAccent = themeMode === "dark"
+    ? (preferences.accentColorDark ?? "#df7a42")
+    : (preferences.accentColor ?? "#c65c31");
 
   const {
     jsonImportMode,
@@ -426,7 +429,8 @@ function AppContent() {
     closeJsonModal();
     closeAuxiliaryModals();
     openCreateEditor();
-  }, [canManageApps, closeAuxiliaryModals, closeJsonModal, openCreateEditor]);
+    setEditorState((current) => ({ ...current, accent: inheritedEditorAccent }));
+  }, [canManageApps, closeAuxiliaryModals, closeJsonModal, inheritedEditorAccent, openCreateEditor, setEditorState]);
 
   const openEditEditorFromUi = useCallback((app: WebAppEntry) => {
     if (!canManageApps) {
@@ -782,6 +786,7 @@ function AppContent() {
           busy={busy}
           editorMode={editorMode}
           editorState={editorState}
+          inheritedAccent={inheritedEditorAccent}
           setEditorState={setEditorState}
           iconQuery={iconQuery}
           setIconQuery={setIconQuery}
@@ -826,7 +831,10 @@ function AppContent() {
           jsonModalError={jsonModalError}
           jsonModalInfo={jsonModalInfo}
           jsonFileInputRef={jsonFileInputRef}
-          onClose={closeSettings}
+          onClose={() => {
+            closeSettings();
+            clearPreviewTheme();
+          }}
           onCreateGroup={handleCreateGroup}
           onRenameGroup={handleRenameGroup}
           onMoveGroup={handleMoveGroup}
@@ -843,10 +851,14 @@ function AppContent() {
           onResetImport={resetImport}
           onLogout={handleLogout}
           preferences={preferences}
+          themeMode={themeMode}
           onUpdatePreferences={updatePreferences}
           onUpdateUsername={handleUpdateUsername}
           onUpdatePassword={handleUpdatePassword}
           onDeleteSelf={handleDeleteSelf}
+          onAccountSuccess={pushToast}
+          onAccountError={pushErrorToast}
+          onPreviewTheme={previewTheme}
         />
         <ToastContainer toasts={toasts} onDismiss={dismissToast} />
       </div>

@@ -8,6 +8,9 @@ const defaultPreferences = {
   accent_color: null,
   sidebar_color: null,
   button_color: null,
+  accent_color_dark: null,
+  sidebar_color_dark: null,
+  button_color_dark: null,
 };
 
 export function getPreferences(userId: number): UserPreferencesRecord {
@@ -23,8 +26,8 @@ export function getPreferences(userId: number): UserPreferencesRecord {
 }
 
 const upsertPreferencesStmt = db.prepare(`
-  INSERT INTO user_preferences (user_id, theme, language, default_app_id, accent_color, sidebar_color, button_color, updated_at)
-  VALUES (@user_id, @theme, @language, @default_app_id, @accent_color, @sidebar_color, @button_color, @updated_at)
+  INSERT INTO user_preferences (user_id, theme, language, default_app_id, accent_color, sidebar_color, button_color, accent_color_dark, sidebar_color_dark, button_color_dark, updated_at)
+  VALUES (@user_id, @theme, @language, @default_app_id, @accent_color, @sidebar_color, @button_color, @accent_color_dark, @sidebar_color_dark, @button_color_dark, @updated_at)
   ON CONFLICT(user_id) DO UPDATE SET
     theme = excluded.theme,
     language = excluded.language,
@@ -32,6 +35,9 @@ const upsertPreferencesStmt = db.prepare(`
     accent_color = excluded.accent_color,
     sidebar_color = excluded.sidebar_color,
     button_color = excluded.button_color,
+    accent_color_dark = excluded.accent_color_dark,
+    sidebar_color_dark = excluded.sidebar_color_dark,
+    button_color_dark = excluded.button_color_dark,
     updated_at = excluded.updated_at
 `);
 

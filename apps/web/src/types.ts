@@ -123,7 +123,8 @@ export type UserPreferences = {
   defaultAppId: number | null;
   accentColor: string | null;
   sidebarColor: string | null;
-  buttonColor: string | null;
+  accentColorDark: string | null;
+  sidebarColorDark: string | null;
 };
 
 export type DashboardIconMetadata = {

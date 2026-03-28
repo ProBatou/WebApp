@@ -20,43 +20,89 @@ function hexToRgba(hex: string, alpha: number): string {
   return `rgba(${rgb[0]}, ${rgb[1]}, ${rgb[2]}, ${alpha})`;
 }
 
-function resolveTheme(userTheme: UserTheme): ThemeMode {
+export function resolveTheme(userTheme: UserTheme): ThemeMode {
   if (userTheme === "auto") {
     return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
   }
   return userTheme;
 }
 
-function applyColors(prefs: UserPreferences) {
-  const root = document.documentElement;
+function relativeLuminance(hex: string): number {
+  const rgb = hexToRgb(hex);
+  if (!rgb) return 0.5;
+  return rgb.map((c) => {
+    const s = c / 255;
+    return s <= 0.03928 ? s / 12.92 : Math.pow((s + 0.055) / 1.055, 2.4);
+  }).reduce((acc, val, i) => acc + val * [0.2126, 0.7152, 0.0722][i], 0);
+}
 
-  if (prefs.accentColor) {
-    root.style.setProperty("--accent", prefs.accentColor);
-    root.style.setProperty("--accent-strong", darkenHex(prefs.accentColor));
-    root.style.setProperty("--accent-soft", hexToRgba(prefs.accentColor, 0.14));
+function lightenHex(hex: string, factor = 0.35): string {
+  const rgb = hexToRgb(hex);
+  if (!rgb) return hex;
+  return `#${rgb.map((c) => Math.min(255, Math.round(c + (255 - c) * factor)).toString(16).padStart(2, "0")).join("")}`;
+}
+
+function applyColors(prefs: UserPreferences, themeMode: ThemeMode) {
+  const root = document.documentElement;
+  const isDarkTheme = themeMode === "dark";
+
+  const accentColor = isDarkTheme ? prefs.accentColorDark : prefs.accentColor;
+  const sidebarColor = isDarkTheme ? prefs.sidebarColorDark : prefs.sidebarColor;
+
+  if (accentColor) {
+    root.style.setProperty("--accent", accentColor);
+    root.style.setProperty("--accent-strong", darkenHex(accentColor));
+    root.style.setProperty("--accent-soft", hexToRgba(accentColor, 0.14));
   } else {
     root.style.removeProperty("--accent");
     root.style.removeProperty("--accent-strong");
     root.style.removeProperty("--accent-soft");
   }
 
-  if (prefs.sidebarColor) {
-    root.style.setProperty("--panel", prefs.sidebarColor);
-    root.style.setProperty("--panel-strong", darkenHex(prefs.sidebarColor, 0.05));
-    root.style.setProperty("--panel-muted", hexToRgba(prefs.sidebarColor, 0.56));
-    root.style.setProperty("--menu-bg", hexToRgba(prefs.sidebarColor, 0.96));
-    root.style.setProperty("--modal-surface", hexToRgba(prefs.sidebarColor, 0.92));
+  if (sidebarColor) {
+    const lum = relativeLuminance(sidebarColor);
+    const isSidebarDark = lum < 0.18;
+    const fieldBg = isSidebarDark
+      ? hexToRgba(lightenHex(sidebarColor, 0.18), 0.86)
+      : hexToRgba(lightenHex(sidebarColor, 0.5), 0.72);
+    root.style.setProperty("--panel", sidebarColor);
+    root.style.setProperty("--panel-strong", darkenHex(sidebarColor, 0.05));
+    root.style.setProperty("--panel-muted", hexToRgba(sidebarColor, 0.56));
+    root.style.setProperty("--menu-bg", hexToRgba(sidebarColor, 0.96));
+    root.style.setProperty("--modal-surface", hexToRgba(sidebarColor, 0.92));
+    root.style.setProperty("--tile-surface", hexToRgba(sidebarColor, 0.48));
+    root.style.setProperty("--ghost-surface", hexToRgba(sidebarColor, 0.62));
+    root.style.setProperty("--viewer-surface", hexToRgba(sidebarColor, 0.16));
+    root.style.setProperty("--preview-surface", hexToRgba(sidebarColor, 0.52));
+    root.style.setProperty("--field-bg", fieldBg);
+    if (isSidebarDark) {
+      root.style.setProperty("--text", "#f4ede4");
+      root.style.setProperty("--muted", "rgba(244, 237, 228, 0.54)");
+      root.style.setProperty("--border", "rgba(255, 234, 214, 0.12)");
+    } else {
+      root.style.removeProperty("--text");
+      root.style.removeProperty("--muted");
+      root.style.removeProperty("--border");
+    }
   } else {
     root.style.removeProperty("--panel");
     root.style.removeProperty("--panel-strong");
     root.style.removeProperty("--panel-muted");
     root.style.removeProperty("--menu-bg");
     root.style.removeProperty("--modal-surface");
+    root.style.removeProperty("--tile-surface");
+    root.style.removeProperty("--ghost-surface");
+    root.style.removeProperty("--viewer-surface");
+    root.style.removeProperty("--preview-surface");
+    root.style.removeProperty("--field-bg");
+    root.style.removeProperty("--text");
+    root.style.removeProperty("--muted");
+    root.style.removeProperty("--border");
   }
 
-  if (prefs.buttonColor) {
-    root.style.setProperty("--btn-bg", prefs.buttonColor);
-    root.style.setProperty("--btn-bg-hover", darkenHex(prefs.buttonColor));
+  if (accentColor) {
+    root.style.setProperty("--btn-bg", accentColor);
+    root.style.setProperty("--btn-bg-hover", darkenHex(accentColor));
   } else {
     root.style.removeProperty("--btn-bg");
     root.style.removeProperty("--btn-bg-hover");
@@ -69,7 +115,8 @@ const defaultPreferences: UserPreferences = {
   defaultAppId: null,
   accentColor: null,
   sidebarColor: null,
-  buttonColor: null,
+  accentColorDark: null,
+  sidebarColorDark: null,
 };
 
 export function usePreferences({
@@ -85,16 +132,18 @@ export function usePreferences({
     initialPreferences ?? defaultPreferences
   );
   const saveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const nextPreferencesRef = useRef<UserPreferences>(initialPreferences ?? defaultPreferences);
+  const previewThemeRef = useRef<ThemeMode | null>(null);
 
   useEffect(() => {
     if (!initialPreferences) return;
     setPreferences(initialPreferences);
+    nextPreferencesRef.current = initialPreferences;
   }, [initialPreferences]);
 
   useEffect(() => {
-    applyColors(preferences);
-
-    const resolved = resolveTheme(preferences.theme);
+    const resolved = previewThemeRef.current ?? resolveTheme(preferences.theme);
+    applyColors(preferences, resolved);
     onThemeChange(resolved);
 
     if (preferences.language !== "auto") {
@@ -117,18 +166,30 @@ export function usePreferences({
   const updatePreferences = useCallback((patch: Partial<UserPreferences>) => {
     setPreferences((current) => {
       const next = { ...current, ...patch };
-
-      if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
-      saveTimeoutRef.current = setTimeout(() => {
-        void apiFetch("/api/user/preferences", {
-          method: "PUT",
-          body: JSON.stringify(patch),
-        });
-      }, 500);
-
+      nextPreferencesRef.current = next;
       return next;
     });
+    if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
+    saveTimeoutRef.current = setTimeout(() => {
+      void apiFetch("/api/user/preferences", {
+        method: "PUT",
+        body: JSON.stringify(nextPreferencesRef.current),
+      });
+    }, 500);
   }, []);
 
-  return { preferences, updatePreferences };
+  const previewTheme = useCallback((mode: ThemeMode) => {
+    previewThemeRef.current = mode;
+    onThemeChange(mode);
+    applyColors(nextPreferencesRef.current, mode);
+  }, [onThemeChange]);
+
+  const clearPreviewTheme = useCallback(() => {
+    previewThemeRef.current = null;
+    const resolved = resolveTheme(nextPreferencesRef.current.theme);
+    onThemeChange(resolved);
+    applyColors(nextPreferencesRef.current, resolved);
+  }, [onThemeChange]);
+
+  return { preferences, updatePreferences, previewTheme, clearPreviewTheme };
 }

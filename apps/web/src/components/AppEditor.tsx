@@ -21,6 +21,7 @@ export function AppEditor({
   busy,
   editorMode,
   editorState,
+  inheritedAccent,
   setEditorState,
   iconQuery,
   setIconQuery,
@@ -42,6 +43,7 @@ export function AppEditor({
   busy: boolean;
   editorMode: EditorMode;
   editorState: AppEditorState;
+  inheritedAccent: string;
   setEditorState: Dispatch<SetStateAction<AppEditorState>>;
   iconQuery: string;
   setIconQuery: (value: string) => void;
@@ -71,6 +73,7 @@ export function AppEditor({
   const effectiveSelectedIconPreviewVariants = selectedIconPreviewVariants
     ? getEffectivePreviewVariants(selectedIconPreviewVariants, editorState.iconVariantInverted)
     : null;
+  const previewAccent = editorMode === "create" ? inheritedAccent : editorState.accent;
 
   return (
     <div className="editor-modal-overlay" onClick={onClose} role="presentation">
@@ -109,9 +112,9 @@ export function AppEditor({
               required
             />
           </label>
-          <div className="form-row editor-logo-row">
+          <div className="editor-logo-row">
             <label>
-            <span>{t("app.icon")}</span>
+              <span>{t("app.icon")}</span>
               <input
                 type="text"
                 value={iconQuery}
@@ -126,20 +129,8 @@ export function AppEditor({
                 <a href="https://dashboardicons.com/icons" target="_blank" rel="noreferrer">
                   {t("app.openCatalog")}
                 </a>
-              </div>
-            </label>
-            <div className="editor-logo-side">
-              <label>
-                <span aria-hidden="true">&nbsp;</span>
-                <input
-                  type="color"
-                  value={editorState.accent}
-                  onChange={(event) => setEditorState((current) => ({ ...current, accent: event.target.value }))}
-                  title={t("app.color")}
-                  aria-label={t("app.color")}
-                />
+                </div>
               </label>
-            </div>
           </div>
           <div className="icon-search-panel">
             {dashboardIconsError ? <p className="form-error">{t(dashboardIconsError)}</p> : null}
@@ -231,7 +222,7 @@ export function AppEditor({
                 icon={editorState.icon}
                 name={editorState.name}
                 url={editorState.url}
-                accent={editorState.accent}
+                accent={previewAccent}
                 themeMode={themeMode}
                 dashboardIconsMetadata={dashboardIconsMetadata}
                 iconVariantMode={editorState.iconVariantMode}
