@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState, type FormEvent } from "react";
 import { apiFetch } from "../lib/api";
-import { emptyEditorState } from "../lib/app-utils";
+import { emptyEditorState, isDashboardIconSlug } from "../lib/app-utils";
 import type { AppEditorState, EditorMode, WebAppEntry } from "../types";
 
 export function useEditor({
@@ -60,9 +60,10 @@ export function useEditor({
       isShared: app.is_shared,
       groupId: app.group_id,
     });
-    setIconQuery(app.icon);
-    setDebouncedIconQuery(app.icon);
-    setIconSelectionLocked(Boolean(app.icon));
+    const initialIconQuery = isDashboardIconSlug(app.icon) ? app.icon : "";
+    setIconQuery(initialIconQuery);
+    setDebouncedIconQuery(initialIconQuery);
+    setIconSelectionLocked(isDashboardIconSlug(app.icon));
     setEditorOpen(true);
   }, []);
 

@@ -10,7 +10,22 @@ import type { AppRecord } from "../lib/types.js";
 const appSchema = z.object({
   name: z.string().trim().min(2).max(64),
   url: z.string().url(),
-  icon: z.string().trim().min(1).max(80).regex(/^[A-Za-z0-9-]+$/, "errors.invalidIcon"),
+  icon: z.string().trim().min(1).max(2_000_000).refine((value) => {
+    if (/^[A-Za-z0-9-]+$/.test(value)) {
+      return true;
+    }
+
+    if (/^data:image\/[a-zA-Z0-9.+-]+;base64,[A-Za-z0-9+/=]+$/.test(value)) {
+      return true;
+    }
+
+    try {
+      const parsedUrl = new URL(value);
+      return parsedUrl.protocol === "http:" || parsedUrl.protocol === "https:";
+    } catch {
+      return false;
+    }
+  }, "errors.invalidIcon"),
   iconVariantMode: z.enum(["auto", "base"]).default("auto"),
   iconVariantInverted: z.boolean().default(false),
   accent: z.string().regex(/^#([0-9a-fA-F]{6})$/, "errors.invalidData"),

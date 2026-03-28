@@ -44,6 +44,24 @@ export function isDashboardIconSlug(value: string) {
   return /^[a-z0-9-]+$/.test(value.trim());
 }
 
+export function isCustomIconUrl(value: string) {
+  const trimmedValue = value.trim();
+  if (!trimmedValue) {
+    return false;
+  }
+
+  if (/^data:image\/[a-zA-Z0-9.+-]+;base64,[A-Za-z0-9+/=]+$/.test(trimmedValue)) {
+    return true;
+  }
+
+  try {
+    const parsedUrl = new URL(trimmedValue);
+    return parsedUrl.protocol === "http:" || parsedUrl.protocol === "https:";
+  } catch {
+    return false;
+  }
+}
+
 export function getDashboardIconUrl(icon: string) {
   return `${dashboardIconsProxyBaseUrl}/${icon}`;
 }
