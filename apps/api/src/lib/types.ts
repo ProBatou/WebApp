@@ -46,5 +46,8 @@ export type UserPreferencesRecord = {
   accent_color: string | null;
   sidebar_color: string | null;
   button_color: string | null;
+  accent_color_dark: string | null;
+  sidebar_color_dark: string | null;
+  button_color_dark: string | null;
   updated_at: string;
 };

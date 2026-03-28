@@ -20,7 +20,9 @@ export function Dropdown({
   disabled?: boolean;
 }) {
   const [open, setOpen] = useState(false);
+  const [placement, setPlacement] = useState<"above" | "below">("below");
   const rootRef = useRef<HTMLDivElement | null>(null);
+  const popoverRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     if (!open || disabled) {
@@ -53,6 +55,34 @@ export function Dropdown({
     };
   }, [disabled, open]);
 
+  useEffect(() => {
+    if (!open) {
+      return;
+    }
+
+    const updatePlacement = () => {
+      const triggerRect = rootRef.current?.getBoundingClientRect();
+      const popoverRect = popoverRef.current?.getBoundingClientRect();
+      if (!triggerRect || !popoverRect) {
+        return;
+      }
+
+      const spaceBelow = window.innerHeight - triggerRect.bottom;
+      const spaceAbove = triggerRect.top;
+      const neededHeight = Math.min(popoverRect.height, window.innerHeight * 0.4);
+      setPlacement(spaceBelow >= neededHeight || spaceBelow >= spaceAbove ? "below" : "above");
+    };
+
+    updatePlacement();
+    window.addEventListener("resize", updatePlacement);
+    window.addEventListener("scroll", updatePlacement, true);
+
+    return () => {
+      window.removeEventListener("resize", updatePlacement);
+      window.removeEventListener("scroll", updatePlacement, true);
+    };
+  }, [items.length, open]);
+
   return (
     <div ref={rootRef} className={open ? "sidebar-actions-menu open" : "sidebar-actions-menu"}>
       <button
@@ -63,11 +93,18 @@ export function Dropdown({
         aria-haspopup="menu"
         aria-expanded={open}
       >
-        {trigger}
+        <span className="dropdown-trigger-label">{trigger}</span>
+        <span className={open ? "dropdown-trigger-icon open" : "dropdown-trigger-icon"} aria-hidden="true">
+          ▾
+        </span>
       </button>
 
       {open ? (
-        <div className="sidebar-actions-popover" role="menu">
+        <div
+          ref={popoverRef}
+          className={placement === "above" ? "sidebar-actions-popover open-above" : "sidebar-actions-popover open-below"}
+          role="menu"
+        >
           {items.map((item) => (
             <button
               key={item.value}

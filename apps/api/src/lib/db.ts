@@ -186,6 +186,16 @@ const migrations: Migration[] = [
       `);
     },
   },
+  {
+    id: "012_preferences_dark_colors",
+    up: (database) => {
+      database.exec(`
+        ALTER TABLE user_preferences ADD COLUMN accent_color_dark TEXT;
+        ALTER TABLE user_preferences ADD COLUMN sidebar_color_dark TEXT;
+        ALTER TABLE user_preferences ADD COLUMN button_color_dark TEXT;
+      `);
+    },
+  },
 ];
 
 export function applyMigrations(database: SqliteDatabase) {
