@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState, type ChangeEvent, type MouseEvent } from "react";
+import { useCallback, useEffect, useRef, useState, type MouseEvent } from "react";
 import {
   DndContext,
   DragOverlay,
@@ -22,7 +22,7 @@ import { DragOverlayTile, Sidebar } from "./components/Sidebar";
 import { ToastContainer } from "./components/ToastContainer";
 import { UserManagerModal } from "./components/UserManagerModal";
 import { Workspace } from "./components/Workspace";
-import { parseImportedApps, exportAppsToJson, getSuggestedDashboardIcon, themeStorageKey } from "./lib/app-utils";
+import { getSuggestedDashboardIcon, themeStorageKey } from "./lib/app-utils";
 import { apiFetch } from "./lib/api";
 import { useApps } from "./hooks/useApps";
 import { useAppStatus } from "./hooks/useAppStatus";
@@ -31,14 +31,13 @@ import { useDashboardIcons } from "./hooks/useDashboardIcons";
 import { useEditor } from "./hooks/useEditor";
 import { useGroups } from "./hooks/useGroups";
 import { useIframes } from "./hooks/useIframes";
+import { useJsonImport } from "./hooks/useJsonImport";
+import { useModals } from "./hooks/useModals";
 import { useToast } from "./hooks/useToast";
 import { I18nProvider, useI18nContext, useTranslation } from "./lib/i18n";
 import type {
   ContextMenuState,
-  ImportAppsResponse,
   InvitationResponse,
-  JsonImportMode,
-  JsonModalMode,
   SidebarMode,
   ThemeMode,
   UserEntry,
@@ -66,30 +65,12 @@ function AppContent() {
   });
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [jsonModalMode, setJsonModalMode] = useState<JsonModalMode>(null);
-  const [jsonImportMode, setJsonImportMode] = useState<JsonImportMode>("merge");
-  const [jsonValue, setJsonValue] = useState("");
-  const [jsonModalError, setJsonModalError] = useState<string | null>(null);
-  const [jsonModalInfo, setJsonModalInfo] = useState<string | null>(null);
-  const [groupManagerOpen, setGroupManagerOpen] = useState(false);
-  const [userManagerOpen, setUserManagerOpen] = useState(false);
   const [managedUsers, setManagedUsers] = useState<UserEntry[]>([]);
   const [contextMenu, setContextMenu] = useState<ContextMenuState>(null);
   const [draggingAppId, setDraggingAppId] = useState<number | null>(null);
   const [dragOutProgress, setDragOutProgress] = useState(0);
-  const [shortcutHelpOpen, setShortcutHelpOpen] = useState(false);
-  const [confirmState, setConfirmState] = useState<{
-    open: boolean;
-    message: string;
-    onConfirm: (() => void) | null;
-  }>({ open: false, message: "", onConfirm: null });
   const sidebarRef = useRef<HTMLElement | null>(null);
-  const jsonFileInputRef = useRef<HTMLInputElement | null>(null);
-  const closeJsonModal = useCallback(() => {
-    setJsonModalMode(null);
-    setJsonModalError(null);
-    setJsonModalInfo(null);
-  }, []);
+  const closeJsonModalRef = useRef<() => void>(() => undefined);
   const { toasts, pushToast, pushErrorToast, dismissToast } = useToast();
 
   const {
@@ -163,6 +144,22 @@ function AppContent() {
     .map((iframeId) => apps.find((item) => item.id === iframeId && item.open_mode === "iframe") ?? null)
     .filter((app): app is WebAppEntry => app !== null);
 
+  const {
+    groupManagerOpen,
+    userManagerOpen,
+    shortcutHelpOpen,
+    confirmState,
+    openGroupManager,
+    closeGroupManager,
+    openUserManager,
+    closeUserManager,
+    openShortcutHelp,
+    closeShortcutHelp,
+    closeAuxiliaryModals,
+    openConfirm,
+    closeConfirm,
+  } = useModals();
+
   const clearAppState = useCallback(() => {
     resetAppsState();
     resetGroups();
@@ -172,11 +169,9 @@ function AppContent() {
   const clearUiState = useCallback(() => {
     closeEditor();
     setContextMenu(null);
-    closeJsonModal();
-    setGroupManagerOpen(false);
-    setUserManagerOpen(false);
-    setShortcutHelpOpen(false);
-  }, [closeEditor, closeJsonModal]);
+    closeJsonModalRef.current();
+    closeAuxiliaryModals();
+  }, [closeAuxiliaryModals, closeEditor]);
 
   const {
     user,
@@ -203,6 +198,37 @@ function AppContent() {
     enabled: Boolean(user),
   });
   const canManageApps = user?.role === "admin";
+
+  const {
+    jsonModalMode,
+    jsonImportMode,
+    jsonValue,
+    jsonModalError,
+    jsonModalInfo,
+    jsonFileInputRef,
+    setJsonImportMode,
+    setJsonValue,
+    closeJsonModal,
+    openJsonImport,
+    openJsonExport,
+    handleJsonFileChange,
+    handleCopyExportJson,
+    handleImportJson,
+  } = useJsonImport({
+    apps,
+    canManageApps,
+    closeEditor,
+    closeAuxiliaryModals,
+    closeConfirm,
+    openConfirm,
+    pushToast,
+    selectApp,
+    setApps,
+    setBusy,
+    setContextMenu,
+    setError,
+  });
+  closeJsonModalRef.current = closeJsonModal;
 
   useEffect(() => {
     document.documentElement.dataset.theme = themeMode;
@@ -262,22 +288,22 @@ function AppContent() {
         }
 
         if (shortcutHelpOpen) {
-          setShortcutHelpOpen(false);
+          closeShortcutHelp();
         }
 
         if (groupManagerOpen) {
-          setGroupManagerOpen(false);
+          closeGroupManager();
         }
 
         if (userManagerOpen) {
-          setUserManagerOpen(false);
+          closeUserManager();
         }
       }
     };
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [closeEditor, editorOpen, jsonModalMode, shortcutHelpOpen, groupManagerOpen, userManagerOpen, closeJsonModal]);
+  }, [closeEditor, editorOpen, jsonModalMode, shortcutHelpOpen, groupManagerOpen, userManagerOpen, closeGroupManager, closeJsonModal, closeShortcutHelp, closeUserManager]);
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -305,26 +331,26 @@ function AppContent() {
         setContextMenu(null);
         closeEditor();
         closeJsonModal();
-        setGroupManagerOpen(false);
-        setUserManagerOpen(false);
-        setShortcutHelpOpen(true);
+        closeGroupManager();
+        closeUserManager();
+        openShortcutHelp();
       }
     };
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [canManageApps, closeEditor, closeJsonModal, user]);
+  }, [canManageApps, closeEditor, closeGroupManager, closeJsonModal, closeUserManager, openShortcutHelp, user]);
 
   const reloadUsers = useCallback(async () => {
     const result = await apiFetch<UsersResponse>("/api/users", { method: "GET" });
     setManagedUsers(result.items);
   }, []);
 
-  const toggleThemeMode = () => {
+  const toggleThemeMode = useCallback(() => {
     setThemeMode((current) => (current === "light" ? "dark" : "light"));
-  };
+  }, []);
 
-  const handleSelectApp = (app: WebAppEntry) => {
+  const handleSelectApp = useCallback((app: WebAppEntry) => {
     setContextMenu(null);
     setSidebarOpen(false);
     selectApp(app.id);
@@ -332,13 +358,13 @@ function AppContent() {
     if (app.open_mode === "external") {
       window.open(app.url, "_blank", "noopener,noreferrer");
     }
-  };
+  }, [selectApp]);
 
-  const handleDeleteAppFromUi = async (appId: number) => {
+  const handleDeleteAppFromUi = useCallback(async (appId: number) => {
     await deleteApp(appId);
     closeEditor();
     setContextMenu(null);
-  };
+  }, [closeEditor, deleteApp]);
 
   const handleToggleDefaultApp = async (app: WebAppEntry) => {
     try {
@@ -367,159 +393,35 @@ function AppContent() {
     }
   };
 
-  const openCreateEditorFromUi = () => {
+  const openCreateEditorFromUi = useCallback(() => {
     if (!canManageApps) {
       return;
     }
 
     setContextMenu(null);
     closeJsonModal();
-    setGroupManagerOpen(false);
-    setUserManagerOpen(false);
-    setShortcutHelpOpen(false);
+    closeAuxiliaryModals();
     openCreateEditor();
-  };
+  }, [canManageApps, closeAuxiliaryModals, closeJsonModal, openCreateEditor]);
 
-  const openEditEditorFromUi = (app: WebAppEntry) => {
+  const openEditEditorFromUi = useCallback((app: WebAppEntry) => {
     if (!canManageApps) {
       return;
     }
 
     setContextMenu(null);
     closeJsonModal();
-    setGroupManagerOpen(false);
-    setUserManagerOpen(false);
-    setShortcutHelpOpen(false);
+    closeAuxiliaryModals();
     openEditEditor(app);
-  };
+  }, [canManageApps, closeAuxiliaryModals, closeJsonModal, openEditEditor]);
 
-  const openJsonImport = () => {
-    if (!canManageApps) {
-      return;
-    }
-
-    setContextMenu(null);
-    closeEditor();
-    setGroupManagerOpen(false);
-    setUserManagerOpen(false);
-    setShortcutHelpOpen(false);
-    setJsonImportMode("merge");
-    setJsonValue("");
-    setJsonModalError(null);
-    setJsonModalInfo(null);
-    setJsonModalMode("import");
-  };
-
-  const openJsonExport = () => {
-    if (!canManageApps) {
-      return;
-    }
-
-    setContextMenu(null);
-    closeEditor();
-    setGroupManagerOpen(false);
-    setUserManagerOpen(false);
-    setShortcutHelpOpen(false);
-    setJsonModalError(null);
-    setJsonModalInfo(null);
-    setJsonValue(exportAppsToJson(apps));
-    setJsonModalMode("export");
-  };
-
-  const handleJsonFileChange = async (event: ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file) {
-      return;
-    }
-
-    try {
-      const nextValue = await file.text();
-      setJsonValue(nextValue);
-      setJsonModalError(null);
-      setJsonModalInfo(t("toast.fileLoaded", { name: file.name }));
-    } catch {
-      setJsonModalError("errors.readJson");
-      setJsonModalInfo(null);
-    } finally {
-      event.target.value = "";
-    }
-  };
-
-  const handleCopyExportJson = async () => {
-    try {
-      await navigator.clipboard.writeText(jsonValue);
-      setJsonModalError(null);
-      setJsonModalInfo("toast.jsonCopied");
-      pushToast("toast.jsonCopiedClipboard");
-    } catch {
-      setJsonModalError("errors.copyJson");
-      setJsonModalInfo(null);
-    }
-  };
-
-  const executeImport = async () => {
-    try {
-      setBusy(true);
-      setError(null);
-      setJsonModalError(null);
-      setJsonModalInfo(null);
-
-      const importedItems = parseImportedApps(jsonValue);
-      const result = await apiFetch<ImportAppsResponse>("/api/apps/import", {
-        method: "POST",
-        body: JSON.stringify({
-          mode: jsonImportMode,
-          items: importedItems,
-        }),
-      });
-
-      setApps(result.items);
-      const preferredId = result.importedIds.length > 0 ? result.importedIds[result.importedIds.length - 1] : result.items[0]?.id ?? null;
-      selectApp(preferredId);
-      closeJsonModal();
-      pushToast(t("toast.importedApps", { count: result.importedIds.length, suffix: result.importedIds.length > 1 ? "s" : "" }));
-    } catch (importError) {
-      setJsonModalError(importError instanceof Error ? importError.message : "errors.import");
-    } finally {
-      setBusy(false);
-    }
-  };
-
-  const handleImportJson = async () => {
-    try {
-      const importedItems = parseImportedApps(jsonValue);
-      if (jsonImportMode === "replace" && apps.length > 0) {
-        setConfirmState({
-          open: true,
-          message: t("confirm.replaceImport", {
-            existing: apps.length,
-            existingSuffix: apps.length > 1 ? "s" : "",
-            incoming: importedItems.length,
-            incomingSuffix: importedItems.length > 1 ? "s" : "",
-          }),
-          onConfirm: () => {
-            setConfirmState({ open: false, message: "", onConfirm: null });
-            void executeImport();
-          },
-        });
-        return;
-      }
-
-      await executeImport();
-    } catch (importError) {
-      setJsonModalError(importError instanceof Error ? importError.message : "errors.import");
-    }
-  };
-
-  const openContextMenu = (event: MouseEvent<HTMLDivElement>, app: WebAppEntry) => {
+  const openContextMenu = useCallback((event: MouseEvent<HTMLDivElement>, app: WebAppEntry) => {
     if (!canManageApps && app.open_mode !== "iframe") {
       return;
     }
 
     event.preventDefault();
-    setGroupManagerOpen(false);
-    setUserManagerOpen(false);
-    setShortcutHelpOpen(false);
+    closeAuxiliaryModals();
 
     const menuWidth = 190;
     const menuHeight = app.open_mode === "iframe" ? 212 : 172;
@@ -531,17 +433,15 @@ function AppContent() {
       y: Math.min(event.clientY, maxY),
       app,
     });
-  };
+  }, [canManageApps, closeAuxiliaryModals]);
 
-  const openSidebarContextMenu = (event: MouseEvent<HTMLElement>) => {
+  const openSidebarContextMenu = useCallback((event: MouseEvent<HTMLElement>) => {
     if (!canManageApps) {
       return;
     }
 
     event.preventDefault();
-    setGroupManagerOpen(false);
-    setUserManagerOpen(false);
-    setShortcutHelpOpen(false);
+    closeAuxiliaryModals();
 
     const menuWidth = 190;
     const menuHeight = 172;
@@ -553,9 +453,9 @@ function AppContent() {
       y: Math.min(event.clientY, maxY),
       app: null,
     });
-  };
+  }, [canManageApps, closeAuxiliaryModals]);
 
-  const getDragOutProgress = (translated: { left: number; right: number; width: number; height: number }) => {
+  const getDragOutProgress = useCallback((translated: { left: number; right: number; width: number; height: number }) => {
     const sidebarBounds = sidebarRef.current?.getBoundingClientRect();
     if (!sidebarBounds) {
       return 0;
@@ -568,9 +468,9 @@ function AppContent() {
     }
 
     return Math.min(1, (fullExitDistance - visibleExitOffset) / 180);
-  };
+  }, []);
 
-  const isDroppedOutsideSidebar = (event: DragEndEvent) => {
+  const isDroppedOutsideSidebar = useCallback((event: DragEndEvent) => {
     const sidebarBounds = sidebarRef.current?.getBoundingClientRect();
     const translated = event.active.rect.current.translated;
     if (!sidebarBounds || !translated) {
@@ -578,17 +478,17 @@ function AppContent() {
     }
 
     return translated.left > sidebarBounds.right + 72;
-  };
+  }, []);
 
-  const handleDragStart = (event: DragStartEvent) => {
+  const handleDragStart = useCallback((event: DragStartEvent) => {
     const nextId = Number(event.active.id);
     setDraggingAppId(Number.isNaN(nextId) ? null : nextId);
     setDragOutProgress(0);
     setContextMenu(null);
     setSidebarOpen(true);
-  };
+  }, []);
 
-  const handleDragMove = (event: DragMoveEvent) => {
+  const handleDragMove = useCallback((event: DragMoveEvent) => {
     const translated = event.active.rect.current.translated;
     if (!translated) {
       setDragOutProgress(0);
@@ -596,18 +496,143 @@ function AppContent() {
     }
 
     setDragOutProgress(getDragOutProgress(translated));
-  };
+  }, [getDragOutProgress]);
 
-  const handleDragCancel = (_event: DragCancelEvent) => {
+  const handleDragCancel = useCallback((_event: DragCancelEvent) => {
     setDraggingAppId(null);
     setDragOutProgress(0);
-  };
+  }, []);
 
-  const handleDragEnd = async (event: DragEndEvent) => {
+  const handleDragEnd = useCallback(async (event: DragEndEvent) => {
     setDraggingAppId(null);
     setDragOutProgress(0);
     await handleReorder(event, isDroppedOutsideSidebar, groups);
-  };
+  }, [groups, handleReorder, isDroppedOutsideSidebar]);
+
+  const handleOpenGroupManager = useCallback(() => {
+    setContextMenu(null);
+    closeEditor();
+    closeJsonModal();
+    closeUserManager();
+    closeShortcutHelp();
+    openGroupManager();
+  }, [closeEditor, closeJsonModal, closeShortcutHelp, closeUserManager, openGroupManager]);
+
+  const handleOpenUserManager = useCallback(() => {
+    setContextMenu(null);
+    closeEditor();
+    closeJsonModal();
+    closeGroupManager();
+    closeShortcutHelp();
+    openUserManager();
+    if (user?.role === "admin") {
+      void reloadUsers();
+    }
+  }, [closeEditor, closeGroupManager, closeJsonModal, closeShortcutHelp, openUserManager, reloadUsers, user?.role]);
+
+  const handleCloseContextMenu = useCallback(() => {
+    setContextMenu(null);
+  }, []);
+
+  const handleRefreshContextApp = useCallback(() => {
+    if (contextMenu?.app) {
+      setContextMenu(null);
+      refreshIframeApp(contextMenu.app);
+    }
+  }, [contextMenu, refreshIframeApp]);
+
+  const handleEditContextApp = useCallback(() => {
+    if (contextMenu?.app) {
+      openEditEditorFromUi(contextMenu.app);
+    }
+  }, [contextMenu, openEditEditorFromUi]);
+
+  const handleDeleteContextApp = useCallback(() => {
+    if (contextMenu?.app) {
+      void handleDeleteAppFromUi(contextMenu.app.id);
+    }
+  }, [contextMenu, handleDeleteAppFromUi]);
+
+  const handleToggleDefaultContextApp = useCallback(() => {
+    if (contextMenu?.app) {
+      void handleToggleDefaultApp(contextMenu.app);
+    }
+  }, [contextMenu, handleToggleDefaultApp]);
+
+  const handleToggleSidebarMode = useCallback(() => {
+    setContextMenu(null);
+    setSidebarMode((current) => (current === "expanded" ? "compact" : "expanded"));
+  }, []);
+
+  const handleCloseConfirm = useCallback(() => {
+    closeConfirm();
+  }, [closeConfirm]);
+
+  const handleConfirmAction = useCallback(() => {
+    confirmState.onConfirm?.();
+  }, [confirmState]);
+
+  const handleCreateGroup = useCallback(async (name: string) => {
+    const group = await createGroup(name);
+    pushToast(t("toast.groupAdded", { name: group.name }));
+  }, [createGroup, pushToast, t]);
+
+  const handleRenameGroup = useCallback(async (groupId: number, name: string) => {
+    const group = await updateGroup(groupId, name);
+    pushToast(t("toast.groupRenamed", { name: group.name }));
+  }, [pushToast, t, updateGroup]);
+
+  const handleDeleteGroup = useCallback(async (groupId: number) => {
+    const group = groups.find((item) => item.id === groupId);
+    await deleteGroup(groupId);
+    await reloadApps(selectedAppId);
+    pushToast(group ? t("toast.groupDeleted", { name: group.name }) : "toast.groupDeletedFallback");
+  }, [deleteGroup, groups, pushToast, reloadApps, selectedAppId, t]);
+
+  const handleCreateInvitation = useCallback(async (role: "admin" | "viewer") => {
+    try {
+      setBusy(true);
+      setError(null);
+      const result = await apiFetch<InvitationResponse>("/api/invitations", {
+        method: "POST",
+        body: JSON.stringify({ role }),
+      });
+      pushToast("toast.inviteLinkCreated");
+      return result.inviteUrl;
+    } finally {
+      setBusy(false);
+    }
+  }, [pushToast]);
+
+  const handleChangeUserRole = useCallback(async (userId: number, role: "admin" | "viewer") => {
+    try {
+      setBusy(true);
+      setError(null);
+      const result = await apiFetch<UsersResponse>(`/api/users/${userId}/role`, {
+        method: "PUT",
+        body: JSON.stringify({ role }),
+      });
+      setManagedUsers(result.items);
+      pushToast("toast.userRoleUpdated");
+    } finally {
+      setBusy(false);
+    }
+  }, [pushToast]);
+
+  const handleDeleteUser = useCallback(async (userId: number) => {
+    const managedUser = managedUsers.find((item) => item.id === userId);
+    try {
+      setBusy(true);
+      setError(null);
+      const result = await apiFetch<UsersResponse>(`/api/users/${userId}`, {
+        method: "DELETE",
+      });
+      setManagedUsers(result.items);
+      pushToast(managedUser ? t("toast.userDeleted", { name: managedUser.username }) : "toast.userDeletedFallback");
+    } finally {
+      setBusy(false);
+    }
+  }, [managedUsers, pushToast, t]);
 
   const draggedApp = draggingAppId === null ? null : apps.find((item) => item.id === draggingAppId) ?? null;
 
@@ -646,7 +671,7 @@ function AppContent() {
       onDragCancel={handleDragCancel}
       onDragEnd={(event) => void handleDragEnd(event)}
     >
-      <div className="app-shell" onClick={() => setContextMenu(null)} aria-busy={busy}>
+      <div className="app-shell" onClick={handleCloseContextMenu} aria-busy={busy}>
         <div className={busy ? "busy-indicator visible" : "busy-indicator"} role="status" aria-live="polite">
           <span className="busy-spinner" aria-hidden="true" />
           <span>{t("app.busy")}</span>
@@ -674,25 +699,8 @@ function AppContent() {
           onOpenSidebarContextMenu={openSidebarContextMenu}
           onOpenCreateEditor={openCreateEditorFromUi}
           onOpenJsonImport={openJsonImport}
-          onOpenGroupManager={() => {
-            setContextMenu(null);
-            closeEditor();
-            closeJsonModal();
-            setUserManagerOpen(false);
-            setShortcutHelpOpen(false);
-            setGroupManagerOpen(true);
-          }}
-          onOpenUserManager={() => {
-            setContextMenu(null);
-            closeEditor();
-            closeJsonModal();
-            setGroupManagerOpen(false);
-            setShortcutHelpOpen(false);
-            setUserManagerOpen(true);
-            if (user.role === "admin") {
-              void reloadUsers();
-            }
-          }}
+          onOpenGroupManager={handleOpenGroupManager}
+          onOpenUserManager={handleOpenUserManager}
           onLogout={handleLogout}
           onToggleTheme={toggleThemeMode}
           lang={lang}
@@ -712,35 +720,15 @@ function AppContent() {
           contextMenu={contextMenu}
           sidebarMode={sidebarMode}
           canManageApps={canManageApps}
-          onClose={() => setContextMenu(null)}
-          onRefresh={() => {
-            if (contextMenu?.app) {
-              setContextMenu(null);
-              refreshIframeApp(contextMenu.app);
-            }
-          }}
-          onEdit={() => {
-            if (contextMenu?.app) {
-              openEditEditorFromUi(contextMenu.app);
-            }
-          }}
-          onDelete={() => {
-            if (contextMenu?.app) {
-              void handleDeleteAppFromUi(contextMenu.app.id);
-            }
-          }}
-          onToggleDefault={() => {
-            if (contextMenu?.app) {
-              void handleToggleDefaultApp(contextMenu.app);
-            }
-          }}
+          onClose={handleCloseContextMenu}
+          onRefresh={handleRefreshContextApp}
+          onEdit={handleEditContextApp}
+          onDelete={handleDeleteContextApp}
+          onToggleDefault={handleToggleDefaultContextApp}
           onCreate={openCreateEditorFromUi}
           onImport={openJsonImport}
           onExport={openJsonExport}
-          onToggleSidebarMode={() => {
-            setContextMenu(null);
-            setSidebarMode((current) => (current === "expanded" ? "compact" : "expanded"));
-          }}
+          onToggleSidebarMode={handleToggleSidebarMode}
         />
 
         <AppEditor
@@ -788,79 +776,29 @@ function AppContent() {
         <ConfirmModal
           open={confirmState.open}
           message={confirmState.message}
-          onConfirm={() => confirmState.onConfirm?.()}
-          onCancel={() => setConfirmState({ open: false, message: "", onConfirm: null })}
+          onConfirm={handleConfirmAction}
+          onCancel={handleCloseConfirm}
         />
 
-        <ShortcutHelpModal open={shortcutHelpOpen} onClose={() => setShortcutHelpOpen(false)} />
+        <ShortcutHelpModal open={shortcutHelpOpen} onClose={closeShortcutHelp} />
         <GroupManagerModal
           open={groupManagerOpen}
           busy={busy}
           groups={groups}
-          onClose={() => setGroupManagerOpen(false)}
-          onCreateGroup={async (name) => {
-            const group = await createGroup(name);
-            pushToast(t("toast.groupAdded", { name: group.name }));
-          }}
-          onRenameGroup={async (groupId, name) => {
-            const group = await updateGroup(groupId, name);
-            pushToast(t("toast.groupRenamed", { name: group.name }));
-          }}
-          onDeleteGroup={async (groupId) => {
-            const group = groups.find((item) => item.id === groupId);
-            await deleteGroup(groupId);
-            await reloadApps(selectedAppId);
-            pushToast(group ? t("toast.groupDeleted", { name: group.name }) : "toast.groupDeletedFallback");
-          }}
+          onClose={closeGroupManager}
+          onCreateGroup={handleCreateGroup}
+          onRenameGroup={handleRenameGroup}
+          onDeleteGroup={handleDeleteGroup}
         />
         <UserManagerModal
           open={userManagerOpen && user.role === "admin"}
           busy={busy}
           currentUserId={user.id}
           users={managedUsers}
-          onClose={() => setUserManagerOpen(false)}
-          onCreateInvitation={async (role) => {
-            try {
-              setBusy(true);
-              setError(null);
-              const result = await apiFetch<InvitationResponse>("/api/invitations", {
-                method: "POST",
-                body: JSON.stringify({ role }),
-              });
-              pushToast("toast.inviteLinkCreated");
-              return result.inviteUrl;
-            } finally {
-              setBusy(false);
-            }
-          }}
-          onChangeRole={async (userId, role) => {
-            try {
-              setBusy(true);
-              setError(null);
-              const result = await apiFetch<UsersResponse>(`/api/users/${userId}/role`, {
-                method: "PUT",
-                body: JSON.stringify({ role }),
-              });
-              setManagedUsers(result.items);
-              pushToast("toast.userRoleUpdated");
-            } finally {
-              setBusy(false);
-            }
-          }}
-          onDeleteUser={async (userId) => {
-            const managedUser = managedUsers.find((item) => item.id === userId);
-            try {
-              setBusy(true);
-              setError(null);
-              const result = await apiFetch<UsersResponse>(`/api/users/${userId}`, {
-                method: "DELETE",
-              });
-              setManagedUsers(result.items);
-              pushToast(managedUser ? t("toast.userDeleted", { name: managedUser.username }) : "toast.userDeletedFallback");
-            } finally {
-              setBusy(false);
-            }
-          }}
+          onClose={closeUserManager}
+          onCreateInvitation={handleCreateInvitation}
+          onChangeRole={handleChangeUserRole}
+          onDeleteUser={handleDeleteUser}
         />
         <ToastContainer toasts={toasts} onDismiss={dismissToast} />
       </div>
