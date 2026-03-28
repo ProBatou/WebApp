@@ -15,8 +15,7 @@ import { AuthScreen } from "./components/AuthScreen";
 import { AppEditor } from "./components/AppEditor";
 import { ConfirmModal } from "./components/ConfirmModal";
 import { ContextMenu } from "./components/ContextMenu";
-import { JsonModal } from "./components/JsonModal";
-import { SettingsModal } from "./components/SettingsModal";
+import { SettingsModal, type SettingsTab } from "./components/SettingsModal";
 import { ShortcutHelpModal } from "./components/ShortcutHelpModal";
 import { DragOverlayTile, Sidebar } from "./components/Sidebar";
 import { ToastContainer } from "./components/ToastContainer";
@@ -197,7 +196,6 @@ function AppContent() {
   const canManageApps = user?.role === "admin";
 
   const {
-    jsonModalMode,
     jsonImportMode,
     jsonValue,
     jsonModalError,
@@ -206,11 +204,11 @@ function AppContent() {
     setJsonImportMode,
     setJsonValue,
     closeJsonModal,
-    openJsonImport,
-    openJsonExport,
     handleJsonFileChange,
     handleCopyExportJson,
     handleImportJson,
+    prepareExport,
+    resetImport,
   } = useJsonImport({
     apps,
     canManageApps,
@@ -270,7 +268,7 @@ function AppContent() {
   }, [dashboardIconsState.dashboardIcons, editorOpen, editorState.icon, iconSelectionLocked, normalizedIconQuery, setEditorState]);
 
   useEffect(() => {
-    if (!editorOpen && !jsonModalMode && !shortcutHelpOpen && !settingsOpen) {
+    if (!editorOpen && !shortcutHelpOpen && !settingsOpen) {
       return undefined;
     }
 
@@ -278,10 +276,6 @@ function AppContent() {
       if (event.key === "Escape") {
         if (editorOpen) {
           closeEditor();
-        }
-
-        if (jsonModalMode) {
-          closeJsonModal();
         }
 
         if (shortcutHelpOpen) {
@@ -296,7 +290,7 @@ function AppContent() {
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [closeEditor, editorOpen, jsonModalMode, shortcutHelpOpen, settingsOpen, closeSettings, closeJsonModal, closeShortcutHelp]);
+  }, [closeEditor, editorOpen, shortcutHelpOpen, settingsOpen, closeSettings, closeShortcutHelp]);
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -501,16 +495,25 @@ function AppContent() {
     await handleReorder(event, isDroppedOutsideSidebar, groups);
   }, [groups, handleReorder, isDroppedOutsideSidebar]);
 
-  const handleOpenSettings = useCallback(() => {
+  const [settingsInitialTab, setSettingsInitialTab] = useState<SettingsTab | undefined>(undefined);
+  const [settingsInitialJsonMode, setSettingsInitialJsonMode] = useState<"import" | "export" | undefined>(undefined);
+
+  const handleOpenSettings = useCallback((tab?: SettingsTab, jsonMode?: "import" | "export") => {
     setContextMenu(null);
     closeEditor();
-    closeJsonModal();
     closeShortcutHelp();
+    setSettingsInitialTab(tab);
+    setSettingsInitialJsonMode(jsonMode);
+    if (jsonMode === "export") {
+      prepareExport();
+    } else if (jsonMode === "import") {
+      resetImport();
+    }
     openSettings();
     if (user?.role === "admin") {
       void reloadUsers();
     }
-  }, [closeEditor, closeJsonModal, closeShortcutHelp, openSettings, reloadUsers, user?.role]);
+  }, [closeEditor, closeShortcutHelp, openSettings, prepareExport, resetImport, reloadUsers, user?.role]);
 
   const handleCloseContextMenu = useCallback(() => {
     setContextMenu(null);
@@ -731,8 +734,8 @@ function AppContent() {
           onDelete={handleDeleteContextApp}
           onToggleDefault={handleToggleDefaultContextApp}
           onCreate={openCreateEditorFromUi}
-          onImport={openJsonImport}
-          onExport={openJsonExport}
+          onImport={() => handleOpenSettings("json", "import")}
+          onExport={() => handleOpenSettings("json", "export")}
           onToggleSidebarMode={handleToggleSidebarMode}
         />
 
@@ -759,26 +762,7 @@ function AppContent() {
           onDelete={handleDeleteApp}
         />
 
-        <JsonModal
-          open={jsonModalMode !== null}
-          mode={jsonModalMode}
-          apps={apps}
-          busy={busy}
-          jsonImportMode={jsonImportMode}
-          setJsonImportMode={setJsonImportMode}
-          jsonValue={jsonValue}
-          setJsonValue={setJsonValue}
-          jsonModalError={jsonModalError}
-          jsonModalInfo={jsonModalInfo}
-          jsonFileInputRef={jsonFileInputRef}
-          onClose={closeJsonModal}
-          onFileChange={handleJsonFileChange}
-          onOpenExport={openJsonExport}
-          onCopyExport={handleCopyExportJson}
-          onImport={handleImportJson}
-        />
-
-        <ConfirmModal
+<ConfirmModal
           open={confirmState.open}
           message={confirmState.message}
           onConfirm={handleConfirmAction}
@@ -794,6 +778,16 @@ function AppContent() {
           userName={user.username}
           groups={groups}
           users={managedUsers}
+          apps={apps}
+          initialTab={settingsInitialTab}
+          initialJsonMode={settingsInitialJsonMode}
+          jsonImportMode={jsonImportMode}
+          setJsonImportMode={setJsonImportMode}
+          jsonValue={jsonValue}
+          setJsonValue={setJsonValue}
+          jsonModalError={jsonModalError}
+          jsonModalInfo={jsonModalInfo}
+          jsonFileInputRef={jsonFileInputRef}
           onClose={closeSettings}
           onCreateGroup={handleCreateGroup}
           onRenameGroup={handleRenameGroup}
@@ -804,8 +798,11 @@ function AppContent() {
           onCopyInvitationLink={handleCopyInvitationLink}
           onChangeRole={handleChangeUserRole}
           onDeleteUser={handleDeleteUser}
-          onOpenJsonImport={openJsonImport}
-          onOpenJsonExport={openJsonExport}
+          onJsonFileChange={handleJsonFileChange}
+          onCopyExport={handleCopyExportJson}
+          onImport={handleImportJson}
+          onPrepareExport={prepareExport}
+          onResetImport={resetImport}
           onLogout={handleLogout}
         />
         <ToastContainer toasts={toasts} onDismiss={dismissToast} />
