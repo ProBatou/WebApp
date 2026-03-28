@@ -11,6 +11,14 @@ const groupSchema = z.object({
   name: z.string().trim().min(2).max(40),
 });
 
+const reorderGroupsSchema = z.object({
+  items: z.array(
+    z.object({
+      id: z.number().int().positive(),
+    })
+  ).min(1),
+});
+
 function blockDemoWrites(reply: FastifyReply) {
   if (!isDemoMode) {
     return false;
@@ -58,6 +66,42 @@ export async function registerGroupRoutes(server: FastifyInstance) {
     const group = groupRepository.createGroup(parsed.data.name);
 
     return reply.code(201).send({ item: group, items: groupRepository.listGroups() });
+  });
+
+  server.post("/api/groups/reorder", writeRouteConfig, async (request, reply) => {
+    const user = requireSession(request, reply);
+    if (!user) {
+      return reply;
+    }
+
+    if (!requireAdmin(user, reply)) {
+      return reply;
+    }
+
+    if (blockDemoWrites(reply)) {
+      return reply;
+    }
+
+    const parsed = reorderGroupsSchema.safeParse(request.body);
+    if (!parsed.success) {
+      return reply.code(400).send({ message: "errors.invalidOrder" });
+    }
+
+    const existingIds = groupRepository.listGroups().map((group) => group.id);
+    const requestedIds = parsed.data.items.map((item) => item.id);
+
+    if (existingIds.length !== requestedIds.length) {
+      return reply.code(400).send({ message: "errors.invalidOrderDuplicate" });
+    }
+
+    const requestedIdSet = new Set(requestedIds);
+    if (requestedIdSet.size !== requestedIds.length || existingIds.some((id) => !requestedIdSet.has(id))) {
+      return reply.code(400).send({ message: "errors.invalidOrderDuplicate" });
+    }
+
+    return {
+      items: groupRepository.reorderGroups(requestedIds),
+    };
   });
 
   server.put("/api/groups/:id", writeRouteConfig, async (request, reply) => {
