@@ -9,7 +9,6 @@ import type { AppRecord } from "../lib/types.js";
 
 const appSchema = z.object({
   name: z.string().trim().min(2).max(64),
-  description: z.string().trim().max(180).default(""),
   url: z.string().url(),
   icon: z.string().trim().min(1).max(80).regex(/^[A-Za-z0-9-]+$/, "errors.invalidIcon"),
   iconVariantMode: z.enum(["auto", "base"]).default("auto"),
@@ -235,11 +234,10 @@ export async function registerAppRoutes(server: FastifyInstance) {
     const now = new Date().toISOString();
     db.prepare(
       `UPDATE apps
-       SET name = ?, description = ?, url = ?, icon = ?, icon_variant_mode = ?, icon_variant_inverted = ?, accent = ?, open_mode = ?, is_shared = ?, group_id = ?, updated_at = ?
+       SET name = ?, url = ?, icon = ?, icon_variant_mode = ?, icon_variant_inverted = ?, accent = ?, open_mode = ?, is_shared = ?, group_id = ?, updated_at = ?
        WHERE id = ?`
     ).run(
       parsed.data.name,
-      parsed.data.description,
       parsed.data.url,
       parsed.data.icon.trim(),
       parsed.data.iconVariantMode,

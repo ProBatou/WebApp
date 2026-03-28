@@ -11,7 +11,6 @@ export type UserRole = SharedUserRole;
 export type AppRecord = {
   id: number;
   name: string;
-  description: string;
   url: string;
   icon: string;
   icon_variant_mode: IconVariantMode;

@@ -17,7 +17,6 @@ export type IconVariantMode = SharedIconVariantMode;
 export type WebAppEntry = {
   id: number;
   name: string;
-  description: string;
   url: string;
   icon: string;
   icon_variant_mode: IconVariantMode;
@@ -101,7 +100,6 @@ export type JsonModalMode = "import" | "export" | null;
 
 export type JsonTransferItem = Partial<AppPayload> & {
   name?: unknown;
-  description?: unknown;
   url?: unknown;
   icon?: unknown;
   iconVariantMode?: unknown;

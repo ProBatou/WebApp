@@ -1,6 +1,8 @@
 export const en = {
   "lang.en": "EN",
   "lang.fr": "FR",
+  "lang.de": "DE",
+  "lang.es": "ES",
 
   "common.loading": "Loading...",
   "common.demo": "Demo",
@@ -133,6 +135,7 @@ export const en = {
   "modal.appsInOrder": "{count} app{suffix} in current order.",
   "modal.exportedJson": "Exported JSON",
   "modal.copyJson": "Copy JSON",
+  "modal.editJson": "Edit JSON",
   "modal.closeNotification": "Close notification",
 
   "status.online": "Online",
