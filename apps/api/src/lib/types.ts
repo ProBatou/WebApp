@@ -37,3 +37,14 @@ export type SessionUser = {
   username: string;
   role: UserRole;
 };
+
+export type UserPreferencesRecord = {
+  user_id: number;
+  theme: "light" | "dark" | "auto";
+  language: string;
+  default_app_id: number | null;
+  accent_color: string | null;
+  sidebar_color: string | null;
+  button_color: string | null;
+  updated_at: string;
+};

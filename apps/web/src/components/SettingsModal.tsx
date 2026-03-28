@@ -11,8 +11,8 @@ import { SortableContext, useSortable, verticalListSortingStrategy, arrayMove } 
 import { CSS } from "@dnd-kit/utilities";
 import { Dropdown } from "./Dropdown";
 import { jsonImportExample } from "../lib/app-utils";
-import type { GroupEntry, JsonImportMode, UserEntry, WebAppEntry } from "../types";
-import { useTranslation } from "../lib/i18n";
+import type { GroupEntry, JsonImportMode, UserEntry, UserPreferences, WebAppEntry } from "../types";
+import { useTranslation, type SupportedLanguage } from "../lib/i18n";
 
 export type SettingsTab = "groups" | "users" | "json" | "account" | "about";
 
@@ -484,6 +484,8 @@ export function SettingsModal({
   onPrepareExport,
   onResetImport,
   onLogout,
+  preferences,
+  onUpdatePreferences,
 }: {
   open: boolean;
   busy: boolean;
@@ -518,6 +520,8 @@ export function SettingsModal({
   onPrepareExport: () => void;
   onResetImport: () => void;
   onLogout: () => Promise<void>;
+  preferences: UserPreferences;
+  onUpdatePreferences: (patch: Partial<UserPreferences>) => void;
 }) {
   const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState<SettingsTab>(canManageApps ? "groups" : "account");
@@ -701,6 +705,101 @@ export function SettingsModal({
               >
                 {t("auth.signOut")}
               </button>
+
+              <div className="personalization-section">
+                <h3 className="personalization-title">{t("settings.personalization")}</h3>
+
+                <div className="personalization-row">
+                  <label className="personalization-label">{t("settings.language")}</label>
+                  <select
+                    className="personalization-select"
+                    value={preferences.language}
+                    onChange={(e) => onUpdatePreferences({ language: e.target.value })}
+                  >
+                    <option value="auto">{t("settings.languageAuto")}</option>
+                    {(["en", "fr", "de", "es"] as SupportedLanguage[]).map((l) => (
+                      <option key={l} value={l}>{t(`lang.${l}`)}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="personalization-row">
+                  <label className="personalization-label">{t("settings.theme")}</label>
+                  <select
+                    className="personalization-select"
+                    value={preferences.theme}
+                    onChange={(e) => onUpdatePreferences({ theme: e.target.value as UserPreferences["theme"] })}
+                  >
+                    <option value="auto">{t("settings.themeAuto")}</option>
+                    <option value="light">{t("settings.themeLight")}</option>
+                    <option value="dark">{t("settings.themeDark")}</option>
+                  </select>
+                </div>
+
+                <div className="personalization-row">
+                  <label className="personalization-label">{t("settings.startupPage")}</label>
+                  <select
+                    className="personalization-select"
+                    value={preferences.defaultAppId ?? ""}
+                    onChange={(e) => onUpdatePreferences({ defaultAppId: e.target.value ? Number(e.target.value) : null })}
+                  >
+                    <option value="">{t("settings.startupPageNone")}</option>
+                    {apps.map((app) => (
+                      <option key={app.id} value={app.id}>{app.name}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="personalization-colors">
+                  <div className="personalization-color-row">
+                    <label className="personalization-label">{t("settings.accentColor")}</label>
+                    <div className="personalization-color-field">
+                      <input
+                        type="color"
+                        value={preferences.accentColor ?? "#c65c31"}
+                        onChange={(e) => onUpdatePreferences({ accentColor: e.target.value })}
+                      />
+                      {preferences.accentColor && (
+                        <button type="button" className="personalization-reset-color" onClick={() => onUpdatePreferences({ accentColor: null })}>
+                          ×
+                        </button>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="personalization-color-row">
+                    <label className="personalization-label">{t("settings.sidebarColor")}</label>
+                    <div className="personalization-color-field">
+                      <input
+                        type="color"
+                        value={preferences.sidebarColor ?? "#fffaf4"}
+                        onChange={(e) => onUpdatePreferences({ sidebarColor: e.target.value })}
+                      />
+                      {preferences.sidebarColor && (
+                        <button type="button" className="personalization-reset-color" onClick={() => onUpdatePreferences({ sidebarColor: null })}>
+                          ×
+                        </button>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="personalization-color-row">
+                    <label className="personalization-label">{t("settings.buttonColor")}</label>
+                    <div className="personalization-color-field">
+                      <input
+                        type="color"
+                        value={preferences.buttonColor ?? "#c65c31"}
+                        onChange={(e) => onUpdatePreferences({ buttonColor: e.target.value })}
+                      />
+                      {preferences.buttonColor && (
+                        <button type="button" className="personalization-reset-color" onClick={() => onUpdatePreferences({ buttonColor: null })}>
+                          ×
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
           ) : null}
         </div>

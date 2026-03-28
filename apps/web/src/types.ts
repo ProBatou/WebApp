@@ -42,6 +42,7 @@ export type BootstrapResponse = {
   needsSetup: boolean;
   demoMode: boolean;
   user: AuthUser | null;
+  preferences: UserPreferences | null;
 };
 
 export type AppsResponse = {
@@ -114,6 +115,16 @@ export type JsonTransferItem = Partial<AppPayload> & {
 export type EditorMode = "create" | "edit";
 export type SidebarMode = "compact" | "expanded";
 export type ThemeMode = "light" | "dark";
+export type UserTheme = "light" | "dark" | "auto";
+
+export type UserPreferences = {
+  theme: UserTheme;
+  language: string;
+  defaultAppId: number | null;
+  accentColor: string | null;
+  sidebarColor: string | null;
+  buttonColor: string | null;
+};
 
 export type DashboardIconMetadata = {
   colors?: {

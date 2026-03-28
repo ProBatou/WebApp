@@ -169,6 +169,23 @@ const migrations: Migration[] = [
       }
     },
   },
+  {
+    id: "011_create_user_preferences",
+    up: (database) => {
+      database.exec(`
+        CREATE TABLE IF NOT EXISTS user_preferences (
+          user_id INTEGER PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+          theme TEXT NOT NULL DEFAULT 'auto' CHECK(theme IN ('light', 'dark', 'auto')),
+          language TEXT NOT NULL DEFAULT 'auto',
+          default_app_id INTEGER REFERENCES apps(id) ON DELETE SET NULL,
+          accent_color TEXT,
+          sidebar_color TEXT,
+          button_color TEXT,
+          updated_at TEXT NOT NULL
+        );
+      `);
+    },
+  },
 ];
 
 export function applyMigrations(database: SqliteDatabase) {
