@@ -31,6 +31,7 @@ import { useGroups } from "./hooks/useGroups";
 import { useIframes } from "./hooks/useIframes";
 import { useJsonImport } from "./hooks/useJsonImport";
 import { useModals } from "./hooks/useModals";
+import { usePreferences } from "./hooks/usePreferences";
 import { useToast } from "./hooks/useToast";
 import { I18nProvider, useI18nContext, useTranslation } from "./lib/i18n";
 import type {
@@ -59,7 +60,8 @@ function AppContent() {
   const [sidebarMode, setSidebarMode] = useState<SidebarMode>("expanded");
   const [themeMode, setThemeMode] = useState<ThemeMode>(() => {
     const storedTheme = window.localStorage.getItem(themeStorageKey);
-    return storedTheme === "dark" ? "dark" : "light";
+    if (storedTheme === "dark" || storedTheme === "light") return storedTheme;
+    return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
   });
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -171,6 +173,7 @@ function AppContent() {
 
   const {
     user,
+    preferences: initialPreferences,
     needsSetup,
     demoMode,
     loading,
@@ -187,6 +190,12 @@ function AppContent() {
     clearUiState,
     setError,
     setBusy,
+  });
+
+  const { preferences, updatePreferences } = usePreferences({
+    initialPreferences,
+    onThemeChange: setThemeMode,
+    onLanguageChange: setLang,
   });
 
   const { appStatuses } = useAppStatus({
@@ -805,6 +814,8 @@ function AppContent() {
           onPrepareExport={prepareExport}
           onResetImport={resetImport}
           onLogout={handleLogout}
+          preferences={preferences}
+          onUpdatePreferences={updatePreferences}
         />
         <ToastContainer toasts={toasts} onDismiss={dismissToast} />
       </div>

@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { apiFetch } from "../lib/api";
-import type { AuthUser, BootstrapResponse, InvitationInfoResponse } from "../types";
+import type { AuthUser, BootstrapResponse, InvitationInfoResponse, UserPreferences } from "../types";
 
 function readInviteTokenFromUrl() {
   const searchParams = new URLSearchParams(window.location.search);
@@ -29,6 +29,7 @@ export function useAuth({
   setBusy: (value: boolean) => void;
 }) {
   const [user, setUser] = useState<AuthUser | null>(null);
+  const [preferences, setPreferences] = useState<UserPreferences | null>(null);
   const [needsSetup, setNeedsSetup] = useState(false);
   const [demoMode, setDemoMode] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -46,6 +47,7 @@ export function useAuth({
         setNeedsSetup(result.needsSetup);
         setDemoMode(result.demoMode);
         setUser(result.user);
+        setPreferences(result.preferences);
         setCredentials(result.demoMode ? { username: "demo", password: "demo" } : { username: "", password: "" });
 
         if (result.user) {
@@ -123,6 +125,7 @@ export function useAuth({
 
   return {
     user,
+    preferences,
     needsSetup,
     demoMode,
     loading,

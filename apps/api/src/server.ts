@@ -12,6 +12,7 @@ import { registerAuthRoutes } from "./routes/auth.js";
 import { registerAppRoutes } from "./routes/apps.js";
 import { registerGroupRoutes } from "./routes/groups.js";
 import { registerIconRoutes } from "./routes/icons.js";
+import { registerPreferencesRoutes } from "./routes/preferences.js";
 
 const currentDir = dirname(fileURLToPath(import.meta.url));
 const webDistPath = resolve(currentDir, "../../web/dist");
@@ -69,6 +70,7 @@ await registerAuthRoutes(server);
 await registerAppRoutes(server);
 await registerGroupRoutes(server);
 await registerIconRoutes(server);
+await registerPreferencesRoutes(server);
 
 if (hasWebBuild) {
   await server.register(staticPlugin, {

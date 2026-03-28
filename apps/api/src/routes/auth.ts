@@ -20,6 +20,7 @@ import {
   verifyPassword,
 } from "../lib/auth.js";
 import { isDemoMode } from "../lib/demo.js";
+import { getPreferences } from "../lib/preferences-repository.js";
 
 const setupPayloadSchema = z.object({
   username: z.string().trim().min(3).max(32),
@@ -47,11 +48,22 @@ const acceptInvitationPayloadSchema = z.object({
 export async function registerAuthRoutes(server: FastifyInstance) {
   server.get("/api/bootstrap", async (request) => {
     const user = getSessionUser(request);
+    const prefs = user ? getPreferences(user.id) : null;
 
     return {
       needsSetup: isDemoMode ? false : !hasUsers(),
       demoMode: isDemoMode,
       user,
+      preferences: prefs
+        ? {
+            theme: prefs.theme,
+            language: prefs.language,
+            defaultAppId: prefs.default_app_id,
+            accentColor: prefs.accent_color,
+            sidebarColor: prefs.sidebar_color,
+            buttonColor: prefs.button_color,
+          }
+        : null,
     };
   });
 
