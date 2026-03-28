@@ -1,20 +1,27 @@
 import { createContext, createElement, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 import { en, type TranslationKey } from "./en";
 import { fr } from "./fr";
+import { de } from "./de";
+import { es } from "./es";
 
 export const languageStorageKey = "webapp-v2-lang";
 
 export const translations = {
   en,
   fr,
+  de,
+  es,
 } as const;
 
 export type SupportedLanguage = keyof typeof translations;
 
+const supportedLanguages = Object.keys(translations) as SupportedLanguage[];
+
 type TranslationParams = Record<string, string | number>;
 
 function normalizeLang(value: string | null | undefined): SupportedLanguage {
-  return value === "fr" ? "fr" : "en";
+  const lower = (value ?? "").toLowerCase();
+  return (supportedLanguages.find((lang) => lower.startsWith(lang)) ?? "en") as SupportedLanguage;
 }
 
 function detectBrowserLang(): SupportedLanguage {
@@ -23,7 +30,7 @@ function detectBrowserLang(): SupportedLanguage {
   }
 
   const preferred = navigator.languages?.[0] ?? navigator.language ?? "en";
-  return preferred.toLowerCase().startsWith("fr") ? "fr" : "en";
+  return normalizeLang(preferred);
 }
 
 function formatTemplate(template: string, params?: TranslationParams) {
@@ -65,7 +72,7 @@ export function I18nProvider({ children }: { children: ReactNode }) {
   }, [lang]);
 
   const setLang = (nextLang: SupportedLanguage) => {
-    setLangState(normalizeLang(nextLang));
+    setLangState(nextLang);
   };
 
   const value = useMemo<I18nContextValue>(

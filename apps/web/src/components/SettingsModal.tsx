@@ -329,6 +329,7 @@ function JsonTabContent({
   onFileChange,
   onCopyExport,
   onImport,
+  onEditExport,
 }: {
   apps: WebAppEntry[];
   busy: boolean;
@@ -344,6 +345,7 @@ function JsonTabContent({
   onFileChange: (event: ChangeEvent<HTMLInputElement>) => Promise<void>;
   onCopyExport: () => Promise<void>;
   onImport: () => Promise<void>;
+  onEditExport: () => void;
 }) {
   const { t } = useTranslation();
 
@@ -439,8 +441,8 @@ function JsonTabContent({
             {t("app.importJson")}
           </button>
         ) : (
-          <button className="primary-button" type="button" onClick={() => void onCopyExport()}>
-            {t("modal.copyJson")}
+          <button className="primary-button" type="button" onClick={onEditExport}>
+            {t("modal.editJson")}
           </button>
         )}
       </div>
@@ -536,6 +538,10 @@ export function SettingsModal({
     } else {
       onResetImport();
     }
+  };
+
+  const handleEditExport = () => {
+    setJsonMode("import");
   };
 
   useEffect(() => {
@@ -651,6 +657,7 @@ export function SettingsModal({
               onFileChange={onJsonFileChange}
               onCopyExport={onCopyExport}
               onImport={onImport}
+              onEditExport={handleEditExport}
             />
           ) : null}
           {activeTab === "account" ? (

@@ -51,7 +51,6 @@ export function useEditor({
     setEditingId(app.id);
     setEditorState({
       name: app.name,
-      description: app.description,
       url: app.url,
       icon: app.icon,
       iconVariantMode: app.icon_variant_mode,
