@@ -420,6 +420,51 @@ function AppContent() {
     }
   };
 
+  const syncDefaultAppSelection = useCallback(async (nextDefaultAppId: number | null) => {
+    const currentDefaultApp = apps.find((item) => item.is_default) ?? null;
+
+    if (nextDefaultAppId === currentDefaultApp?.id) {
+      return;
+    }
+
+    try {
+      setBusy(true);
+      setError(null);
+
+      if (nextDefaultAppId == null) {
+        if (!currentDefaultApp) {
+          return;
+        }
+
+        const result = await apiFetch<{ items: WebAppEntry[] }>(`/api/apps/${currentDefaultApp.id}/default`, {
+          method: "DELETE",
+        });
+        setApps(result.items);
+        pushToast("toast.defaultRemoved");
+        return;
+      }
+
+      const result = await apiFetch<{ items: WebAppEntry[] }>(`/api/apps/${nextDefaultAppId}/default`, {
+        method: "POST",
+      });
+      setApps(result.items);
+      const nextDefaultApp = apps.find((item) => item.id === nextDefaultAppId);
+      pushToast(nextDefaultApp ? t("toast.defaultSet", { name: nextDefaultApp.name }) : "toast.defaultSet");
+    } catch (syncError) {
+      setError(syncError instanceof Error ? syncError.message : "errors.update");
+    } finally {
+      setBusy(false);
+    }
+  }, [apps, pushToast, setApps, setBusy, setError, t]);
+
+  const handleUpdatePreferences = useCallback((patch: Partial<typeof preferences>) => {
+    updatePreferences(patch);
+
+    if (Object.prototype.hasOwnProperty.call(patch, "defaultAppId")) {
+      void syncDefaultAppSelection(patch.defaultAppId ?? null);
+    }
+  }, [preferences, syncDefaultAppSelection, updatePreferences]);
+
   const openCreateEditorFromUi = useCallback(() => {
     if (!canManageApps) {
       return;
@@ -852,7 +897,7 @@ function AppContent() {
           onLogout={handleLogout}
           preferences={preferences}
           themeMode={themeMode}
-          onUpdatePreferences={updatePreferences}
+          onUpdatePreferences={handleUpdatePreferences}
           onUpdateUsername={handleUpdateUsername}
           onUpdatePassword={handleUpdatePassword}
           onDeleteSelf={handleDeleteSelf}

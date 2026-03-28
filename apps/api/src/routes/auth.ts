@@ -65,6 +65,8 @@ export async function registerAuthRoutes(server: FastifyInstance) {
             defaultAppId: prefs.default_app_id,
             accentColor: prefs.accent_color,
             sidebarColor: prefs.sidebar_color,
+            accentColorDark: prefs.accent_color_dark,
+            sidebarColorDark: prefs.sidebar_color_dark,
             buttonColor: prefs.button_color,
           }
         : null,
