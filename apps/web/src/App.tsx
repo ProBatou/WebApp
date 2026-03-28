@@ -211,6 +211,7 @@ function AppContent() {
     resetImport,
   } = useJsonImport({
     apps,
+    groups,
     canManageApps,
     closeEditor,
     closeAuxiliaryModals,

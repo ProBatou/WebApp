@@ -28,9 +28,13 @@ const reorderSchema = z.object({
   ).min(1),
 });
 
+const importAppItemSchema = appSchema.extend({
+  groupName: z.string().trim().min(1).max(40).nullable().optional(),
+});
+
 const importAppsSchema = z.object({
   mode: z.enum(["merge", "replace"]).default("merge"),
-  items: z.array(appSchema).min(1).max(500),
+  items: z.array(importAppItemSchema).min(1).max(500),
 });
 
 const appRepository = createAppRepository(db);
@@ -329,13 +333,27 @@ export async function registerAppRoutes(server: FastifyInstance) {
       return reply.code(400).send({ message: "errors.invalidJsonImport", issues: parsed.error.flatten() });
     }
 
-    const invalidGroupReference = parsed.data.items.some(
-      (item) => item.groupId !== undefined && item.groupId !== null && !groupRepository.hasGroup(item.groupId)
-    );
-    if (invalidGroupReference) {
-      return reply.code(400).send({ message: "errors.invalidJsonImport" });
+    const groupNameToId = new Map<string, number>();
+    for (const item of parsed.data.items) {
+      const name = item.groupName ?? null;
+      if (!name || (item.groupId != null && groupRepository.hasGroup(item.groupId))) {
+        continue;
+      }
+      if (groupNameToId.has(name)) {
+        continue;
+      }
+      const existing = groupRepository.listGroups().find((g) => g.name.toLowerCase() === name.toLowerCase());
+      groupNameToId.set(name, existing ? existing.id : groupRepository.createGroup(name).id);
     }
 
-    return appRepository.importApps(parsed.data.mode, parsed.data.items);
+    const sanitizedItems = parsed.data.items.map((item) => {
+      if (item.groupId != null && groupRepository.hasGroup(item.groupId)) {
+        return item;
+      }
+      const mappedId = item.groupName ? groupNameToId.get(item.groupName) ?? null : null;
+      return { ...item, groupId: mappedId };
+    });
+
+    return appRepository.importApps(parsed.data.mode, sanitizedItems);
   });
 }
