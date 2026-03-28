@@ -61,6 +61,22 @@ export function deleteUser(...args: Parameters<typeof authRepository.deleteUser>
   return authRepository.deleteUser(...args);
 }
 
+export function updateUsername(...args: Parameters<typeof authRepository.updateUsername>) {
+  return authRepository.updateUsername(...args);
+}
+
+export function updatePassword(...args: Parameters<typeof authRepository.updatePassword>) {
+  return authRepository.updatePassword(...args);
+}
+
+export function applyPasswordUpdate(...args: Parameters<typeof authRepository.applyPasswordUpdate>) {
+  return authRepository.applyPasswordUpdate(...args);
+}
+
+export function deleteSelf(...args: Parameters<typeof authRepository.deleteSelf>) {
+  return authRepository.deleteSelf(...args);
+}
+
 export function createInvitation(...args: Parameters<typeof authRepository.createInvitation>) {
   return authRepository.createInvitation(...args);
 }

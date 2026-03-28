@@ -450,6 +450,194 @@ function JsonTabContent({
   );
 }
 
+function AccountTabContent({
+  userName,
+  apps,
+  preferences,
+  onUpdatePreferences,
+  onUpdateUsername,
+  onUpdatePassword,
+  onDeleteSelf,
+  onLogout,
+}: {
+  userName: string;
+  apps: WebAppEntry[];
+  preferences: UserPreferences;
+  onUpdatePreferences: (patch: Partial<UserPreferences>) => void;
+  onUpdateUsername: (newUsername: string) => Promise<void>;
+  onUpdatePassword: (currentPassword: string, newPassword: string) => Promise<void>;
+  onDeleteSelf: () => Promise<void>;
+  onLogout: () => Promise<void>;
+}) {
+  const { t } = useTranslation();
+  const [newUsername, setNewUsername] = useState("");
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [accountError, setAccountError] = useState<string | null>(null);
+  const [accountInfo, setAccountInfo] = useState<string | null>(null);
+
+  const handleUpdateUsername = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setAccountError(null);
+    setAccountInfo(null);
+    try {
+      await onUpdateUsername(newUsername.trim());
+      setNewUsername("");
+      setAccountInfo(t("toast.userRoleUpdated"));
+    } catch (err) {
+      setAccountError(err instanceof Error ? err.message : "errors.save");
+    }
+  };
+
+  const handleUpdatePassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setAccountError(null);
+    setAccountInfo(null);
+    try {
+      await onUpdatePassword(currentPassword, newPassword);
+      setCurrentPassword("");
+      setNewPassword("");
+      setAccountInfo(t("toast.userRoleUpdated"));
+    } catch (err) {
+      setAccountError(err instanceof Error ? err.message : "errors.save");
+    }
+  };
+
+  return (
+    <div className="json-panel settings-account-tab">
+      <p className="json-summary">
+        {t("auth.signedInAs")} <strong>{userName}</strong>
+      </p>
+      <button className="danger-button settings-logout-button" type="button" onClick={() => void onLogout()}>
+        {t("auth.signOut")}
+      </button>
+
+      <div className="personalization-section">
+        <h3 className="personalization-title">{t("settings.personalization")}</h3>
+
+        <div className="personalization-row">
+          <label className="personalization-label">{t("settings.language")}</label>
+          <select
+            className="personalization-select"
+            value={preferences.language}
+            onChange={(e) => onUpdatePreferences({ language: e.target.value })}
+          >
+            <option value="auto">{t("settings.languageAuto")}</option>
+            {(["en", "fr", "de", "es"] as SupportedLanguage[]).map((l) => (
+              <option key={l} value={l}>{t(`lang.${l}`)}</option>
+            ))}
+          </select>
+        </div>
+
+        <div className="personalization-row">
+          <label className="personalization-label">{t("settings.theme")}</label>
+          <select
+            className="personalization-select"
+            value={preferences.theme}
+            onChange={(e) => onUpdatePreferences({ theme: e.target.value as UserPreferences["theme"] })}
+          >
+            <option value="auto">{t("settings.themeAuto")}</option>
+            <option value="light">{t("settings.themeLight")}</option>
+            <option value="dark">{t("settings.themeDark")}</option>
+          </select>
+        </div>
+
+        <div className="personalization-row">
+          <label className="personalization-label">{t("settings.startupPage")}</label>
+          <select
+            className="personalization-select"
+            value={preferences.defaultAppId ?? ""}
+            onChange={(e) => onUpdatePreferences({ defaultAppId: e.target.value ? Number(e.target.value) : null })}
+          >
+            <option value="">{t("settings.startupPageNone")}</option>
+            {apps.map((app) => (
+              <option key={app.id} value={app.id}>{app.name}</option>
+            ))}
+          </select>
+        </div>
+
+        <div className="personalization-colors">
+          {(
+            [
+              { key: "accentColor", label: t("settings.accentColor"), fallback: "#c65c31" },
+              { key: "sidebarColor", label: t("settings.sidebarColor"), fallback: "#fffaf4" },
+              { key: "buttonColor", label: t("settings.buttonColor"), fallback: "#c65c31" },
+            ] as { key: keyof UserPreferences; label: string; fallback: string }[]
+          ).map(({ key, label, fallback }) => (
+            <div key={key} className="personalization-color-row">
+              <label className="personalization-label">{label}</label>
+              <div className="personalization-color-field">
+                <input
+                  type="color"
+                  value={(preferences[key] as string | null) ?? fallback}
+                  onChange={(e) => onUpdatePreferences({ [key]: e.target.value })}
+                />
+                {preferences[key] && (
+                  <button type="button" className="personalization-reset-color" onClick={() => onUpdatePreferences({ [key]: null })}>
+                    ×
+                  </button>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {accountError && <p className="account-feedback account-error">{t(accountError)}</p>}
+      {accountInfo && <p className="account-feedback account-info">{accountInfo}</p>}
+
+      <div className="personalization-section">
+        <h3 className="personalization-title">{t("account.changeUsername")}</h3>
+        <form className="account-form" onSubmit={(e) => void handleUpdateUsername(e)}>
+          <input
+            className="account-input"
+            type="text"
+            placeholder={t("account.newUsername")}
+            value={newUsername}
+            onChange={(e) => setNewUsername(e.target.value)}
+            minLength={3}
+            maxLength={32}
+            required
+          />
+          <button className="primary-button account-form-btn" type="submit">{t("account.save")}</button>
+        </form>
+      </div>
+
+      <div className="personalization-section">
+        <h3 className="personalization-title">{t("account.changePassword")}</h3>
+        <form className="account-form" onSubmit={(e) => void handleUpdatePassword(e)}>
+          <input
+            className="account-input"
+            type="password"
+            placeholder={t("account.currentPassword")}
+            value={currentPassword}
+            onChange={(e) => setCurrentPassword(e.target.value)}
+            required
+          />
+          <input
+            className="account-input"
+            type="password"
+            placeholder={t("account.newPassword")}
+            value={newPassword}
+            onChange={(e) => setNewPassword(e.target.value)}
+            minLength={8}
+            required
+          />
+          <button className="primary-button account-form-btn" type="submit">{t("account.save")}</button>
+        </form>
+      </div>
+
+      <div className="personalization-section">
+        <h3 className="personalization-title">{t("account.deleteAccount")}</h3>
+        <p className="account-delete-warning">{t("account.deleteConfirm")}</p>
+        <button className="danger-button" type="button" onClick={() => void onDeleteSelf()}>
+          {t("account.deleteAccount")}
+        </button>
+      </div>
+    </div>
+  );
+}
+
 export function SettingsModal({
   open,
   busy,
@@ -486,6 +674,9 @@ export function SettingsModal({
   onLogout,
   preferences,
   onUpdatePreferences,
+  onUpdateUsername,
+  onUpdatePassword,
+  onDeleteSelf,
 }: {
   open: boolean;
   busy: boolean;
@@ -522,6 +713,9 @@ export function SettingsModal({
   onLogout: () => Promise<void>;
   preferences: UserPreferences;
   onUpdatePreferences: (patch: Partial<UserPreferences>) => void;
+  onUpdateUsername: (newUsername: string) => Promise<void>;
+  onUpdatePassword: (currentPassword: string, newPassword: string) => Promise<void>;
+  onDeleteSelf: () => Promise<void>;
 }) {
   const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState<SettingsTab>(canManageApps ? "groups" : "account");
@@ -694,113 +888,16 @@ export function SettingsModal({
             </div>
           ) : null}
           {activeTab === "account" ? (
-            <div className="json-panel settings-account-tab">
-              <p className="json-summary">
-                {t("auth.signedInAs")} <strong>{userName}</strong>
-              </p>
-              <button
-                className="danger-button settings-logout-button"
-                type="button"
-                onClick={() => void onLogout()}
-              >
-                {t("auth.signOut")}
-              </button>
-
-              <div className="personalization-section">
-                <h3 className="personalization-title">{t("settings.personalization")}</h3>
-
-                <div className="personalization-row">
-                  <label className="personalization-label">{t("settings.language")}</label>
-                  <select
-                    className="personalization-select"
-                    value={preferences.language}
-                    onChange={(e) => onUpdatePreferences({ language: e.target.value })}
-                  >
-                    <option value="auto">{t("settings.languageAuto")}</option>
-                    {(["en", "fr", "de", "es"] as SupportedLanguage[]).map((l) => (
-                      <option key={l} value={l}>{t(`lang.${l}`)}</option>
-                    ))}
-                  </select>
-                </div>
-
-                <div className="personalization-row">
-                  <label className="personalization-label">{t("settings.theme")}</label>
-                  <select
-                    className="personalization-select"
-                    value={preferences.theme}
-                    onChange={(e) => onUpdatePreferences({ theme: e.target.value as UserPreferences["theme"] })}
-                  >
-                    <option value="auto">{t("settings.themeAuto")}</option>
-                    <option value="light">{t("settings.themeLight")}</option>
-                    <option value="dark">{t("settings.themeDark")}</option>
-                  </select>
-                </div>
-
-                <div className="personalization-row">
-                  <label className="personalization-label">{t("settings.startupPage")}</label>
-                  <select
-                    className="personalization-select"
-                    value={preferences.defaultAppId ?? ""}
-                    onChange={(e) => onUpdatePreferences({ defaultAppId: e.target.value ? Number(e.target.value) : null })}
-                  >
-                    <option value="">{t("settings.startupPageNone")}</option>
-                    {apps.map((app) => (
-                      <option key={app.id} value={app.id}>{app.name}</option>
-                    ))}
-                  </select>
-                </div>
-
-                <div className="personalization-colors">
-                  <div className="personalization-color-row">
-                    <label className="personalization-label">{t("settings.accentColor")}</label>
-                    <div className="personalization-color-field">
-                      <input
-                        type="color"
-                        value={preferences.accentColor ?? "#c65c31"}
-                        onChange={(e) => onUpdatePreferences({ accentColor: e.target.value })}
-                      />
-                      {preferences.accentColor && (
-                        <button type="button" className="personalization-reset-color" onClick={() => onUpdatePreferences({ accentColor: null })}>
-                          ×
-                        </button>
-                      )}
-                    </div>
-                  </div>
-
-                  <div className="personalization-color-row">
-                    <label className="personalization-label">{t("settings.sidebarColor")}</label>
-                    <div className="personalization-color-field">
-                      <input
-                        type="color"
-                        value={preferences.sidebarColor ?? "#fffaf4"}
-                        onChange={(e) => onUpdatePreferences({ sidebarColor: e.target.value })}
-                      />
-                      {preferences.sidebarColor && (
-                        <button type="button" className="personalization-reset-color" onClick={() => onUpdatePreferences({ sidebarColor: null })}>
-                          ×
-                        </button>
-                      )}
-                    </div>
-                  </div>
-
-                  <div className="personalization-color-row">
-                    <label className="personalization-label">{t("settings.buttonColor")}</label>
-                    <div className="personalization-color-field">
-                      <input
-                        type="color"
-                        value={preferences.buttonColor ?? "#c65c31"}
-                        onChange={(e) => onUpdatePreferences({ buttonColor: e.target.value })}
-                      />
-                      {preferences.buttonColor && (
-                        <button type="button" className="personalization-reset-color" onClick={() => onUpdatePreferences({ buttonColor: null })}>
-                          ×
-                        </button>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
+            <AccountTabContent
+              userName={userName}
+              apps={apps}
+              preferences={preferences}
+              onUpdatePreferences={onUpdatePreferences}
+              onUpdateUsername={onUpdateUsername}
+              onUpdatePassword={onUpdatePassword}
+              onDeleteSelf={onDeleteSelf}
+              onLogout={onLogout}
+            />
           ) : null}
         </div>
       </aside>

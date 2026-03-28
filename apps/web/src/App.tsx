@@ -173,6 +173,7 @@ function AppContent() {
 
   const {
     user,
+    setUser,
     preferences: initialPreferences,
     needsSetup,
     demoMode,
@@ -342,9 +343,35 @@ function AppContent() {
     setManagedUsers(result.items);
   }, []);
 
-  const toggleThemeMode = useCallback(() => {
-    setThemeMode((current) => (current === "light" ? "dark" : "light"));
+  const handleUpdateUsername = useCallback(async (newUsername: string) => {
+    const result = await apiFetch<{ username: string }>("/api/user/username", {
+      method: "PUT",
+      body: JSON.stringify({ username: newUsername }),
+    });
+    setUser((u) => u ? { ...u, username: result.username } : u);
+  }, [setUser]);
+
+  const handleUpdatePassword = useCallback(async (currentPassword: string, newPassword: string) => {
+    await apiFetch<{ ok: boolean }>("/api/user/password", {
+      method: "PUT",
+      body: JSON.stringify({ currentPassword, newPassword }),
+    });
   }, []);
+
+  const handleDeleteSelf = useCallback(async () => {
+    await apiFetch<{ deleted: boolean }>("/api/user", { method: "DELETE" });
+    setUser(null);
+    clearAppState();
+    clearUiState();
+  }, [setUser, clearAppState, clearUiState]);
+
+  const toggleThemeMode = useCallback(() => {
+    setThemeMode((current) => {
+      const next = current === "light" ? "dark" : "light";
+      updatePreferences({ theme: next });
+      return next;
+    });
+  }, [updatePreferences]);
 
   const handleSelectApp = useCallback((app: WebAppEntry) => {
     setContextMenu(null);
@@ -375,6 +402,7 @@ function AppContent() {
       );
 
       setApps(result.items);
+      updatePreferences({ defaultAppId: app.is_default ? null : app.id });
 
       if (!app.is_default) {
         selectApp(app.id);
@@ -816,6 +844,9 @@ function AppContent() {
           onLogout={handleLogout}
           preferences={preferences}
           onUpdatePreferences={updatePreferences}
+          onUpdateUsername={handleUpdateUsername}
+          onUpdatePassword={handleUpdatePassword}
+          onDeleteSelf={handleDeleteSelf}
         />
         <ToastContainer toasts={toasts} onDismiss={dismissToast} />
       </div>
