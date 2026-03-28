@@ -95,6 +95,12 @@ jobs:
         with:
           ref: ${{ needs.prepare.outputs.source_ref }}
 
+      - name: Set version from tag
+        run: |
+          VERSION="${{ needs.prepare.outputs.release_tag }}"
+          VERSION="${VERSION#v}"
+          sed -i "s/\"version\": \".*\"/\"version\": \"$VERSION\"/" apps/web/package.json
+
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
