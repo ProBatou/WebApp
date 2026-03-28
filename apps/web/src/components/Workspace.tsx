@@ -27,7 +27,6 @@ export function Workspace({
                   title={app.name}
                   loading="lazy"
                   referrerPolicy="strict-origin-when-cross-origin"
-                  sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
                   allow="fullscreen *; autoplay *; clipboard-write *; picture-in-picture *; encrypted-media *"
                 />
               ))}
