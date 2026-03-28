@@ -13,25 +13,16 @@ const closedConfirmState: ConfirmState = {
 };
 
 export function useModals() {
-  const [groupManagerOpen, setGroupManagerOpen] = useState(false);
-  const [userManagerOpen, setUserManagerOpen] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(false);
   const [shortcutHelpOpen, setShortcutHelpOpen] = useState(false);
   const [confirmState, setConfirmState] = useState<ConfirmState>(closedConfirmState);
 
-  const openGroupManager = useCallback(() => {
-    setGroupManagerOpen(true);
+  const openSettings = useCallback(() => {
+    setSettingsOpen(true);
   }, []);
 
-  const closeGroupManager = useCallback(() => {
-    setGroupManagerOpen(false);
-  }, []);
-
-  const openUserManager = useCallback(() => {
-    setUserManagerOpen(true);
-  }, []);
-
-  const closeUserManager = useCallback(() => {
-    setUserManagerOpen(false);
+  const closeSettings = useCallback(() => {
+    setSettingsOpen(false);
   }, []);
 
   const openShortcutHelp = useCallback(() => {
@@ -43,8 +34,7 @@ export function useModals() {
   }, []);
 
   const closeAuxiliaryModals = useCallback(() => {
-    setGroupManagerOpen(false);
-    setUserManagerOpen(false);
+    setSettingsOpen(false);
     setShortcutHelpOpen(false);
   }, []);
 
@@ -61,14 +51,11 @@ export function useModals() {
   }, []);
 
   return {
-    groupManagerOpen,
-    userManagerOpen,
+    settingsOpen,
     shortcutHelpOpen,
     confirmState,
-    openGroupManager,
-    closeGroupManager,
-    openUserManager,
-    closeUserManager,
+    openSettings,
+    closeSettings,
     openShortcutHelp,
     closeShortcutHelp,
     closeAuxiliaryModals,
