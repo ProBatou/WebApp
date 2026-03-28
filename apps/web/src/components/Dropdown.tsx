@@ -89,7 +89,10 @@ export function Dropdown({
         className={className ? `sidebar-actions-trigger ${className}` : "sidebar-actions-trigger"}
         type="button"
         disabled={disabled}
-        onClick={() => setOpen((current) => !current)}
+        onClick={(event) => {
+          event.stopPropagation();
+          setOpen((current) => !current);
+        }}
         aria-haspopup="menu"
         aria-expanded={open}
       >
@@ -110,9 +113,12 @@ export function Dropdown({
               key={item.value}
               className={item.active ? "secondary-button dropdown-item active" : "secondary-button dropdown-item"}
               type="button"
-              onClick={() => {
+              onClick={(event) => {
+                event.stopPropagation();
                 setOpen(false);
-                onSelect(item.value);
+                queueMicrotask(() => {
+                  onSelect(item.value);
+                });
               }}
             >
               {item.label}

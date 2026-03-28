@@ -5,6 +5,7 @@ import {
   getDashboardIconPreviewVariants,
   getFallbackIconLabel,
   getFaviconCandidates,
+  isCustomIconUrl,
   isDashboardIconSlug,
   resolveDashboardIcon,
 } from "../lib/app-utils";
@@ -30,7 +31,9 @@ export function AppIcon({
   iconVariantInverted: boolean;
 }) {
   const [dashboardAssetIndex, setDashboardAssetIndex] = useState(0);
+  const [customIconFailed, setCustomIconFailed] = useState(false);
   const [faviconIndex, setFaviconIndex] = useState(0);
+  const customIconUrl = isCustomIconUrl(icon) && !customIconFailed ? icon.trim() : "";
   const baseIcon = getDashboardIconBaseSlug(icon);
   const desiredIcon = isDashboardIconSlug(icon)
     ? resolveDashboardIcon(icon, themeMode, dashboardIconsMetadata, iconVariantMode, iconVariantInverted).icon
@@ -51,16 +54,28 @@ export function AppIcon({
 
   useEffect(() => {
     setDashboardAssetIndex(0);
+    setCustomIconFailed(false);
     setFaviconIndex(0);
   }, [desiredIcon, baseIcon, url]);
 
-  const imageSurface = dashboardIcon || Boolean(faviconUrl);
+  const imageSurface = Boolean(customIconUrl) || dashboardIcon || Boolean(faviconUrl);
   const iconClassName = imageSurface ? "app-icon dashboard-icon-surface" : "app-icon";
   const iconStyle = imageSurface ? undefined : { backgroundColor: accent };
 
   return (
-    <span className={iconClassName} style={iconStyle} title={dashboardIcon ? dashboardIconUrl : faviconUrl || undefined}>
-      {dashboardIcon ? (
+    <span className={iconClassName} style={iconStyle} title={customIconUrl || (dashboardIcon ? dashboardIconUrl : faviconUrl || undefined)}>
+      {customIconUrl ? (
+        <img
+          key={customIconUrl}
+          className="app-icon-image"
+          src={customIconUrl}
+          alt=""
+          loading="lazy"
+          onError={() => {
+            setCustomIconFailed(true);
+          }}
+        />
+      ) : dashboardIcon ? (
         <img
           key={dashboardIconUrl}
           className="app-icon-image"
