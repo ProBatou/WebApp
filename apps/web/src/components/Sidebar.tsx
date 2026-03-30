@@ -300,11 +300,14 @@ export function Sidebar({
     return groupedApps;
   }, [filteredApps, groups, t]);
   const visibleAppsInCompact = useMemo(() => {
-    return filteredApps.filter((app) => {
-      const sectionId = app.group_id === null ? "group:none" : `group:${app.group_id}`;
-      return !collapsedGroups.has(sectionId);
-    });
-  }, [collapsedGroups, filteredApps]);
+    const result: WebAppEntry[] = [];
+    for (const section of groupedSections) {
+      if (!collapsedGroups.has(section.id)) {
+        result.push(...section.apps);
+      }
+    }
+    return result;
+  }, [collapsedGroups, groupedSections]);
 
   useEffect(() => {
     window.localStorage.setItem(collapsedGroupsStorageKey, JSON.stringify(Array.from(collapsedGroups)));
