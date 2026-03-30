@@ -1,0 +1,87 @@
+.json-modal {
+  width: min(760px, 100%);
+}
+
+.json-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  margin-top: 18px;
+}
+
+.json-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.export-toolbar {
+  align-items: flex-start;
+}
+
+.json-toolbar-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.json-file-input {
+  display: none;
+}
+
+.json-segmented {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px;
+  border-radius: 999px;
+  background: var(--panel-strong);
+  border: 1px solid var(--border);
+}
+
+.json-textarea {
+  min-height: 320px;
+  font-family: "SFMono-Regular", "Cascadia Code", "Menlo", monospace;
+  line-height: 1.5;
+}
+
+.json-summary {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.92rem;
+}
+
+.json-close-action {
+  margin-left: auto;
+}
+
+.shortcut-modal {
+  width: min(560px, 100%);
+}
+
+.shortcut-list {
+  display: grid;
+  gap: 10px;
+}
+
+.shortcut-item {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 12px 14px;
+  border-radius: 18px;
+  border: 1px solid var(--border);
+  background: var(--preview-surface);
+}
+
+kbd {
+  min-width: 72px;
+  padding: 8px 12px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: var(--panel-strong);
+  font-family: "SFMono-Regular", "Cascadia Code", "Menlo", monospace;
+  text-align: center;
+}

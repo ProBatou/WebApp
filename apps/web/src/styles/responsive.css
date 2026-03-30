@@ -1,0 +1,208 @@
+@media (max-width: 1180px) {
+  .viewer-panel {
+    min-height: auto;
+  }
+
+  .empty-state,
+  .external-state,
+  .app-frame {
+    min-height: 100dvh;
+  }
+}
+
+@media (max-width: 960px) {
+  .edge-trigger {
+    display: block;
+    width: 32px;
+    padding: 0;
+    margin: 0;
+    border: 0;
+    background: transparent;
+    opacity: 0;
+    appearance: none;
+    -webkit-appearance: none;
+    -webkit-tap-highlight-color: transparent;
+    box-shadow: none;
+    outline: none;
+    touch-action: pan-y;
+  }
+
+  .auth-shell,
+  .app-shell {
+    grid-template-columns: 1fr;
+  }
+
+  .sidebar {
+    top: 0;
+    left: 0;
+    bottom: 0;
+    width: min(320px, calc(100vw - 24px));
+  }
+
+  .sidebar.compact {
+    width: 92px;
+  }
+
+  .workspace {
+    padding-left: 0;
+  }
+
+  .floating-banner {
+    top: 14px;
+    left: 18px;
+    right: 18px;
+  }
+
+  .app-editor-modal {
+    width: min(760px, 100%);
+    max-height: min(92vh, 920px);
+    overflow: auto;
+    padding: 18px;
+  }
+
+  .app-editor-modal .editor-form {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .app-editor-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .app-editor-fields-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .app-editor-custom-icon-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .app-editor-group-field {
+    grid-column: auto;
+  }
+
+  .app-editor-preview-shell {
+    position: static;
+  }
+
+  .app-editor-modal .icon-search-results {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 640px) {
+  .auth-shell,
+  .app-shell {
+    padding: 12px;
+    gap: 12px;
+  }
+
+  .auth-panel {
+    border-radius: 24px;
+    padding: 18px;
+  }
+
+  .app-shell {
+    padding: 0;
+    gap: 0;
+  }
+
+  .app-shell .workspace,
+  .app-shell .sidebar {
+    border-radius: 0;
+  }
+
+  .json-toolbar,
+  .json-toolbar-actions {
+    align-items: stretch;
+  }
+
+  .json-toolbar-actions,
+  .json-close-action {
+    margin-left: 0;
+    width: 100%;
+  }
+
+  .json-toolbar-actions .secondary-button,
+  .json-toolbar-actions .ghost-icon-button {
+    width: 100%;
+  }
+
+  .user-create-grid,
+  .user-row {
+    grid-template-columns: 1fr;
+  }
+
+  .user-actions {
+    width: 100%;
+    justify-content: flex-start;
+  }
+
+  .workspace-grid {
+    margin-top: 0;
+  }
+
+  .viewer-panel,
+  .app-frame,
+  .empty-state,
+  .external-state {
+    min-height: 100dvh;
+  }
+
+  .editor-modal-overlay {
+    padding: 12px;
+  }
+
+  .editor-modal {
+    padding: 18px;
+    border-radius: 24px;
+  }
+
+  .toast-stack {
+    right: 12px;
+    bottom: 12px;
+    width: min(360px, calc(100vw - 24px));
+  }
+
+  .form-row {
+    grid-template-columns: 1fr;
+  }
+
+  .preview-card-top,
+  .editor-field-note,
+  .icon-variant-panel {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .selected-icon-variants-actions,
+  .icon-reset-button {
+    width: 100%;
+  }
+
+  .selected-icon-variants-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .selected-icon-variants-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .icon-variant-switch {
+    width: 100%;
+  }
+
+  .icon-variant-option {
+    flex: 1;
+  }
+
+  .icon-search-results {
+    grid-template-columns: 1fr;
+  }
+
+  .sidebar-tools {
+    flex-direction: column;
+  }
+}
