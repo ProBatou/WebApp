@@ -40,7 +40,7 @@ test("applyMigrations creates critical tables and schema_migrations on an empty 
     assert.ok(tableNames.includes("schema_migrations"));
 
     const migrationCount = (database.prepare("SELECT COUNT(*) AS count FROM schema_migrations").get() as { count: number }).count;
-    assert.equal(migrationCount, 12);
+    assert.equal(migrationCount, 13);
   } finally {
     database.close();
   }
@@ -87,9 +87,11 @@ test("applyMigrations applies pending incremental migrations", () => {
     assert.ok(preferencesColumns.includes("accent_color_dark"));
     assert.ok(preferencesColumns.includes("sidebar_color_dark"));
     assert.ok(preferencesColumns.includes("button_color_dark"));
+    assert.ok(preferencesColumns.includes("text_color"));
+    assert.ok(preferencesColumns.includes("text_color_dark"));
 
     const migrationCount = (database.prepare("SELECT COUNT(*) AS count FROM schema_migrations").get() as { count: number }).count;
-    assert.equal(migrationCount, 12);
+    assert.equal(migrationCount, 13);
   } finally {
     database.close();
   }

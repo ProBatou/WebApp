@@ -238,8 +238,10 @@ test("GET /api/user/preferences returns default preferences for a new user", asy
       defaultAppId: null,
       accentColor: null,
       sidebarColor: null,
+      textColor: null,
       accentColorDark: null,
       sidebarColorDark: null,
+      textColorDark: null,
     });
   } finally {
     await server.close();
@@ -275,8 +277,10 @@ test("PUT /api/user/preferences persists and returns the updated preferences", a
         language: "fr",
         accentColor: "#112233",
         sidebarColor: "#445566",
+        textColor: "#223344",
         accentColorDark: "#778899",
         sidebarColorDark: "#aabbcc",
+        textColorDark: "#ddeeff",
       },
     });
 
@@ -287,8 +291,10 @@ test("PUT /api/user/preferences persists and returns the updated preferences", a
       defaultAppId: null,
       accentColor: "#112233",
       sidebarColor: "#445566",
+      textColor: "#223344",
       accentColorDark: "#778899",
       sidebarColorDark: "#aabbcc",
+      textColorDark: "#ddeeff",
     });
 
     const fetchResponse = await server.inject({

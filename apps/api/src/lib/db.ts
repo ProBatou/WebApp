@@ -203,6 +203,17 @@ const migrations: Migration[] = [
       `);
     },
   },
+  {
+    id: "013_preferences_text_colors",
+    up: (database) => {
+      if (!hasColumn(database, "user_preferences", "text_color")) {
+        database.exec("ALTER TABLE user_preferences ADD COLUMN text_color TEXT");
+      }
+      if (!hasColumn(database, "user_preferences", "text_color_dark")) {
+        database.exec("ALTER TABLE user_preferences ADD COLUMN text_color_dark TEXT");
+      }
+    },
+  },
 ];
 
 export function applyMigrations(database: SqliteDatabase) {

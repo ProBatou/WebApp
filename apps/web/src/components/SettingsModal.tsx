@@ -455,7 +455,7 @@ const colorDefs = [
     lightKey: "sidebarColor" as keyof UserPreferences,
     darkKey: "sidebarColorDark" as keyof UserPreferences,
     labelKey: "settings.sidebarColor" as const,
-    fallbackLight: "#fffaf4",
+    fallbackLight: "#f7efe2",
     fallbackDark: "#181411",
   },
   {
@@ -464,6 +464,13 @@ const colorDefs = [
     labelKey: "settings.accentColor" as const,
     fallbackLight: "#c65c31",
     fallbackDark: "#df7a42",
+  },
+  {
+    lightKey: "textColor" as keyof UserPreferences,
+    darkKey: "textColorDark" as keyof UserPreferences,
+    labelKey: "settings.textColor" as const,
+    fallbackLight: "#21160e",
+    fallbackDark: "#f4ede4",
   },
 ];
 

@@ -1,5 +1,11 @@
 import { useEffect, useMemo, useState } from "react";
-import { dashboardIconsMetadataUrl, getDashboardIconAssetCandidates, getDashboardIconUrl, isDashboardIconSlug } from "../lib/app-utils";
+import {
+  dashboardIconsMetadataUrl,
+  getDashboardIconAssetCandidates,
+  getDashboardIconUrl,
+  isDashboardIconSlug,
+  normalizeIconSearchValue,
+} from "../lib/app-utils";
 import type { DashboardIconsMetadataMap, WebAppEntry } from "../types";
 
 export function useDashboardIcons({
@@ -22,9 +28,15 @@ export function useDashboardIcons({
     () => apps.some((app) => isDashboardIconSlug(app.icon)) || isDashboardIconSlug(editorIcon),
     [apps, editorIcon]
   );
-  const normalizedIconQuery = iconQuery.trim().toLowerCase();
-  const filteredDashboardIcons = normalizedIconQuery
-    ? dashboardIcons.filter((icon) => icon.includes(normalizedIconQuery)).slice(0, 8)
+  const normalizedIconQuery = normalizeIconSearchValue(iconQuery);
+  const normalizedQueryTerms = normalizedIconQuery.split("-").filter(Boolean);
+  const filteredDashboardIcons = normalizedQueryTerms.length
+    ? dashboardIcons
+        .filter((icon) => {
+          const normalizedIcon = normalizeIconSearchValue(icon);
+          return normalizedQueryTerms.every((term) => normalizedIcon.includes(term));
+        })
+        .slice(0, 8)
     : [];
 
   useEffect(() => {

@@ -49,7 +49,7 @@ export function AppIcon({
   const dashboardIconUrl = dashboardAssetUrls[dashboardAssetIndex] ?? "";
   const dashboardIcon = Boolean(dashboardIconUrl);
   const faviconCandidates = getFaviconCandidates(url);
-  const faviconUrl = !dashboardIcon ? (faviconCandidates[faviconIndex] ?? "") : "";
+  const faviconUrl = !dashboardIcon && !customIconUrl ? (faviconCandidates[faviconIndex] ?? "") : "";
   const fallbackLabel = getFallbackIconLabel(name, icon);
 
   useEffect(() => {
@@ -59,23 +59,12 @@ export function AppIcon({
   }, [desiredIcon, baseIcon, url]);
 
   const imageSurface = Boolean(customIconUrl) || dashboardIcon || Boolean(faviconUrl);
-  const iconClassName = imageSurface ? "app-icon dashboard-icon-surface" : "app-icon";
+  const iconClassName = imageSurface ? "app-icon app-icon-surface" : "app-icon";
   const iconStyle = imageSurface ? undefined : { backgroundColor: accent };
 
   return (
-    <span className={iconClassName} style={iconStyle} title={customIconUrl || (dashboardIcon ? dashboardIconUrl : faviconUrl || undefined)}>
-      {customIconUrl ? (
-        <img
-          key={customIconUrl}
-          className="app-icon-image"
-          src={customIconUrl}
-          alt=""
-          loading="lazy"
-          onError={() => {
-            setCustomIconFailed(true);
-          }}
-        />
-      ) : dashboardIcon ? (
+    <span className={iconClassName} style={iconStyle} title={dashboardIcon ? dashboardIconUrl : customIconUrl || faviconUrl || undefined}>
+      {dashboardIcon ? (
         <img
           key={dashboardIconUrl}
           className="app-icon-image"
@@ -84,6 +73,17 @@ export function AppIcon({
           loading="lazy"
           onError={() => {
             setDashboardAssetIndex((current) => current + 1);
+          }}
+        />
+      ) : customIconUrl ? (
+        <img
+          key={customIconUrl}
+          className="app-icon-image"
+          src={customIconUrl}
+          alt=""
+          loading="lazy"
+          onError={() => {
+            setCustomIconFailed(true);
           }}
         />
       ) : faviconUrl ? (

@@ -46,25 +46,6 @@
   align-items: start;
 }
 
-.editor-field-note {
-  display: flex;
-  align-items: center;
-  justify-content: flex-start;
-  gap: 12px;
-  margin-top: 6px;
-  color: var(--muted);
-  font-size: 0.78rem;
-}
-
-.editor-field-note a {
-  color: var(--accent);
-  text-decoration: none;
-}
-
-.editor-field-note a:hover {
-  color: var(--accent-strong);
-}
-
 .editor-actions {
   display: flex;
   flex-wrap: wrap;
