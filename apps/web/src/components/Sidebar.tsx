@@ -54,6 +54,7 @@ function SortableAppTile({
   dashboardIconsMetadata,
   appStatus,
   canManageApps,
+  reorderAppsEnabled,
 }: {
   app: WebAppEntry;
   active: boolean;
@@ -64,6 +65,7 @@ function SortableAppTile({
   dashboardIconsMetadata: DashboardIconsMetadataMap;
   appStatus?: AppStatusEntry;
   canManageApps: boolean;
+  reorderAppsEnabled: boolean;
 }) {
   const { t } = useTranslation();
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: app.id });
@@ -89,13 +91,13 @@ function SortableAppTile({
       }}
     >
       <button
-        className="app-main-hitbox"
+        className={canManageApps && reorderAppsEnabled ? "app-main-hitbox draggable" : "app-main-hitbox"}
         type="button"
         onClick={() => onSelect(app)}
         title={app.name}
         aria-label={t("app.openAppAria", { name: app.name })}
-        {...(canManageApps ? attributes : {})}
-        {...(canManageApps ? listeners : {})}
+        {...(canManageApps && reorderAppsEnabled ? attributes : {})}
+        {...(canManageApps && reorderAppsEnabled ? listeners : {})}
       >
         <AppIcon
           icon={app.icon}
@@ -215,6 +217,7 @@ export function Sidebar({
   selectedAppId,
   draggingAppId,
   dragOutProgress,
+  reorderAppsEnabled,
   themeMode,
   dashboardIconsMetadata,
   busy,
@@ -223,6 +226,7 @@ export function Sidebar({
   onOpenSidebarContextMenu,
   onOpenCreateEditor,
   onOpenSettings,
+  onToggleReorderApps,
   onToggleTheme,
   lang,
   setLang,
@@ -243,6 +247,7 @@ export function Sidebar({
   selectedAppId: number | null;
   draggingAppId: number | null;
   dragOutProgress: number;
+  reorderAppsEnabled: boolean;
   themeMode: ThemeMode;
   dashboardIconsMetadata: DashboardIconsMetadataMap;
   busy: boolean;
@@ -251,6 +256,7 @@ export function Sidebar({
   onOpenSidebarContextMenu: (event: MouseEvent<HTMLElement>) => void;
   onOpenCreateEditor: () => void;
   onOpenSettings: () => void;
+  onToggleReorderApps: () => void;
   onToggleTheme: () => void;
   lang: SupportedLanguage;
   setLang: (lang: SupportedLanguage) => void;
@@ -266,12 +272,12 @@ export function Sidebar({
   const [dragOverGroupId, setDragOverGroupId] = useState<number | null>(null);
   const normalizedFilterQuery = filterQuery.trim().toLowerCase();
   const filteredApps = useMemo(() => {
-    if (draggingAppId !== null || !normalizedFilterQuery) {
+    if (!normalizedFilterQuery) {
       return apps;
     }
 
     return apps.filter((app) => app.name.toLowerCase().includes(normalizedFilterQuery));
-  }, [apps, draggingAppId, normalizedFilterQuery]);
+  }, [apps, normalizedFilterQuery]);
   const groupedSections = useMemo(() => {
     const groupedApps: Array<{
       id: string;
@@ -422,8 +428,7 @@ export function Sidebar({
                 type="search"
                 value={filterQuery}
                 onChange={(event) => setFilterQuery(event.target.value)}
-                placeholder={draggingAppId !== null ? t("app.searchUnavailableWhileSorting") : t("app.searchApps")}
-                disabled={draggingAppId !== null}
+                placeholder={t("app.searchApps")}
               />
             </label>
           ) : null}
@@ -506,6 +511,7 @@ export function Sidebar({
                               dashboardIconsMetadata={dashboardIconsMetadata}
                               appStatus={appStatuses[app.id]}
                               canManageApps={canManageApps}
+                              reorderAppsEnabled={reorderAppsEnabled}
                             />
                             ))}
                           </div>
@@ -530,6 +536,7 @@ export function Sidebar({
                     dashboardIconsMetadata={dashboardIconsMetadata}
                     appStatus={appStatuses[app.id]}
                     canManageApps={canManageApps}
+                    reorderAppsEnabled={reorderAppsEnabled}
                   />
                 ))}
                 {visibleAppsInCompact.length === 0 ? <p className="sidebar-empty-state">{t("app.noAppsVisible")}</p> : null}
@@ -552,6 +559,61 @@ export function Sidebar({
               aria-label={t("app.new")}
             >
               +
+            </button>
+          ) : null}
+          {canManageApps ? (
+            <button
+              className={reorderAppsEnabled ? "ghost-icon-button sidebar-bottom-button active" : "ghost-icon-button sidebar-bottom-button"}
+              type="button"
+              onClick={onToggleReorderApps}
+              aria-label={reorderAppsEnabled ? t("app.disableReorderMode") : t("app.enableReorderMode")}
+              title={reorderAppsEnabled ? t("app.disableReorderMode") : t("app.enableReorderMode")}
+            >
+              {reorderAppsEnabled ? (
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true" focusable="false">
+                  <path
+                    d="M5 7V5.3a3 3 0 0 1 5.1-2.12"
+                    stroke="currentColor"
+                    strokeWidth="1.6"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                  <path
+                    d="M10.1 3.25 11.55 4.75"
+                    stroke="currentColor"
+                    strokeWidth="1.6"
+                    strokeLinecap="round"
+                  />
+                  <rect
+                    x="4"
+                    y="7"
+                    width="8"
+                    height="6"
+                    rx="1.5"
+                    stroke="currentColor"
+                    strokeWidth="1.4"
+                  />
+                </svg>
+              ) : (
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true" focusable="false">
+                  <path
+                    d="M5 7V5.3a3 3 0 0 1 6 0V7"
+                    stroke="currentColor"
+                    strokeWidth="1.6"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                  <rect
+                    x="4"
+                    y="7"
+                    width="8"
+                    height="6"
+                    rx="1.5"
+                    stroke="currentColor"
+                    strokeWidth="1.4"
+                  />
+                </svg>
+              )}
             </button>
           ) : null}
           <button

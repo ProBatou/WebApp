@@ -19,6 +19,7 @@ const currentDir = dirname(fileURLToPath(import.meta.url));
 const webDistPath = resolve(currentDir, "../../web/dist");
 const hasWebBuild = existsSync(resolve(webDistPath, "index.html"));
 const SESSION_PURGE_INTERVAL_MS = 1000 * 60 * 60;
+const isProduction = process.env.NODE_ENV === "production";
 
 export async function createServer() {
   const server = Fastify({
@@ -40,8 +41,8 @@ export async function createServer() {
 
   await server.register(cookie);
   await server.register(rateLimit, {
-    global: true,
-    max: 120,
+    global: isProduction,
+    max: isProduction ? 120 : 1000,
     timeWindow: "1 minute",
     allowList: [],
   });

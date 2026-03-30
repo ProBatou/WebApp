@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState, type MouseEvent } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   DndContext,
   DragOverlay,
@@ -6,10 +6,6 @@ import {
   closestCenter,
   useSensor,
   useSensors,
-  type DragCancelEvent,
-  type DragEndEvent,
-  type DragMoveEvent,
-  type DragStartEvent,
 } from "@dnd-kit/core";
 import { AuthScreen } from "./components/AuthScreen";
 import { AppEditor } from "./components/AppEditor";
@@ -28,15 +24,16 @@ import { useAuth } from "./hooks/useAuth";
 import { useDashboardIcons } from "./hooks/useDashboardIcons";
 import { useEditor } from "./hooks/useEditor";
 import { useGroups } from "./hooks/useGroups";
+import { useAppShellUi } from "./hooks/useAppShellUi";
 import { useIframes } from "./hooks/useIframes";
 import { useJsonImport } from "./hooks/useJsonImport";
 import { useModals } from "./hooks/useModals";
 import { usePreferences } from "./hooks/usePreferences";
+import { useSettingsActions } from "./hooks/useSettingsActions";
 import { useToast } from "./hooks/useToast";
 import { useUserManagement } from "./hooks/useUserManagement";
 import { I18nProvider, useI18nContext, useTranslation } from "./lib/i18n";
 import type {
-  ContextMenuState,
   SidebarMode,
   ThemeMode,
   WebAppEntry,
@@ -63,11 +60,9 @@ function AppContent() {
   });
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [contextMenu, setContextMenu] = useState<ContextMenuState>(null);
-  const [draggingAppId, setDraggingAppId] = useState<number | null>(null);
-  const [dragOutProgress, setDragOutProgress] = useState(0);
   const sidebarRef = useRef<HTMLElement | null>(null);
   const closeJsonModalRef = useRef<() => void>(() => undefined);
+  const setContextMenuRef = useRef<(value: null) => void>(() => undefined);
   const { toasts, pushToast, pushErrorToast, dismissToast } = useToast();
 
   const {
@@ -195,6 +190,32 @@ function AppContent() {
     onThemeChange: setThemeMode,
     onLanguageChange: setLang,
   });
+  const {
+    handleToggleDefaultApp,
+    handleUpdatePreferences,
+    handleCreateGroup,
+    handleRenameGroup,
+    handleDeleteGroup,
+    handleMoveGroup,
+    handleReorderGroups,
+  } = useSettingsActions({
+    apps,
+    groups,
+    selectedAppId,
+    pushToast,
+    setApps,
+    setBusy,
+    setError,
+    setContextMenu: () => setContextMenu(null),
+    selectApp,
+    createGroup,
+    updateGroup,
+    reorderGroups,
+    deleteGroup,
+    reloadApps,
+    updatePreferences,
+    t,
+  });
 
   const {
     managedUsers,
@@ -251,10 +272,74 @@ function AppContent() {
     selectApp,
     setApps,
     setBusy,
-    setContextMenu,
+    setContextMenu: (value) => setContextMenuRef.current(value),
     setError,
   });
   closeJsonModalRef.current = closeJsonModal;
+
+  const {
+    contextMenu,
+    draggingAppId,
+    dragOutProgress,
+    reorderAppsEnabled,
+    settingsInitialTab,
+    settingsInitialJsonMode,
+    draggedApp,
+    setContextMenu,
+    openCreateEditorFromUi,
+    openEditEditorFromUi,
+    openContextMenu,
+    openSidebarContextMenu,
+    handleSelectApp,
+    handleDragStart,
+    handleDragMove,
+    handleDragCancel,
+    handleDragEnd,
+    handleOpenSettings,
+    handleCloseContextMenu,
+    handleRefreshContextApp,
+    handleEditContextApp,
+    handleDeleteContextApp,
+    handleToggleDefaultContextApp,
+    handleToggleSidebarMode,
+    handleToggleReorderApps,
+  } = useAppShellUi({
+    userPresent: Boolean(user),
+    userRole: user?.role ?? null,
+    canManageApps,
+    editorOpen,
+    shortcutHelpOpen,
+    settingsOpen,
+    apps,
+    groups,
+    sidebarRef,
+    closeEditor,
+    closeSettings,
+    closeShortcutHelp,
+    closeJsonModal,
+    closeAuxiliaryModals,
+    openShortcutHelp,
+    openSettings,
+    openCreateEditor,
+    openEditEditor,
+    prepareExport,
+    resetImport,
+    reloadUsers,
+    refreshIframeApp,
+    selectApp,
+    setSidebarOpen,
+    setSidebarMode,
+    setEditorState,
+    inheritedEditorAccent,
+    handleDeleteAppFromUi: async (appId) => {
+      await deleteApp(appId);
+      closeEditor();
+      setContextMenu(null);
+    },
+    handleToggleDefaultApp,
+    handleReorder,
+  });
+  setContextMenuRef.current = setContextMenu;
 
   useEffect(() => {
     document.documentElement.dataset.theme = themeMode;
@@ -298,66 +383,6 @@ function AppContent() {
     setIconQuery(nextIcon);
   }, [dashboardIconsState.dashboardIcons, editorOpen, editorState.icon, iconSelectionLocked, normalizedIconQuery, setEditorState]);
 
-  useEffect(() => {
-    if (!editorOpen && !shortcutHelpOpen && !settingsOpen) {
-      return undefined;
-    }
-
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") {
-        if (editorOpen) {
-          closeEditor();
-        }
-
-        if (shortcutHelpOpen) {
-          closeShortcutHelp();
-        }
-
-        if (settingsOpen) {
-          closeSettings();
-        }
-      }
-    };
-
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [closeEditor, editorOpen, shortcutHelpOpen, settingsOpen, closeSettings, closeShortcutHelp]);
-
-  useEffect(() => {
-    const handleKeyDown = (event: KeyboardEvent) => {
-      const target = event.target;
-      const isTypingTarget = target instanceof HTMLElement
-        && (target.isContentEditable || ["INPUT", "TEXTAREA", "SELECT"].includes(target.tagName));
-
-      if (event.key === "Escape") {
-        setContextMenu(null);
-        return;
-      }
-
-      if (!user || event.ctrlKey || event.metaKey || event.altKey || isTypingTarget) {
-        return;
-      }
-
-      if (canManageApps && event.key.toLowerCase() === "n") {
-        event.preventDefault();
-        openCreateEditorFromUi();
-        return;
-      }
-
-      if (event.key === "?") {
-        event.preventDefault();
-        setContextMenu(null);
-        closeEditor();
-        closeJsonModal();
-        closeSettings();
-        openShortcutHelp();
-      }
-    };
-
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [canManageApps, closeEditor, closeSettings, closeJsonModal, openShortcutHelp, user]);
-
   const toggleThemeMode = useCallback(() => {
     setThemeMode((current) => {
       const next = current === "light" ? "dark" : "light";
@@ -366,266 +391,6 @@ function AppContent() {
     });
   }, [updatePreferences]);
 
-  const handleSelectApp = useCallback((app: WebAppEntry) => {
-    setContextMenu(null);
-    setSidebarOpen(false);
-    selectApp(app.id);
-
-    if (app.open_mode === "external") {
-      window.open(app.url, "_blank", "noopener,noreferrer");
-    }
-  }, [selectApp]);
-
-  const handleDeleteAppFromUi = useCallback(async (appId: number) => {
-    await deleteApp(appId);
-    closeEditor();
-    setContextMenu(null);
-  }, [closeEditor, deleteApp]);
-
-  const handleToggleDefaultApp = async (app: WebAppEntry) => {
-    try {
-      setBusy(true);
-      setError(null);
-
-      const result = await apiFetch<{ items: WebAppEntry[] }>(
-        `/api/apps/${app.id}/default`,
-        {
-          method: app.is_default ? "DELETE" : "POST",
-        }
-      );
-
-      setApps(result.items);
-      updatePreferences({ defaultAppId: app.is_default ? null : app.id });
-
-      if (!app.is_default) {
-        selectApp(app.id);
-      }
-
-      pushToast(app.is_default ? "toast.defaultRemoved" : t("toast.defaultSet", { name: app.name }));
-      setContextMenu(null);
-    } catch (toggleError) {
-      setError(toggleError instanceof Error ? toggleError.message : "errors.update");
-    } finally {
-      setBusy(false);
-    }
-  };
-
-  const syncDefaultAppSelection = useCallback(async (nextDefaultAppId: number | null) => {
-    const currentDefaultApp = apps.find((item) => item.is_default) ?? null;
-
-    if (nextDefaultAppId === currentDefaultApp?.id) {
-      return;
-    }
-
-    try {
-      setBusy(true);
-      setError(null);
-
-      if (nextDefaultAppId == null) {
-        if (!currentDefaultApp) {
-          return;
-        }
-
-        const result = await apiFetch<{ items: WebAppEntry[] }>(`/api/apps/${currentDefaultApp.id}/default`, {
-          method: "DELETE",
-        });
-        setApps(result.items);
-        pushToast("toast.defaultRemoved");
-        return;
-      }
-
-      const result = await apiFetch<{ items: WebAppEntry[] }>(`/api/apps/${nextDefaultAppId}/default`, {
-        method: "POST",
-      });
-      setApps(result.items);
-      const nextDefaultApp = apps.find((item) => item.id === nextDefaultAppId);
-      pushToast(nextDefaultApp ? t("toast.defaultSet", { name: nextDefaultApp.name }) : "toast.defaultSet");
-    } catch (syncError) {
-      setError(syncError instanceof Error ? syncError.message : "errors.update");
-    } finally {
-      setBusy(false);
-    }
-  }, [apps, pushToast, setApps, setBusy, setError, t]);
-
-  const handleUpdatePreferences = useCallback((patch: Partial<typeof preferences>) => {
-    updatePreferences(patch);
-
-    if (Object.prototype.hasOwnProperty.call(patch, "defaultAppId")) {
-      void syncDefaultAppSelection(patch.defaultAppId ?? null);
-    }
-  }, [preferences, syncDefaultAppSelection, updatePreferences]);
-
-  const openCreateEditorFromUi = useCallback(() => {
-    if (!canManageApps) {
-      return;
-    }
-
-    setContextMenu(null);
-    closeJsonModal();
-    closeAuxiliaryModals();
-    openCreateEditor();
-    setEditorState((current) => ({ ...current, accent: inheritedEditorAccent }));
-  }, [canManageApps, closeAuxiliaryModals, closeJsonModal, inheritedEditorAccent, openCreateEditor, setEditorState]);
-
-  const openEditEditorFromUi = useCallback((app: WebAppEntry) => {
-    if (!canManageApps) {
-      return;
-    }
-
-    setContextMenu(null);
-    closeJsonModal();
-    closeAuxiliaryModals();
-    openEditEditor(app);
-  }, [canManageApps, closeAuxiliaryModals, closeJsonModal, openEditEditor]);
-
-  const openContextMenu = useCallback((event: MouseEvent<HTMLDivElement>, app: WebAppEntry) => {
-    if (!canManageApps && app.open_mode !== "iframe") {
-      return;
-    }
-
-    event.preventDefault();
-    closeAuxiliaryModals();
-
-    const menuWidth = 190;
-    const menuHeight = app.open_mode === "iframe" ? 212 : 172;
-    const maxX = Math.max(12, window.innerWidth - menuWidth - 12);
-    const maxY = Math.max(12, window.innerHeight - menuHeight - 12);
-
-    setContextMenu({
-      x: Math.min(event.clientX, maxX),
-      y: Math.min(event.clientY, maxY),
-      app,
-    });
-  }, [canManageApps, closeAuxiliaryModals]);
-
-  const openSidebarContextMenu = useCallback((event: MouseEvent<HTMLElement>) => {
-    if (!canManageApps) {
-      return;
-    }
-
-    event.preventDefault();
-    closeAuxiliaryModals();
-
-    const menuWidth = 190;
-    const menuHeight = 172;
-    const maxX = Math.max(12, window.innerWidth - menuWidth - 12);
-    const maxY = Math.max(12, window.innerHeight - menuHeight - 12);
-
-    setContextMenu({
-      x: Math.min(event.clientX, maxX),
-      y: Math.min(event.clientY, maxY),
-      app: null,
-    });
-  }, [canManageApps, closeAuxiliaryModals]);
-
-  const getDragOutProgress = useCallback((translated: { left: number; right: number; width: number; height: number }) => {
-    const sidebarBounds = sidebarRef.current?.getBoundingClientRect();
-    if (!sidebarBounds) {
-      return 0;
-    }
-
-    const fullExitDistance = translated.left - sidebarBounds.right;
-    const visibleExitOffset = 24;
-    if (fullExitDistance <= visibleExitOffset) {
-      return 0;
-    }
-
-    return Math.min(1, (fullExitDistance - visibleExitOffset) / 180);
-  }, []);
-
-  const isDroppedOutsideSidebar = useCallback((event: DragEndEvent) => {
-    const sidebarBounds = sidebarRef.current?.getBoundingClientRect();
-    const translated = event.active.rect.current.translated;
-    if (!sidebarBounds || !translated) {
-      return false;
-    }
-
-    return translated.left > sidebarBounds.right + 72;
-  }, []);
-
-  const handleDragStart = useCallback((event: DragStartEvent) => {
-    const nextId = Number(event.active.id);
-    setDraggingAppId(Number.isNaN(nextId) ? null : nextId);
-    setDragOutProgress(0);
-    setContextMenu(null);
-    setSidebarOpen(true);
-  }, []);
-
-  const handleDragMove = useCallback((event: DragMoveEvent) => {
-    const translated = event.active.rect.current.translated;
-    if (!translated) {
-      setDragOutProgress(0);
-      return;
-    }
-
-    setDragOutProgress(getDragOutProgress(translated));
-  }, [getDragOutProgress]);
-
-  const handleDragCancel = useCallback((_event: DragCancelEvent) => {
-    setDraggingAppId(null);
-    setDragOutProgress(0);
-  }, []);
-
-  const handleDragEnd = useCallback(async (event: DragEndEvent) => {
-    setDraggingAppId(null);
-    setDragOutProgress(0);
-    await handleReorder(event, isDroppedOutsideSidebar, groups);
-  }, [groups, handleReorder, isDroppedOutsideSidebar]);
-
-  const [settingsInitialTab, setSettingsInitialTab] = useState<SettingsTab | undefined>(undefined);
-  const [settingsInitialJsonMode, setSettingsInitialJsonMode] = useState<"import" | "export" | undefined>(undefined);
-
-  const handleOpenSettings = useCallback((tab?: SettingsTab, jsonMode?: "import" | "export") => {
-    setContextMenu(null);
-    closeEditor();
-    closeShortcutHelp();
-    setSettingsInitialTab(tab);
-    setSettingsInitialJsonMode(jsonMode);
-    if (jsonMode === "export") {
-      prepareExport();
-    } else if (jsonMode === "import") {
-      resetImport();
-    }
-    openSettings();
-    if (user?.role === "admin") {
-      void reloadUsers();
-    }
-  }, [closeEditor, closeShortcutHelp, openSettings, prepareExport, resetImport, reloadUsers, user?.role]);
-
-  const handleCloseContextMenu = useCallback(() => {
-    setContextMenu(null);
-  }, []);
-
-  const handleRefreshContextApp = useCallback(() => {
-    if (contextMenu?.app) {
-      setContextMenu(null);
-      refreshIframeApp(contextMenu.app);
-    }
-  }, [contextMenu, refreshIframeApp]);
-
-  const handleEditContextApp = useCallback(() => {
-    if (contextMenu?.app) {
-      openEditEditorFromUi(contextMenu.app);
-    }
-  }, [contextMenu, openEditEditorFromUi]);
-
-  const handleDeleteContextApp = useCallback(() => {
-    if (contextMenu?.app) {
-      void handleDeleteAppFromUi(contextMenu.app.id);
-    }
-  }, [contextMenu, handleDeleteAppFromUi]);
-
-  const handleToggleDefaultContextApp = useCallback(() => {
-    if (contextMenu?.app) {
-      void handleToggleDefaultApp(contextMenu.app);
-    }
-  }, [contextMenu, handleToggleDefaultApp]);
-
-  const handleToggleSidebarMode = useCallback(() => {
-    setContextMenu(null);
-    setSidebarMode((current) => (current === "expanded" ? "compact" : "expanded"));
-  }, []);
-
   const handleCloseConfirm = useCallback(() => {
     closeConfirm();
   }, [closeConfirm]);
@@ -633,46 +398,6 @@ function AppContent() {
   const handleConfirmAction = useCallback(() => {
     confirmState.onConfirm?.();
   }, [confirmState]);
-
-  const handleCreateGroup = useCallback(async (name: string) => {
-    const group = await createGroup(name);
-    pushToast(t("toast.groupAdded", { name: group.name }));
-  }, [createGroup, pushToast, t]);
-
-  const handleRenameGroup = useCallback(async (groupId: number, name: string) => {
-    const group = await updateGroup(groupId, name);
-    pushToast(t("toast.groupRenamed", { name: group.name }));
-  }, [pushToast, t, updateGroup]);
-
-  const handleDeleteGroup = useCallback(async (groupId: number) => {
-    const group = groups.find((item) => item.id === groupId);
-    await deleteGroup(groupId);
-    await reloadApps(selectedAppId);
-    pushToast(group ? t("toast.groupDeleted", { name: group.name }) : "toast.groupDeletedFallback");
-  }, [deleteGroup, groups, pushToast, reloadApps, selectedAppId, t]);
-
-  const handleMoveGroup = useCallback(async (groupId: number, direction: "up" | "down") => {
-    const currentIndex = groups.findIndex((group) => group.id === groupId);
-    if (currentIndex === -1) {
-      return;
-    }
-
-    const targetIndex = direction === "up" ? currentIndex - 1 : currentIndex + 1;
-    if (targetIndex < 0 || targetIndex >= groups.length) {
-      return;
-    }
-
-    const nextGroups = [...groups];
-    const [movedGroup] = nextGroups.splice(currentIndex, 1);
-    nextGroups.splice(targetIndex, 0, movedGroup);
-    await reorderGroups(nextGroups.map((group) => group.id));
-  }, [groups, reorderGroups]);
-
-  const handleReorderGroups = useCallback(async (groupIds: number[]) => {
-    await reorderGroups(groupIds);
-  }, [reorderGroups]);
-
-  const draggedApp = draggingAppId === null ? null : apps.find((item) => item.id === draggingAppId) ?? null;
 
   if (loading) {
     return <div className="full-screen-state">{t("app.loadingWebapp")}</div>;
@@ -728,6 +453,7 @@ function AppContent() {
           selectedAppId={selectedAppId}
           draggingAppId={draggingAppId}
           dragOutProgress={dragOutProgress}
+          reorderAppsEnabled={reorderAppsEnabled}
           themeMode={themeMode}
           dashboardIconsMetadata={dashboardIconsState.dashboardIconsMetadata}
           busy={busy}
@@ -736,6 +462,7 @@ function AppContent() {
           onOpenSidebarContextMenu={openSidebarContextMenu}
           onOpenCreateEditor={openCreateEditorFromUi}
           onOpenSettings={handleOpenSettings}
+          onToggleReorderApps={handleToggleReorderApps}
           onToggleTheme={toggleThemeMode}
           lang={lang}
           setLang={setLang}

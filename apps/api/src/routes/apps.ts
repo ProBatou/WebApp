@@ -70,7 +70,7 @@ export async function registerAppRoutes(server: FastifyInstance) {
     };
   });
 
-  server.get<{ Params: IdParams }>("/api/apps/:id/ping", async (request, reply) => {
+  server.get<{ Params: IdParams }>("/api/apps/:id/ping", { config: { rateLimit: false } }, async (request, reply) => {
     const user = requireSession(request, reply);
     if (!user) {
       return reply;

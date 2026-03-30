@@ -5,6 +5,7 @@ import type { AppPingResponse, AppStatusEntry, WebAppEntry } from "../types";
 type AppStatusMap = Record<number, AppStatusEntry>;
 
 const pollIntervalMs = 60000;
+const initialLoadDelayMs = import.meta.env.DEV ? 1500 : 0;
 
 function createUnknownStatusMap(apps: WebAppEntry[]) {
   return Object.fromEntries(
@@ -67,7 +68,9 @@ export function useAppStatus({
     };
 
     setAppStatuses(createUnknownStatusMap(apps));
-    void loadStatuses();
+    const initialLoadTimeoutId = window.setTimeout(() => {
+      void loadStatuses();
+    }, initialLoadDelayMs);
 
     const intervalId = window.setInterval(() => {
       void loadStatuses();
@@ -75,6 +78,7 @@ export function useAppStatus({
 
     return () => {
       cancelled = true;
+      window.clearTimeout(initialLoadTimeoutId);
       window.clearInterval(intervalId);
     };
   }, [apps, enabled]);

@@ -98,6 +98,8 @@ export const en = {
   "app.noAppsVisible": "No visible apps.",
   "app.noAppsMatch": "No apps match your search.",
   "app.searchApps": "Search apps",
+  "app.enableReorderMode": "Enable reorder mode",
+  "app.disableReorderMode": "Disable reorder mode",
   "sidebar.apps": "Apps",
   "sidebar.language": "Language",
   "settings.open": "Settings",
