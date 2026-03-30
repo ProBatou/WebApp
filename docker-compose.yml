@@ -1,16 +1,9 @@
 services:
-  webapp-v2:
-    container_name: webapp-v2
-    image: ghcr.io/probatou/webapp:latest
-    environment:
-      NODE_ENV: production
-      PORT: "3004"
-      DATABASE_PATH: /app/data/webapp.db
-    labels:
-      cosmos-force-network-mode: bridge
+  webapp:
+    image: ghcr.io/example-org/webapp:latest
+    container_name: webapp
     ports:
       - "3004:3004"
     volumes:
-      - /cosmos-storage/webapp-v2/data:/app/data
+      - ./data:/app/data
     restart: unless-stopped
-    network_mode: bridge

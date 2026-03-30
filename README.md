@@ -3,9 +3,9 @@
 **One dashboard. Every service.**
 
 [![Demo](https://img.shields.io/badge/demo-live-brightgreen)](https://webapp-latest-mk9k.onrender.com)
-[![Docker Pulls](https://img.shields.io/badge/docker-ghcr.io-blue)](https://ghcr.io/probatou/webapp)
-[![Release](https://img.shields.io/github/v/release/ProBatou/WebApp)](https://github.com/ProBatou/WebApp/releases)
-[![License](https://img.shields.io/github/license/ProBatou/WebApp)](./LICENSE)
+[![Docker Pulls](https://img.shields.io/badge/docker-ghcr.io-blue)](https://ghcr.io)
+[![Release](https://img.shields.io/badge/release-latest-blue)](#)
+[![License](https://img.shields.io/badge/license-Apache--2.0-blue)](./LICENSE)
 
 ---
 
@@ -48,7 +48,7 @@ docker run -d \
   --name webapp \
   -p 3004:3004 \
   -v ./data:/app/data \
-  ghcr.io/probatou/webapp:latest
+  ghcr.io/example-org/webapp:latest
 ```
 
 Open `http://localhost:3004`, create your account, and start adding services.
@@ -58,7 +58,7 @@ Open `http://localhost:3004`, create your account, and start adding services.
 ```yaml
 services:
   webapp:
-    image: ghcr.io/probatou/webapp:latest
+    image: ghcr.io/example-org/webapp:latest
     container_name: webapp
     ports:
       - "3004:3004"
@@ -86,7 +86,7 @@ A `cosmos-service.json` is included for one-click deployment. Data is stored in 
 ## Develop locally
 
 ```bash
-git clone https://github.com/ProBatou/WebApp.git
+git clone https://github.com/example-org/webapp.git
 cd WebApp
 npm install
 npm run dev
