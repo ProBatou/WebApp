@@ -1,47 +1,47 @@
 # WebApp
 
-> Ton homelab, une seule page.
-
-Tu as Plex, Nextcloud, Grafana, Home Assistant, Portainer... et tu passes ta vie a retaper des URLs ou a fouiller dans tes bookmarks ? **WebApp** rassemble tout dans une interface claire, accessible depuis n'importe quel appareil sur ton reseau.
-
-![Aperçu WebApp V2](./docs/webapp-v2-preview.png)
+**One dashboard. Every service.**
 
 [![Demo](https://img.shields.io/badge/demo-live-brightgreen)](https://webapp-latest-mk9k.onrender.com)
-[![Docker](https://img.shields.io/badge/docker-ghcr.io-blue)](https://ghcr.io/probatou/webapp)
-[![License](https://img.shields.io/github/license/ProBatou/WebApp)](./LICENSE)
+[![Docker Pulls](https://img.shields.io/badge/docker-ghcr.io-blue)](https://ghcr.io/probatou/webapp)
 [![Release](https://img.shields.io/github/v/release/ProBatou/WebApp)](https://github.com/ProBatou/WebApp/releases)
+[![License](https://img.shields.io/github/license/ProBatou/WebApp)](./LICENSE)
 
 ---
 
-## Voir la demo
+You've got Plex, Nextcloud, Grafana, Home Assistant, Portainer... and you're either maintaining a wall of bookmarks or just memorizing ports. WebApp solves that. It's a self-hosted dashboard that puts every service you run behind a single URL — clean, fast, yours.
 
-👉 **[webapp-latest-mk9k.onrender.com](https://webapp-latest-mk9k.onrender.com)**
-
-Login : `demo`  
-Mot de passe : `demo`
-
-> Le serveur peut mettre ~30 secondes a demarrer s'il est en veille.
-> Cette instance publique est en mode demo : les modifications sont desactivees.
+> **Try it now:** [webapp-latest-mk9k.onrender.com](https://webapp-latest-mk9k.onrender.com) — login `demo` / `demo`
+> *(The demo is read-only. The server may take ~30s to wake up from idle.)*
 
 ---
 
-## Ce que ca fait
+## What you get
 
-- **Toutes tes apps au meme endroit** : affichage en iframe integree ou ouverture dans un onglet externe
-- **Rafraichissement individuel** : recharge une app sans recharger toute la page
-- **Glisser-deposer** : reorganise les apps librement
-- **Import / export JSON** : sauvegarde ou restaure ta configuration facilement
-- **Theme clair / sombre** : bascule selon tes preferences
-- **Sidebar compacte** : maximise l'espace disponible pour le contenu
-- **Authentification par session** : cookie HTTP-only, sans JWT expose cote client
+**Organization**
+- Group services into collapsible categories
+- Drag and drop to reorder everything
+- Compact sidebar mode to reclaim screen space
+
+**Flexibility**
+- Embed any service in an inline iframe, or pop it out in a new tab
+- Refresh a single app without reloading the page
+- Export your full configuration as JSON — import it anywhere
+
+**Personalization**
+- Light and dark themes with custom accent colors
+- Interface available in English, French, German and Spanish
+
+**Multi-user**
+- Invite users via expiring tokens
+- Two roles: `admin` (full access) and `viewer` (read-only)
+- Session-based auth with HTTP-only cookies — no JWT floating in localStorage
 
 ---
 
-## Demarrage rapide
+## Get started
 
 ### Docker
-
-Methode recommandee pour un usage normal.
 
 ```bash
 docker run -d \
@@ -51,9 +51,9 @@ docker run -d \
   ghcr.io/probatou/webapp:latest
 ```
 
-Ouvre ensuite `http://localhost:3004` et cree ton compte.
+Open `http://localhost:3004`, create your account, and start adding services.
 
-### Exemple `docker-compose.yml`
+### Docker Compose
 
 ```yaml
 services:
@@ -67,7 +67,23 @@ services:
     restart: unless-stopped
 ```
 
-### Developpement local
+### Cosmos
+
+A `cosmos-service.json` is included for one-click deployment. Data is stored in a named Docker volume (`webapp-data`).
+
+---
+
+## Environment variables
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `PORT` | `3004` | Listening port |
+| `DATABASE_PATH` | `/app/data/webapp.db` | SQLite file location |
+| `NODE_ENV` | `production` | Node environment |
+
+---
+
+## Develop locally
 
 ```bash
 git clone https://github.com/ProBatou/WebApp.git
@@ -76,94 +92,33 @@ npm install
 npm run dev
 ```
 
-Services disponibles :
-
-- Frontend : `http://localhost:5173`
-- API : `http://localhost:3001`
-
----
-
-## Deploiement Cosmos
-
-Le depot contient aussi une configuration dediee a Cosmos avec `cosmos-service.json`.
-Cette configuration utilise directement l'image Docker GHCR publiee.
-Dans Cosmos, les donnees sont stockees dans un volume Docker nomme dedie.
-Le service s'execute en root uniquement dans ce contexte pour maximiser la compatibilite de deploiement.
-
-Configuration utilisee :
-
-```text
-image : ghcr.io/probatou/webapp:latest
-data  : volume Docker `webapp-data` -> /app/data
-db    : /app/data/webapp.db
-user  : root (compatibilite Cosmos)
-port  : 3004
-```
+| | URL |
+|--|-----|
+| Frontend | `http://localhost:5173` |
+| API | `http://localhost:3001` |
 
 ---
 
-## Variables d'environnement
+## Tech
 
-### Image Docker GHCR
-
-| Variable | Defaut | Description |
-|----------|--------|-------------|
-| `PORT` | `3004` | Port d'ecoute du serveur |
-| `DATABASE_PATH` | `/app/data/webapp.db` | Chemin vers la base SQLite |
-| `NODE_ENV` | `production` | Environnement Node |
-
-### Developpement local
-
-Par defaut :
-
-- l'API ecoute sur `3001`
-- la base SQLite est creee dans `apps/api/data/webapp-v2.db`
-
----
-
-## Stack
-
-| Couche | Techno |
-|--------|--------|
-| Frontend | React 19 + Vite + TypeScript |
-| Backend | Fastify 5 + TypeScript |
-| Base de donnees | SQLite via `better-sqlite3` |
+| | |
+|--|--|
+| Frontend | React 19, Vite 6, TypeScript |
+| Backend | Fastify 5, TypeScript |
+| Database | SQLite (better-sqlite3) |
+| Auth | Server sessions, HTTP-only cookies |
 | Validation | Zod |
-| Auth | Sessions serveur + cookies HTTP-only |
-| Monorepo | npm workspaces |
+| Drag & drop | dnd-kit |
+| Deployment | Docker, GitHub Actions, GHCR |
+
+Multi-platform images: `linux/amd64` and `linux/arm64` (Raspberry Pi, NAS, Apple Silicon).
 
 ---
 
-## Images Docker disponibles
+## Contributing
 
-```bash
-ghcr.io/probatou/webapp:latest
-ghcr.io/probatou/webapp:1.0.0
-ghcr.io/probatou/webapp:1.0
-```
+Issues and PRs are welcome.
 
-Support de `linux/amd64` et `linux/arm64` pour Raspberry Pi, NAS et Apple Silicon.
-
----
-
-## Historique
-
-WebApp existe depuis une premiere version en PHP/SQLite.
-La v2 est une reecriture complete en TypeScript avec un monorepo, une API Fastify et une interface React moderne.
-
-L'ancienne version reste disponible :
-
-- branche : `php-legacy`
-- tag : `php-legacy`
-
----
-
-## Contribuer
-
-Les issues et PR sont les bienvenues.
-
----
-
-## Licence
+## License
 
 [Apache 2.0](./LICENSE)
