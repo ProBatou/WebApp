@@ -1,4 +1,6 @@
-FROM node:20-slim AS builder
+# Node 22 is used because it is the current active LTS line and gives us a newer runtime
+# baseline for long-lived self-hosted deployments without changing application behavior.
+FROM node:22-slim AS builder
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
     python3 \
@@ -6,35 +8,39 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     g++ \
   && rm -rf /var/lib/apt/lists/*
 
-WORKDIR /build
+WORKDIR /app
 
-COPY package.json package-lock.json ./
+COPY package.json ./
 COPY apps/api/package.json ./apps/api/
 COPY apps/web/package.json ./apps/web/
+COPY apps/shared/package.json ./apps/shared/
 
-RUN npm ci
+RUN npm install
 
 COPY . .
 
-RUN npm run build --workspace apps/web
-RUN npm run build --workspace apps/api
+RUN npm run build
+RUN npm prune --omit=dev
 
-FROM node:20-slim AS runner
+FROM node:22-slim AS runner
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    libsqlite3-dev \
+    tini \
+    ca-certificates \
   && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 
-COPY package.json package-lock.json ./
-COPY apps/api/package.json ./apps/api/
-COPY apps/web/package.json ./apps/web/
+ENV NODE_ENV=production
+ENV PORT=3004
+ENV DATABASE_PATH=/app/data/webapp.db
 
-RUN npm ci --omit=dev
-
-COPY --from=builder /build/apps/web/dist ./apps/web/dist
-COPY --from=builder /build/apps/api/dist ./apps/api/dist
+COPY --from=builder /app/package.json ./package.json
+COPY --from=builder /app/node_modules ./node_modules
+COPY --from=builder /app/apps/api/package.json ./apps/api/package.json
+COPY --from=builder /app/apps/api/dist ./apps/api/dist
+COPY --from=builder /app/apps/web/dist ./apps/web/dist
+COPY --from=builder /app/apps/shared ./apps/shared
 
 RUN mkdir -p /app/data \
   && chown -R node:node /app
@@ -43,11 +49,8 @@ USER node
 
 EXPOSE 3004
 
-ENV NODE_ENV=production
-ENV PORT=3004
-ENV DATABASE_PATH=/app/data/webapp.db
-
 HEALTHCHECK --interval=30s --timeout=5s --start-period=30s --retries=3 \
   CMD node -e "fetch('http://localhost:3004/api/health').then((r) => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))"
 
+ENTRYPOINT ["/usr/bin/tini", "--"]
 CMD ["node", "apps/api/dist/server.js"]
