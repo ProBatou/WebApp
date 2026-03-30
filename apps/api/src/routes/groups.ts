@@ -1,11 +1,12 @@
 import type { FastifyInstance } from "fastify";
 import { z } from "zod";
 import { requireAdmin, requireSession } from "../lib/auth.js";
-import { db } from "../lib/db.js";
 import { blockDemoWrites } from "../lib/demo-guard.js";
-import { createGroupRepository } from "../lib/group-repository.js";
+import { groupRepository } from "../lib/group-repository.js";
 
-const groupRepository = createGroupRepository(db);
+type IdParams = {
+  id: string;
+};
 
 const groupSchema = z.object({
   name: z.string().trim().min(2).max(40),
@@ -95,7 +96,7 @@ export async function registerGroupRoutes(server: FastifyInstance) {
     };
   });
 
-  server.put("/api/groups/:id", writeRouteConfig, async (request, reply) => {
+  server.put<{ Params: IdParams }>("/api/groups/:id", writeRouteConfig, async (request, reply) => {
     const user = requireSession(request, reply);
     if (!user) {
       return reply;
@@ -109,7 +110,7 @@ export async function registerGroupRoutes(server: FastifyInstance) {
       return reply;
     }
 
-    const id = Number((request.params as { id: string }).id);
+    const id = Number(request.params.id);
     if (!Number.isInteger(id)) {
       return reply.code(400).send({ message: "errors.invalidId" });
     }
@@ -127,7 +128,7 @@ export async function registerGroupRoutes(server: FastifyInstance) {
     return { item: group, items: groupRepository.listGroups() };
   });
 
-  server.delete("/api/groups/:id", writeRouteConfig, async (request, reply) => {
+  server.delete<{ Params: IdParams }>("/api/groups/:id", writeRouteConfig, async (request, reply) => {
     const user = requireSession(request, reply);
     if (!user) {
       return reply;
@@ -141,7 +142,7 @@ export async function registerGroupRoutes(server: FastifyInstance) {
       return reply;
     }
 
-    const id = Number((request.params as { id: string }).id);
+    const id = Number(request.params.id);
     if (!Number.isInteger(id)) {
       return reply.code(400).send({ message: "errors.invalidId" });
     }

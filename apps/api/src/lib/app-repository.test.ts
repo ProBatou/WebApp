@@ -161,6 +161,38 @@ test("setDefaultApp keeps a single default app and can clear it", () => {
   }
 });
 
+test("deleteAppAndReindex returns false when the app does not exist", () => {
+  const { database, repository } = createTestAppRepository();
+  try {
+    assert.equal(repository.deleteAppAndReindex(9999), false);
+  } finally {
+    database.close();
+  }
+});
+
+test("deleteAppAndReindex removes the app and compacts later sort orders", () => {
+  const { database, repository } = createTestAppRepository();
+  try {
+    const plex = repository.insertApp(createApp("Plex"));
+    const grafana = repository.insertApp(createApp("Grafana"));
+    const jellyfin = repository.insertApp(createApp("Jellyfin"));
+
+    const deleted = repository.deleteAppAndReindex(grafana.id);
+
+    assert.equal(deleted, true);
+    assert.equal(repository.getAppById(grafana.id), null);
+    assert.deepEqual(
+      repository.listApps().map((app) => ({ id: app.id, sort_order: app.sort_order })),
+      [
+        { id: plex.id, sort_order: 1 },
+        { id: jellyfin.id, sort_order: 2 },
+      ]
+    );
+  } finally {
+    database.close();
+  }
+});
+
 test("listAppsForRole returns only shared apps for viewer", () => {
   const { database, repository } = createTestAppRepository();
   try {
