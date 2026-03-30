@@ -172,3 +172,36 @@ test("POST /api/groups requires both authentication and the CSRF header", async 
     await server.close();
   }
 });
+
+test("DELETE /api/apps/:id returns 404 for missing apps", async () => {
+  const server = await createServer();
+
+  try {
+    const setupResponse = await server.inject({
+      method: "POST",
+      url: "/api/setup",
+      headers: {
+        "x-requested-with": "webapp-v2",
+      },
+      payload: {
+        username: "admin",
+        password: "supersecret",
+      },
+    });
+    const sessionCookie = getSessionCookie(setupResponse.headers["set-cookie"]);
+
+    const response = await server.inject({
+      method: "DELETE",
+      url: "/api/apps/9999",
+      headers: {
+        cookie: sessionCookie,
+        "x-requested-with": "webapp-v2",
+      },
+    });
+
+    assert.equal(response.statusCode, 404);
+    assert.deepEqual(response.json(), { message: "errors.invalidApp" });
+  } finally {
+    await server.close();
+  }
+});

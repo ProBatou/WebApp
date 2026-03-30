@@ -1,5 +1,5 @@
-import { serializeAppRecord, type SerializedAppRecord } from "./apps.js";
-import type { SqliteDatabase } from "./db.js";
+import { serializeAppRecord } from "./apps.js";
+import { db, type SqliteDatabase } from "./db.js";
 import type { AppRecord, UserRole } from "./types.js";
 import type { SharedAppPayload } from "@webapp-v2/shared";
 
@@ -128,16 +128,21 @@ export function createAppRepository(database: SqliteDatabase) {
   }
 
   function deleteAppAndReindex(appId: number) {
-    database.prepare("DELETE FROM apps WHERE id = ?").run(appId);
+    const deleteTransaction = database.transaction((targetAppId: number) => {
+      const existing = database.prepare("SELECT sort_order FROM apps WHERE id = ?").get(targetAppId) as
+        | { sort_order: number }
+        | undefined;
 
-    const apps = listApps();
-    const reorder = database.transaction((items: SerializedAppRecord[]) => {
-      const statement = database.prepare("UPDATE apps SET sort_order = ? WHERE id = ?");
-      items.forEach((item, index) => {
-        statement.run(index + 1, item.id);
-      });
+      if (!existing) {
+        return false;
+      }
+
+      database.prepare("DELETE FROM apps WHERE id = ?").run(targetAppId);
+      database.prepare("UPDATE apps SET sort_order = sort_order - 1 WHERE sort_order > ?").run(existing.sort_order);
+      return true;
     });
-    reorder(apps);
+
+    return deleteTransaction(appId);
   }
 
   function importApps(mode: ImportMode, items: AppPayload[]) {
@@ -197,3 +202,5 @@ export function createAppRepository(database: SqliteDatabase) {
     importApps,
   };
 }
+
+export const appRepository = createAppRepository(db);

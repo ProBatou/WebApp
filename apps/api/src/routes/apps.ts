@@ -1,10 +1,13 @@
 import type { FastifyInstance } from "fastify";
 import { z } from "zod";
-import { createAppRepository } from "../lib/app-repository.js";
-import { db } from "../lib/db.js";
+import { appRepository } from "../lib/app-repository.js";
 import { blockDemoWrites } from "../lib/demo-guard.js";
-import { createGroupRepository } from "../lib/group-repository.js";
+import { groupRepository } from "../lib/group-repository.js";
 import { requireAdmin, requireSession } from "../lib/auth.js";
+
+type IdParams = {
+  id: string;
+};
 
 const appSchema = z.object({
   name: z.string().trim().min(2).max(64),
@@ -51,9 +54,6 @@ const importAppsSchema = z.object({
   items: z.array(importAppItemSchema).min(1).max(500),
 });
 
-const appRepository = createAppRepository(db);
-const groupRepository = createGroupRepository(db);
-
 export async function registerAppRoutes(server: FastifyInstance) {
   const writeRouteConfig = {
     config: { rateLimit: { max: 30, timeWindow: "1 minute" } },
@@ -70,13 +70,13 @@ export async function registerAppRoutes(server: FastifyInstance) {
     };
   });
 
-  server.get("/api/apps/:id/ping", async (request, reply) => {
+  server.get<{ Params: IdParams }>("/api/apps/:id/ping", async (request, reply) => {
     const user = requireSession(request, reply);
     if (!user) {
       return reply;
     }
 
-    const id = Number((request.params as { id: string }).id);
+    const id = Number(request.params.id);
     if (!Number.isInteger(id)) {
       return reply.code(400).send({ message: "errors.invalidId" });
     }
@@ -125,7 +125,7 @@ export async function registerAppRoutes(server: FastifyInstance) {
     }
   });
 
-  server.post("/api/apps/:id/default", writeRouteConfig, async (request, reply) => {
+  server.post<{ Params: IdParams }>("/api/apps/:id/default", writeRouteConfig, async (request, reply) => {
     const user = requireSession(request, reply);
     if (!user) {
       return reply;
@@ -139,7 +139,7 @@ export async function registerAppRoutes(server: FastifyInstance) {
       return reply;
     }
 
-    const id = Number((request.params as { id: string }).id);
+    const id = Number(request.params.id);
     if (!Number.isInteger(id)) {
       return reply.code(400).send({ message: "errors.invalidId" });
     }
@@ -154,7 +154,7 @@ export async function registerAppRoutes(server: FastifyInstance) {
     };
   });
 
-  server.delete("/api/apps/:id/default", writeRouteConfig, async (request, reply) => {
+  server.delete<{ Params: IdParams }>("/api/apps/:id/default", writeRouteConfig, async (request, reply) => {
     const user = requireSession(request, reply);
     if (!user) {
       return reply;
@@ -168,7 +168,7 @@ export async function registerAppRoutes(server: FastifyInstance) {
       return reply;
     }
 
-    const id = Number((request.params as { id: string }).id);
+    const id = Number(request.params.id);
     if (!Number.isInteger(id)) {
       return reply.code(400).send({ message: "errors.invalidId" });
     }
@@ -210,7 +210,7 @@ export async function registerAppRoutes(server: FastifyInstance) {
     return reply.code(201).send({ item: appRepository.listApps().find((item) => item.id === app.id) });
   });
 
-  server.put("/api/apps/:id", writeRouteConfig, async (request, reply) => {
+  server.put<{ Params: IdParams }>("/api/apps/:id", writeRouteConfig, async (request, reply) => {
     const user = requireSession(request, reply);
     if (!user) {
       return reply;
@@ -224,7 +224,7 @@ export async function registerAppRoutes(server: FastifyInstance) {
       return reply;
     }
 
-    const id = Number((request.params as { id: string }).id);
+    const id = Number(request.params.id);
     if (!Number.isInteger(id)) {
       return reply.code(400).send({ message: "errors.invalidId" });
     }
@@ -246,7 +246,7 @@ export async function registerAppRoutes(server: FastifyInstance) {
     return { item: app };
   });
 
-  server.delete("/api/apps/:id", writeRouteConfig, async (request, reply) => {
+  server.delete<{ Params: IdParams }>("/api/apps/:id", writeRouteConfig, async (request, reply) => {
     const user = requireSession(request, reply);
     if (!user) {
       return reply;
@@ -260,12 +260,15 @@ export async function registerAppRoutes(server: FastifyInstance) {
       return reply;
     }
 
-    const id = Number((request.params as { id: string }).id);
+    const id = Number(request.params.id);
     if (!Number.isInteger(id)) {
       return reply.code(400).send({ message: "errors.invalidId" });
     }
 
-    appRepository.deleteAppAndReindex(id);
+    const deleted = appRepository.deleteAppAndReindex(id);
+    if (!deleted) {
+      return reply.code(404).send({ message: "errors.invalidApp" });
+    }
 
     return reply.code(204).send();
   });

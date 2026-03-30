@@ -4,6 +4,10 @@ import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import type { FastifyInstance } from "fastify";
 
+type SlugParams = {
+  slug: string;
+};
+
 const iconSlugPattern = /^[a-z0-9-]+$/;
 const dashboardIconsCdnBaseUrl = "https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/svg";
 const currentDir = dirname(fileURLToPath(import.meta.url));
@@ -26,8 +30,8 @@ async function hasCachedIcon(path: string) {
 export async function registerIconRoutes(server: FastifyInstance) {
   await mkdir(iconsCacheDir, { recursive: true });
 
-  server.get("/api/icons/proxy/:slug", async (request, reply) => {
-    const rawSlug = (request.params as { slug: string }).slug;
+  server.get<{ Params: SlugParams }>("/api/icons/proxy/:slug", async (request, reply) => {
+    const rawSlug = request.params.slug;
     const slug = rawSlug.trim().toLowerCase();
     if (!iconSlugPattern.test(slug)) {
       return reply.code(400).send({ message: "errors.invalidIcon" });

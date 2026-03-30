@@ -26,6 +26,14 @@ import {
 import { isDemoMode } from "../lib/demo.js";
 import { getPreferences } from "../lib/preferences-repository.js";
 
+type TokenParams = {
+  token: string;
+};
+
+type IdParams = {
+  id: string;
+};
+
 const setupPayloadSchema = z.object({
   username: z.string().trim().min(3).max(32),
   password: z.string().min(8).max(128),
@@ -197,8 +205,8 @@ export async function registerAuthRoutes(server: FastifyInstance) {
     }
   );
 
-  server.get("/api/invitations/:token", async (request, reply) => {
-    const token = (request.params as { token: string }).token;
+  server.get<{ Params: TokenParams }>("/api/invitations/:token", async (request, reply) => {
+    const token = request.params.token;
     const invitation = getInvitation(token);
     if (!invitation) {
       return reply.code(404).send({ message: "errors.invalidInvite" });
@@ -210,7 +218,7 @@ export async function registerAuthRoutes(server: FastifyInstance) {
     };
   });
 
-  server.post(
+  server.post<{ Params: TokenParams }>(
     "/api/invitations/:token/accept",
     {
       config: { rateLimit: { max: 10, timeWindow: "1 minute" } },
@@ -220,7 +228,7 @@ export async function registerAuthRoutes(server: FastifyInstance) {
         return reply.code(403).send({ message: "errors.demoMode" });
       }
 
-      const token = (request.params as { token: string }).token;
+      const token = request.params.token;
       const parsed = acceptInvitationPayloadSchema.safeParse(request.body);
       if (!parsed.success) {
         return reply.code(400).send({ message: "errors.invalidData" });
@@ -249,7 +257,7 @@ export async function registerAuthRoutes(server: FastifyInstance) {
     }
   );
 
-  server.put(
+  server.put<{ Params: IdParams }>(
     "/api/users/:id/role",
     {
       config: { rateLimit: { max: 30, timeWindow: "1 minute" } },
@@ -268,7 +276,7 @@ export async function registerAuthRoutes(server: FastifyInstance) {
         return reply;
       }
 
-      const id = Number((request.params as { id: string }).id);
+      const id = Number(request.params.id);
       if (!Number.isInteger(id)) {
         return reply.code(400).send({ message: "errors.invalidId" });
       }
@@ -299,7 +307,7 @@ export async function registerAuthRoutes(server: FastifyInstance) {
     }
   );
 
-  server.delete(
+  server.delete<{ Params: IdParams }>(
     "/api/users/:id",
     {
       config: { rateLimit: { max: 30, timeWindow: "1 minute" } },
@@ -318,7 +326,7 @@ export async function registerAuthRoutes(server: FastifyInstance) {
         return reply;
       }
 
-      const id = Number((request.params as { id: string }).id);
+      const id = Number(request.params.id);
       if (!Number.isInteger(id)) {
         return reply.code(400).send({ message: "errors.invalidId" });
       }

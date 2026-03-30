@@ -1,4 +1,4 @@
-import type { SqliteDatabase } from "./db.js";
+import { db, type SqliteDatabase } from "./db.js";
 import type { GroupRecord } from "./types.js";
 
 export function createGroupRepository(database: SqliteDatabase) {
@@ -60,3 +60,5 @@ export function createGroupRepository(database: SqliteDatabase) {
     hasGroup,
   };
 }
+
+export const groupRepository = createGroupRepository(db);
