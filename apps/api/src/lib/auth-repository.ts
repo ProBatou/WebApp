@@ -252,6 +252,12 @@ export function createAuthRepository(database: SqliteDatabase, createSessionId: 
     return row;
   }
 
+  function purgeExpiredSessions() {
+    const now = new Date().toISOString();
+    const result = database.prepare("DELETE FROM sessions WHERE expires_at <= ?").run(now);
+    return result.changes;
+  }
+
   function requireSession(request: FastifyRequest, reply: FastifyReply) {
     const user = getSessionUser(request);
     if (!user) {
@@ -317,6 +323,7 @@ export function createAuthRepository(database: SqliteDatabase, createSessionId: 
     createSession,
     clearSession,
     getSessionUser,
+    purgeExpiredSessions,
     requireSession,
     requireAdmin,
     updateUserRole,

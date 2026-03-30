@@ -45,6 +45,10 @@ export function getSessionUser(...args: Parameters<typeof authRepository.getSess
   return authRepository.getSessionUser(...args);
 }
 
+export function purgeExpiredSessions() {
+  return authRepository.purgeExpiredSessions();
+}
+
 export function requireSession(...args: Parameters<typeof authRepository.requireSession>) {
   return authRepository.requireSession(...args);
 }

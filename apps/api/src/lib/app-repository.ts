@@ -24,6 +24,11 @@ export function createAppRepository(database: SqliteDatabase) {
     return (database.prepare("SELECT * FROM apps WHERE is_shared = 1 ORDER BY sort_order ASC, id ASC").all() as AppRecord[]).map(serializeAppRecord);
   }
 
+  function getAppById(appId: number) {
+    const app = database.prepare("SELECT * FROM apps WHERE id = ?").get(appId) as AppRecord | undefined;
+    return app ? serializeAppRecord(app) : null;
+  }
+
   function getOrderedAppIds() {
     return (database.prepare("SELECT id FROM apps ORDER BY sort_order ASC, id ASC").all() as Array<{ id: number }>).map((row) => row.id);
   }
@@ -70,6 +75,31 @@ export function createAppRepository(database: SqliteDatabase) {
 
   function insertApp(payload: AppPayload) {
     return insertAppTransaction(payload);
+  }
+
+  function updateApp(appId: number, payload: AppPayload) {
+    const now = new Date().toISOString();
+    database
+      .prepare(
+        `UPDATE apps
+         SET name = ?, url = ?, icon = ?, icon_variant_mode = ?, icon_variant_inverted = ?, accent = ?, open_mode = ?, is_shared = ?, group_id = ?, updated_at = ?
+         WHERE id = ?`
+      )
+      .run(
+        payload.name,
+        payload.url,
+        payload.icon.trim(),
+        payload.iconVariantMode,
+        payload.iconVariantInverted ? 1 : 0,
+        payload.accent,
+        payload.openMode,
+        payload.isShared === false ? 0 : 1,
+        payload.groupId ?? null,
+        now,
+        appId
+      );
+
+    return getAppById(appId);
   }
 
   function reorderApps(items: ReorderAppItem[]) {
@@ -156,9 +186,11 @@ export function createAppRepository(database: SqliteDatabase) {
   return {
     listApps,
     listAppsForRole,
+    getAppById,
     getOrderedAppIds,
     hasExactOrderedIds,
     insertApp,
+    updateApp,
     reorderApps,
     setDefaultApp,
     deleteAppAndReindex,
