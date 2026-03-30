@@ -255,6 +255,35 @@
   padding: 0;
 }
 
+.sidebar-bottom-actions .ghost-icon-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  padding: 0;
+  line-height: 1;
+  color: var(--muted);
+}
+
+.sidebar-bottom-actions .ghost-icon-button svg {
+  display: block;
+}
+
+.sidebar-bottom-actions .ghost-icon-button:hover {
+  color: var(--accent);
+  border-color: color-mix(in srgb, var(--accent) 24%, var(--border));
+}
+
+.sidebar-bottom-actions .ghost-icon-button.active {
+  color: var(--accent);
+  border-color: color-mix(in srgb, var(--accent) 30%, var(--border));
+  background: color-mix(in srgb, var(--accent-soft) 86%, var(--ghost-surface));
+}
+
+.sidebar-settings-button {
+  font-size: 1.12rem;
+}
+
 .sidebar-language-switch {
   display: inline-flex;
   align-items: center;

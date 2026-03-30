@@ -617,13 +617,21 @@ export function Sidebar({
             </button>
           ) : null}
           <button
-            className="ghost-icon-button sidebar-bottom-button"
+            className="ghost-icon-button sidebar-bottom-button sidebar-settings-button"
             type="button"
             onClick={() => onOpenSettings()}
             aria-label={t("settings.open")}
             title={t("settings.open")}
           >
-            ⚙
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true" focusable="false">
+              <path
+                d="M6.89 1.73a1.2 1.2 0 0 1 2.22 0l.3.78a1.2 1.2 0 0 0 1.2.75l.84-.06a1.2 1.2 0 0 1 1.57 1.57l-.06.84a1.2 1.2 0 0 0 .75 1.2l.78.3a1.2 1.2 0 0 1 0 2.22l-.78.3a1.2 1.2 0 0 0-.75 1.2l.06.84a1.2 1.2 0 0 1-1.57 1.57l-.84-.06a1.2 1.2 0 0 0-1.2.75l-.3.78a1.2 1.2 0 0 1-2.22 0l-.3-.78a1.2 1.2 0 0 0-1.2-.75l-.84.06a1.2 1.2 0 0 1-1.57-1.57l.06-.84a1.2 1.2 0 0 0-.75-1.2l-.78-.3a1.2 1.2 0 0 1 0-2.22l.78-.3a1.2 1.2 0 0 0 .75-1.2l-.06-.84A1.2 1.2 0 0 1 4.55 3.2l.84.06a1.2 1.2 0 0 0 1.2-.75l.3-.78Z"
+                stroke="currentColor"
+                strokeWidth="1.2"
+                strokeLinejoin="round"
+              />
+              <circle cx="8" cy="8" r="2.2" stroke="currentColor" strokeWidth="1.2" />
+            </svg>
           </button>
           <button
             className="ghost-icon-button sidebar-language-switch sidebar-bottom-button"
