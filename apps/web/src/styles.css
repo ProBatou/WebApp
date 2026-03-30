@@ -1446,7 +1446,7 @@ textarea {
   background: transparent;
   text-align: left;
   padding: 4px;
-  cursor: grab;
+  cursor: pointer;
   user-select: none;
 }
 
@@ -1564,7 +1564,11 @@ textarea {
   white-space: nowrap;
 }
 
-.app-main-hitbox:active {
+.app-main-hitbox.draggable {
+  cursor: grab;
+}
+
+.app-main-hitbox.draggable:active {
   cursor: grabbing;
 }
 

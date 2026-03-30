@@ -100,6 +100,8 @@ export const fr: Record<TranslationKey, string> = {
   "app.noAppsVisible": "Aucune app visible.",
   "app.noAppsMatch": "Aucune app ne correspond à votre recherche.",
   "app.searchApps": "Rechercher des apps",
+  "app.enableReorderMode": "Activer le mode réorganisation",
+  "app.disableReorderMode": "Désactiver le mode réorganisation",
   "sidebar.apps": "Apps",
   "sidebar.language": "Langue",
   "settings.open": "Paramètres",
