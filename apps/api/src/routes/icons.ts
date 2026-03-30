@@ -8,6 +8,7 @@ const iconSlugPattern = /^[a-z0-9-]+$/;
 const dashboardIconsCdnBaseUrl = "https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/svg";
 const currentDir = dirname(fileURLToPath(import.meta.url));
 const iconsCacheDir = resolve(currentDir, "../../data/icons");
+const allowedSvgContentTypes = ["image/svg+xml", "text/xml", "application/xml"];
 
 function getIconCachePath(slug: string) {
   return resolve(iconsCacheDir, `${slug}.svg`);
@@ -49,9 +50,14 @@ export async function registerIconRoutes(server: FastifyInstance) {
         return reply.code(404).send({ message: "errors.iconNotFound" });
       }
 
+      const upstreamContentType = response.headers.get("content-type")?.toLowerCase() ?? "";
+      if (!allowedSvgContentTypes.some((contentType) => upstreamContentType.includes(contentType))) {
+        return reply.code(400).send({ message: "errors.invalidIcon" });
+      }
+
       const iconSvg = await response.text();
       const trimmedSvg = iconSvg.trimStart();
-      if (!trimmedSvg.startsWith("<svg") && !trimmedSvg.startsWith("<?xml")) {
+      if ((!trimmedSvg.startsWith("<svg") && !trimmedSvg.startsWith("<?xml")) || !iconSvg.toLowerCase().includes("<svg")) {
         return reply.code(400).send({ message: "errors.invalidIcon" });
       }
 
@@ -59,8 +65,7 @@ export async function registerIconRoutes(server: FastifyInstance) {
       if (
         lowerSvg.includes("<script") ||
         lowerSvg.includes("javascript:") ||
-        lowerSvg.includes("onload=") ||
-        lowerSvg.includes("onerror=")
+        /\son[a-z]+\s*=/.test(lowerSvg)
       ) {
         return reply.code(400).send({ message: "errors.invalidIcon" });
       }
