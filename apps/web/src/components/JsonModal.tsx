@@ -50,7 +50,7 @@ export function JsonModal({
         <div className="editor-header">
           <div>
             <p className="eyebrow">{t("modal.admin")}</p>
-            <h3>{mode === "import" ? t("modal.importApps") : t("modal.exportApps")}</h3>
+            <h3>{mode === "import" ? t("modal.import") : t("modal.export")}</h3>
           </div>
         </div>
 

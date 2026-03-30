@@ -83,6 +83,17 @@
   overflow: visible;
 }
 
+.editor-modal.settings-modal {
+  max-height: min(88vh, 920px);
+  overflow: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.editor-modal.settings-modal::-webkit-scrollbar {
+  display: none;
+}
+
 .settings-modal-tabs {
   display: flex;
   gap: 2px;
@@ -206,6 +217,12 @@
   overflow-x: hidden;
   overflow-y: auto;
   overscroll-behavior: contain;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.personalization-row .sidebar-actions-popover::-webkit-scrollbar {
+  display: none;
 }
 
 .personalization-colors-header {
@@ -368,14 +385,15 @@
 .group-list {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 8px;
 }
 
 .group-item {
-  padding: 12px;
+  padding: 10px 12px;
   border: 1px solid var(--border);
-  border-radius: 18px;
+  border-radius: 16px;
   background: var(--preview-surface);
+  transition: border-color 160ms ease, background-color 160ms ease;
 }
 
 .group-item.dragging {
@@ -383,6 +401,10 @@
 }
 
 .group-item-row {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  gap: 10px;
   cursor: grab;
   user-select: none;
 }
@@ -391,10 +413,62 @@
   cursor: grabbing;
 }
 
+.group-item-name {
+  flex: 1 1 auto;
+  min-width: 0;
+  margin: 0;
+  font-size: 0.98rem;
+  line-height: 1.2;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .group-item-actions {
-  display: flex;
-  gap: 10px;
-  flex-wrap: wrap;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex: 0 0 auto;
+  margin-left: auto;
+}
+
+.group-action {
+  min-height: 32px;
+  padding: 6px 10px;
+  border-radius: 10px;
+  font-size: 0.82rem;
+  line-height: 1;
+}
+
+.group-action-icon {
+  width: 32px;
+  min-width: 32px;
+  height: 32px;
+  padding: 0;
+  justify-content: center;
+  font-size: 0.82rem;
+}
+
+.group-action-rename,
+.group-action-delete {
+  min-width: 78px;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .group-item:hover {
+    border-color: color-mix(in srgb, var(--accent) 22%, var(--border));
+    background: color-mix(in srgb, var(--preview-surface) 84%, var(--accent-soft));
+  }
+
+  .group-item-actions .group-action {
+    opacity: 0.84;
+    transition: opacity 140ms ease, border-color 140ms ease, background-color 140ms ease;
+  }
+
+  .group-item:hover .group-item-actions .group-action,
+  .group-item:focus-within .group-item-actions .group-action {
+    opacity: 1;
+  }
 }
 
 .user-create-grid {

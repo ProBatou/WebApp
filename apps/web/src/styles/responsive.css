@@ -97,6 +97,136 @@
   .app-editor-modal .selected-icon-variants-grid {
     grid-template-columns: 1fr;
   }
+
+  .settings-modal {
+    width: min(760px, 100%);
+  }
+
+  .editor-modal.settings-modal {
+    display: grid;
+    grid-template-rows: auto auto minmax(0, 1fr);
+    align-content: stretch;
+    height: min(92dvh, 920px);
+    max-height: min(92vh, 920px);
+    overflow: hidden;
+    padding: 18px;
+  }
+
+  .settings-modal .editor-header {
+    align-items: center;
+    flex-wrap: wrap;
+    margin-bottom: 6px;
+  }
+
+  .settings-modal-tabs {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    overflow-y: hidden;
+    margin-bottom: 14px;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+
+  .settings-modal-tabs::-webkit-scrollbar {
+    display: none;
+  }
+
+  .settings-modal-tab {
+    flex: 0 0 auto;
+    padding: 8px 14px;
+    white-space: nowrap;
+  }
+
+  .settings-tab-content {
+    flex: 1 1 auto;
+    min-height: 0;
+    min-width: 0;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+
+  .settings-tab-content::-webkit-scrollbar {
+    display: none;
+  }
+
+  .settings-modal .json-panel {
+    margin-top: 14px;
+    gap: 12px;
+  }
+
+  .group-create-row,
+  .group-edit-row,
+  .invitation-link-row,
+  .user-create-grid,
+  .user-row {
+    grid-template-columns: 1fr;
+    align-items: stretch;
+  }
+
+  .user-actions {
+    width: 100%;
+    justify-content: flex-start;
+    flex-wrap: wrap;
+  }
+
+  .group-create-row .primary-button,
+  .group-edit-row .secondary-button,
+  .invitation-link-row .secondary-button,
+  .user-actions .sidebar-actions-menu,
+  .user-actions .danger-button {
+    width: 100%;
+  }
+
+  .personalization-row,
+  .personalization-colors-header,
+  .personalization-color-row {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+  }
+
+  .personalization-label {
+    white-space: normal;
+  }
+
+  .personalization-select,
+  .personalization-row .sidebar-actions-menu {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .personalization-row .sidebar-actions-popover {
+    left: 0;
+    right: 0;
+    width: auto;
+    max-width: none;
+    min-width: 0;
+  }
+
+  .personalization-colors-header .json-segmented {
+    width: 100%;
+  }
+
+  .personalization-colors-header .icon-variant-option {
+    flex: 1;
+  }
+
+  .personalization-color-field {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .about-row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+  }
+
+  .about-row dd {
+    text-align: left;
+  }
 }
 
 @media (max-width: 640px) {
@@ -137,6 +267,54 @@
     width: 100%;
   }
 
+  .settings-modal {
+    width: 100%;
+  }
+
+  .editor-modal.settings-modal {
+    height: calc(100dvh - 24px);
+    max-height: calc(100dvh - 24px);
+    padding: 16px;
+    border-radius: 22px;
+  }
+
+  .settings-modal .editor-header {
+    gap: 10px;
+  }
+
+  .settings-modal .editor-header h3 {
+    margin-top: 4px;
+    font-size: 1.3rem;
+  }
+
+  .settings-modal-tabs {
+    margin-bottom: 12px;
+    gap: 6px;
+  }
+
+  .settings-modal-tab {
+    padding: 8px 12px;
+    font-size: 0.82rem;
+  }
+
+  .settings-modal .json-segmented {
+    width: 100%;
+    display: flex;
+  }
+
+  .settings-modal .json-segmented .icon-variant-option {
+    flex: 1;
+  }
+
+  .settings-modal .json-panel {
+    margin-top: 10px;
+    gap: 10px;
+  }
+
+  .settings-modal .json-textarea {
+    min-height: 220px;
+  }
+
   .user-create-grid,
   .user-row {
     grid-template-columns: 1fr;
@@ -145,6 +323,67 @@
   .user-actions {
     width: 100%;
     justify-content: flex-start;
+  }
+
+  .settings-account-tab .settings-logout-button,
+  .settings-account-tab .danger-button,
+  .settings-account-tab .account-form-btn {
+    width: 100%;
+  }
+
+  .settings-account-tab .account-form {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+  }
+
+  .settings-modal .group-item {
+    padding: 8px 10px;
+    border-radius: 14px;
+  }
+
+  .settings-modal .group-item-row {
+    gap: 8px;
+  }
+
+  .settings-modal .group-item-name {
+    font-size: 0.94rem;
+  }
+
+  .settings-modal .group-item-actions {
+    gap: 5px;
+  }
+
+  .settings-modal .group-action {
+    min-height: 30px;
+    padding: 5px 8px;
+    border-radius: 9px;
+    font-size: 0.8rem;
+  }
+
+  .settings-modal .group-action-icon {
+    width: 30px;
+    min-width: 30px;
+    height: 30px;
+    min-height: 30px;
+    padding: 0;
+    font-size: 0.76rem;
+  }
+
+  .settings-modal .group-action-rename,
+  .settings-modal .group-action-delete {
+    min-width: 66px;
+  }
+
+  .settings-account-tab .account-input {
+    flex: 0 1 auto;
+    min-height: 44px;
+    padding: 10px 12px;
+    border-radius: 12px;
+  }
+
+  .settings-account-tab .account-form-btn {
+    padding: 10px 14px;
   }
 
   .workspace-grid {
@@ -211,5 +450,15 @@
 
   .sidebar-tools {
     flex-direction: column;
+  }
+}
+
+@media (max-width: 960px) and (max-height: 780px) {
+  .editor-modal.settings-modal {
+    max-height: calc(100dvh - 16px);
+  }
+
+  .settings-modal .json-textarea {
+    min-height: 180px;
   }
 }

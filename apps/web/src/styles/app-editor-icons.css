@@ -24,33 +24,10 @@
   gap: 10px;
 }
 
-.selected-icon-variants-actions,
-.preview-card-actions {
+.selected-icon-variants-actions {
   display: flex;
   justify-content: flex-end;
   flex: 0 0 auto;
-}
-
-.preview-card-actions {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: flex-start;
-  gap: 10px;
-  align-items: stretch;
-  min-width: 0;
-  max-width: 100%;
-  width: 100%;
-  min-height: 38px;
-}
-
-.preview-card-actions-placeholder {
-  visibility: hidden;
-  pointer-events: none;
-}
-
-.app-editor-modal .preview-card-actions .secondary-button {
-  min-width: 0;
-  padding: 8px 12px;
 }
 
 .icon-invert-button.active {

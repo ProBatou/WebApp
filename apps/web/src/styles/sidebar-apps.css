@@ -21,8 +21,31 @@
 }
 
 .sidebar.compact .app-list {
+  --sidebar-scroll-fade: 12px;
   padding-right: 0;
+  padding-top: 6px;
+  padding-bottom: 10px;
   align-items: center;
+  -webkit-mask-image: linear-gradient(
+    to bottom,
+    transparent 0,
+    #000 var(--sidebar-scroll-fade),
+    #000 calc(100% - var(--sidebar-scroll-fade)),
+    transparent 100%
+  );
+  mask-image: linear-gradient(
+    to bottom,
+    transparent 0,
+    #000 var(--sidebar-scroll-fade),
+    #000 calc(100% - var(--sidebar-scroll-fade)),
+    transparent 100%
+  );
+  -webkit-mask-size: 100% 100%;
+  mask-size: 100% 100%;
+}
+
+.grouped-app-list {
+  overflow: visible;
 }
 
 .app-tile {

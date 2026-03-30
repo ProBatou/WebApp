@@ -435,148 +435,131 @@ export function AppEditor({
                   <p className="eyebrow">{t("app.preview")}</p>
                   <p className="app-editor-section-copy">{t("app.previewHelp")}</p>
                 </div>
-                <div className="preview-card preview-card-with-variants">
-                  <div className="preview-card-content preview-card-content-simple">
-                    <div className="preview-card-top">
-                      <div className="preview-card-copy">
-                        <strong>
-                          <span className="preview-card-title">{previewName}</span>
-                          <span
-                            className={previewStatusClassName}
-                            aria-label={previewStatusAriaLabel}
-                            title={previewStatusTitle}
+                <div className="selected-icon-variants-grid preview-variants-grid">
+                  {effectiveSelectedIconPreviewVariants ? (
+                    <>
+                      <div className={themeMode === "light" ? "selected-icon-variant-card preview-light active" : "selected-icon-variant-card preview-light"}>
+                        <span className="selected-icon-variant-preview icon-search-preview-light">
+                          <DashboardIconPreviewImage
+                            icon={effectiveSelectedIconPreviewVariants.lightBackgroundIcon}
+                            fallbackIcon={effectiveSelectedIconPreviewVariants.baseIcon}
                           />
-                        </strong>
+                        </span>
+                        <div>
+                          <strong>
+                            <span className="preview-card-title">{previewName}</span>
+                            <span
+                              className={previewStatusClassName}
+                              aria-label={previewStatusAriaLabel}
+                              title={previewStatusTitle}
+                            />
+                          </strong>
+                        </div>
                       </div>
-                    </div>
-
-                    <div className="selected-icon-variants-grid preview-variants-grid">
-                      {effectiveSelectedIconPreviewVariants ? (
-                        <>
-                          <div className={themeMode === "light" ? "selected-icon-variant-card preview-light active" : "selected-icon-variant-card preview-light"}>
-                            <span className="selected-icon-variant-preview icon-search-preview-light">
-                              <DashboardIconPreviewImage
-                                icon={effectiveSelectedIconPreviewVariants.lightBackgroundIcon}
-                                fallbackIcon={effectiveSelectedIconPreviewVariants.baseIcon}
-                              />
-                            </span>
-                            <div>
-                              <strong>
-                                <span className="preview-card-title">{previewName}</span>
-                                <span
-                                  className={previewStatusClassName}
-                                  aria-label={previewStatusAriaLabel}
-                                  title={previewStatusTitle}
-                                />
-                              </strong>
-                            </div>
-                          </div>
-                          <div className={themeMode === "dark" ? "selected-icon-variant-card preview-dark active" : "selected-icon-variant-card preview-dark"}>
-                            <span className="selected-icon-variant-preview icon-search-preview-dark">
-                              <DashboardIconPreviewImage
-                                icon={effectiveSelectedIconPreviewVariants.darkBackgroundIcon}
-                                fallbackIcon={effectiveSelectedIconPreviewVariants.baseIcon}
-                              />
-                            </span>
-                            <div>
-                              <strong>
-                                <span className="preview-card-title">{previewName}</span>
-                                <span
-                                  className={previewStatusClassName}
-                                  aria-label={previewStatusAriaLabel}
-                                  title={previewStatusTitle}
-                                />
-                              </strong>
-                            </div>
-                          </div>
-                        </>
-                      ) : hasCustomIconPreview ? (
-                        <>
-                          <div className={themeMode === "light" ? "selected-icon-variant-card preview-light active" : "selected-icon-variant-card preview-light"}>
-                            <span className="selected-icon-variant-preview icon-search-preview-light">
-                              <img src={customIconUrl} alt="" loading="lazy" />
-                            </span>
-                            <div>
-                              <strong>
-                                <span className="preview-card-title">{previewName}</span>
-                                <span
-                                  className={previewStatusClassName}
-                                  aria-label={previewStatusAriaLabel}
-                                  title={previewStatusTitle}
-                                />
-                              </strong>
-                            </div>
-                          </div>
-                          <div className={themeMode === "dark" ? "selected-icon-variant-card preview-dark active" : "selected-icon-variant-card preview-dark"}>
-                            <span className="selected-icon-variant-preview icon-search-preview-dark">
-                              <img src={customIconUrl} alt="" loading="lazy" />
-                            </span>
-                            <div>
-                              <strong>
-                                <span className="preview-card-title">{previewName}</span>
-                                <span
-                                  className={previewStatusClassName}
-                                  aria-label={previewStatusAriaLabel}
-                                  title={previewStatusTitle}
-                                />
-                              </strong>
-                            </div>
-                          </div>
-                        </>
-                      ) : (
-                        <>
-                          <div className="selected-icon-variant-card preview-light">
-                            <span className="selected-icon-variant-preview">
-                              <AppIcon
-                                icon={editorState.icon}
-                                name={editorState.name}
-                                url={editorState.url}
-                                accent={previewAccentLight}
-                                themeMode="light"
-                                dashboardIconsMetadata={dashboardIconsMetadata}
-                                iconVariantMode={editorState.iconVariantMode}
-                                iconVariantInverted={editorState.iconVariantInverted}
-                              />
-                            </span>
-                            <div>
-                              <strong>
-                                <span className="preview-card-title">{previewName}</span>
-                                <span
-                                  className={previewStatusClassName}
-                                  aria-label={previewStatusAriaLabel}
-                                  title={previewStatusTitle}
-                                />
-                              </strong>
-                            </div>
-                          </div>
-                          <div className="selected-icon-variant-card preview-dark">
-                            <span className="selected-icon-variant-preview">
-                              <AppIcon
-                                icon={editorState.icon}
-                                name={editorState.name}
-                                url={editorState.url}
-                                accent={previewAccentDark}
-                                themeMode="dark"
-                                dashboardIconsMetadata={dashboardIconsMetadata}
-                                iconVariantMode={editorState.iconVariantMode}
-                                iconVariantInverted={editorState.iconVariantInverted}
-                              />
-                            </span>
-                            <div>
-                              <strong>
-                                <span className="preview-card-title">{previewName}</span>
-                                <span
-                                  className={previewStatusClassName}
-                                  aria-label={previewStatusAriaLabel}
-                                  title={previewStatusTitle}
-                                />
-                              </strong>
-                            </div>
-                          </div>
-                        </>
-                      )}
-                    </div>
-                  </div>
+                      <div className={themeMode === "dark" ? "selected-icon-variant-card preview-dark active" : "selected-icon-variant-card preview-dark"}>
+                        <span className="selected-icon-variant-preview icon-search-preview-dark">
+                          <DashboardIconPreviewImage
+                            icon={effectiveSelectedIconPreviewVariants.darkBackgroundIcon}
+                            fallbackIcon={effectiveSelectedIconPreviewVariants.baseIcon}
+                          />
+                        </span>
+                        <div>
+                          <strong>
+                            <span className="preview-card-title">{previewName}</span>
+                            <span
+                              className={previewStatusClassName}
+                              aria-label={previewStatusAriaLabel}
+                              title={previewStatusTitle}
+                            />
+                          </strong>
+                        </div>
+                      </div>
+                    </>
+                  ) : hasCustomIconPreview ? (
+                    <>
+                      <div className={themeMode === "light" ? "selected-icon-variant-card preview-light active" : "selected-icon-variant-card preview-light"}>
+                        <span className="selected-icon-variant-preview icon-search-preview-light">
+                          <img src={customIconUrl} alt="" loading="lazy" />
+                        </span>
+                        <div>
+                          <strong>
+                            <span className="preview-card-title">{previewName}</span>
+                            <span
+                              className={previewStatusClassName}
+                              aria-label={previewStatusAriaLabel}
+                              title={previewStatusTitle}
+                            />
+                          </strong>
+                        </div>
+                      </div>
+                      <div className={themeMode === "dark" ? "selected-icon-variant-card preview-dark active" : "selected-icon-variant-card preview-dark"}>
+                        <span className="selected-icon-variant-preview icon-search-preview-dark">
+                          <img src={customIconUrl} alt="" loading="lazy" />
+                        </span>
+                        <div>
+                          <strong>
+                            <span className="preview-card-title">{previewName}</span>
+                            <span
+                              className={previewStatusClassName}
+                              aria-label={previewStatusAriaLabel}
+                              title={previewStatusTitle}
+                            />
+                          </strong>
+                        </div>
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <div className="selected-icon-variant-card preview-light">
+                        <span className="selected-icon-variant-preview">
+                          <AppIcon
+                            icon={editorState.icon}
+                            name={editorState.name}
+                            url={editorState.url}
+                            accent={previewAccentLight}
+                            themeMode="light"
+                            dashboardIconsMetadata={dashboardIconsMetadata}
+                            iconVariantMode={editorState.iconVariantMode}
+                            iconVariantInverted={editorState.iconVariantInverted}
+                          />
+                        </span>
+                        <div>
+                          <strong>
+                            <span className="preview-card-title">{previewName}</span>
+                            <span
+                              className={previewStatusClassName}
+                              aria-label={previewStatusAriaLabel}
+                              title={previewStatusTitle}
+                            />
+                          </strong>
+                        </div>
+                      </div>
+                      <div className="selected-icon-variant-card preview-dark">
+                        <span className="selected-icon-variant-preview">
+                          <AppIcon
+                            icon={editorState.icon}
+                            name={editorState.name}
+                            url={editorState.url}
+                            accent={previewAccentDark}
+                            themeMode="dark"
+                            dashboardIconsMetadata={dashboardIconsMetadata}
+                            iconVariantMode={editorState.iconVariantMode}
+                            iconVariantInverted={editorState.iconVariantInverted}
+                          />
+                        </span>
+                        <div>
+                          <strong>
+                            <span className="preview-card-title">{previewName}</span>
+                            <span
+                              className={previewStatusClassName}
+                              aria-label={previewStatusAriaLabel}
+                              title={previewStatusTitle}
+                            />
+                          </strong>
+                        </div>
+                      </div>
+                    </>
+                  )}
                 </div>
               </div>
 

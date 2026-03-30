@@ -86,10 +86,10 @@ function SortableGroupRow({
         </form>
       ) : (
         <div className="group-item-row" {...attributes} {...listeners}>
-          <strong>{group.name}</strong>
+          <strong className="group-item-name">{group.name}</strong>
           <div className="group-item-actions">
             <button
-              className="secondary-button"
+              className="secondary-button group-action group-action-icon"
               type="button"
               onClick={() => void onMoveGroup(group.id, "up")}
               disabled={busy || groups[0]?.id === group.id}
@@ -99,7 +99,7 @@ function SortableGroupRow({
               ↑
             </button>
             <button
-              className="secondary-button"
+              className="secondary-button group-action group-action-icon"
               type="button"
               onClick={() => void onMoveGroup(group.id, "down")}
               disabled={busy || groups[groups.length - 1]?.id === group.id}
@@ -109,7 +109,7 @@ function SortableGroupRow({
               ↓
             </button>
             <button
-              className="secondary-button"
+              className="secondary-button group-action group-action-rename"
               type="button"
               onClick={() => {
                 setEditingGroupId(group.id);
@@ -119,7 +119,7 @@ function SortableGroupRow({
               {t("common.rename")}
             </button>
             <button
-              className="danger-button"
+              className="danger-button group-action group-action-delete"
               type="button"
               onClick={() => void onDeleteGroup(group.id)}
               disabled={busy}
@@ -358,14 +358,14 @@ function JsonTabContent({
             type="button"
             onClick={() => onSwitchMode("import")}
           >
-            {t("modal.importApps")}
+            {t("modal.import")}
           </button>
           <button
             className={jsonMode === "export" ? "icon-variant-option active" : "icon-variant-option"}
             type="button"
             onClick={() => onSwitchMode("export")}
           >
-            {t("modal.exportApps")}
+            {t("modal.export")}
           </button>
         </div>
       </div>
