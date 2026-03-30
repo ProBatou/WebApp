@@ -219,12 +219,13 @@ export function applyMigrations(database: SqliteDatabase) {
 
   const applyMigration = database.transaction((migration: Migration) => {
     migration.up(database);
-    database.prepare("INSERT INTO schema_migrations (id, applied_at) VALUES (?, ?)").run(migration.id, new Date().toISOString());
+    database.prepare("INSERT OR IGNORE INTO schema_migrations (id, applied_at) VALUES (?, ?)").run(migration.id, new Date().toISOString());
   });
 
   migrations.forEach((migration) => {
     if (!appliedMigrationIds.has(migration.id)) {
       applyMigration(migration);
+      appliedMigrationIds.add(migration.id);
     }
   });
 }
