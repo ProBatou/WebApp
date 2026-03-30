@@ -960,7 +960,7 @@ export function SettingsModal({
                 </div>
                 <div className="about-row">
                   <dt>{t("about.sourceCode")}</dt>
-                  <dd><a href="https://github.com/ProBatou/WebApp" target="_blank" rel="noreferrer">GitHub</a></dd>
+                  <dd>Self-hosted deployment</dd>
                 </div>
                 <div className="about-row">
                   <dt>{t("about.techStack")}</dt>

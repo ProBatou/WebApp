@@ -33,14 +33,12 @@ import { useJsonImport } from "./hooks/useJsonImport";
 import { useModals } from "./hooks/useModals";
 import { usePreferences } from "./hooks/usePreferences";
 import { useToast } from "./hooks/useToast";
+import { useUserManagement } from "./hooks/useUserManagement";
 import { I18nProvider, useI18nContext, useTranslation } from "./lib/i18n";
 import type {
   ContextMenuState,
-  InvitationResponse,
   SidebarMode,
   ThemeMode,
-  UserEntry,
-  UsersResponse,
   WebAppEntry,
 } from "./types";
 
@@ -65,7 +63,6 @@ function AppContent() {
   });
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [managedUsers, setManagedUsers] = useState<UserEntry[]>([]);
   const [contextMenu, setContextMenu] = useState<ContextMenuState>(null);
   const [draggingAppId, setDraggingAppId] = useState<number | null>(null);
   const [dragOutProgress, setDragOutProgress] = useState(0);
@@ -197,6 +194,26 @@ function AppContent() {
     initialPreferences,
     onThemeChange: setThemeMode,
     onLanguageChange: setLang,
+  });
+
+  const {
+    managedUsers,
+    reloadUsers,
+    handleUpdateUsername,
+    handleUpdatePassword,
+    handleDeleteSelf,
+    handleCreateInvitation,
+    handleChangeUserRole,
+    handleDeleteUser,
+    handleCopyInvitationLink,
+  } = useUserManagement({
+    pushToast,
+    setBusy,
+    setError,
+    setUser,
+    clearAppState,
+    clearUiState,
+    t,
   });
 
   const { appStatuses } = useAppStatus({
@@ -340,33 +357,6 @@ function AppContent() {
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [canManageApps, closeEditor, closeSettings, closeJsonModal, openShortcutHelp, user]);
-
-  const reloadUsers = useCallback(async () => {
-    const result = await apiFetch<UsersResponse>("/api/users", { method: "GET" });
-    setManagedUsers(result.items);
-  }, []);
-
-  const handleUpdateUsername = useCallback(async (newUsername: string) => {
-    const result = await apiFetch<{ username: string }>("/api/user/username", {
-      method: "PUT",
-      body: JSON.stringify({ username: newUsername }),
-    });
-    setUser((u) => u ? { ...u, username: result.username } : u);
-  }, [setUser]);
-
-  const handleUpdatePassword = useCallback(async (currentPassword: string, newPassword: string) => {
-    await apiFetch<{ ok: boolean }>("/api/user/password", {
-      method: "PUT",
-      body: JSON.stringify({ currentPassword, newPassword }),
-    });
-  }, []);
-
-  const handleDeleteSelf = useCallback(async () => {
-    await apiFetch<{ deleted: boolean }>("/api/user", { method: "DELETE" });
-    setUser(null);
-    clearAppState();
-    clearUiState();
-  }, [setUser, clearAppState, clearUiState]);
 
   const toggleThemeMode = useCallback(() => {
     setThemeMode((current) => {
@@ -681,56 +671,6 @@ function AppContent() {
   const handleReorderGroups = useCallback(async (groupIds: number[]) => {
     await reorderGroups(groupIds);
   }, [reorderGroups]);
-
-  const handleCreateInvitation = useCallback(async (role: "admin" | "viewer") => {
-    try {
-      setBusy(true);
-      setError(null);
-      const result = await apiFetch<InvitationResponse>("/api/invitations", {
-        method: "POST",
-        body: JSON.stringify({ role }),
-      });
-      pushToast("toast.inviteLinkCreated");
-      return result.inviteUrl;
-    } finally {
-      setBusy(false);
-    }
-  }, [pushToast]);
-
-  const handleChangeUserRole = useCallback(async (userId: number, role: "admin" | "viewer") => {
-    try {
-      setBusy(true);
-      setError(null);
-      const result = await apiFetch<UsersResponse>(`/api/users/${userId}/role`, {
-        method: "PUT",
-        body: JSON.stringify({ role }),
-      });
-      setManagedUsers(result.items);
-      pushToast("toast.userRoleUpdated");
-    } finally {
-      setBusy(false);
-    }
-  }, [pushToast]);
-
-  const handleDeleteUser = useCallback(async (userId: number) => {
-    const managedUser = managedUsers.find((item) => item.id === userId);
-    try {
-      setBusy(true);
-      setError(null);
-      const result = await apiFetch<UsersResponse>(`/api/users/${userId}`, {
-        method: "DELETE",
-      });
-      setManagedUsers(result.items);
-      pushToast(managedUser ? t("toast.userDeleted", { name: managedUser.username }) : "toast.userDeletedFallback");
-    } finally {
-      setBusy(false);
-    }
-  }, [managedUsers, pushToast, t]);
-
-  const handleCopyInvitationLink = useCallback(async (inviteLink: string) => {
-    await navigator.clipboard.writeText(inviteLink);
-    pushToast("toast.inviteLinkCopied");
-  }, [pushToast]);
 
   const draggedApp = draggingAppId === null ? null : apps.find((item) => item.id === draggingAppId) ?? null;
 

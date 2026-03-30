@@ -1,7 +1,7 @@
 # Plan de remédiation — WebApp v2
 
 Date: 2026-03-30
-Source: `/Users/probatou/Downloads/WebApp_v2_Code_Review.md`
+Source: code review document provided locally
 
 ## Objectif
 
