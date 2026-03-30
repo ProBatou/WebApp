@@ -1,0 +1,207 @@
+.app-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  overflow-x: hidden;
+  overflow-y: auto;
+  padding-right: 4px;
+  user-select: none;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.sidebar-empty-state {
+  margin: 8px 4px 0;
+  color: var(--muted);
+  font-size: 0.92rem;
+}
+
+.app-list::-webkit-scrollbar {
+  display: none;
+}
+
+.sidebar.compact .app-list {
+  padding-right: 0;
+  align-items: center;
+}
+
+.app-tile {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px;
+  border-radius: 18px;
+  background: var(--tile-surface);
+  border: 1px solid transparent;
+  overflow: visible;
+}
+
+.sidebar.compact .app-tile {
+  width: 100%;
+  justify-content: center;
+  padding: 4px;
+}
+
+.app-tile.active {
+  background: var(--accent-soft);
+  border-color: rgba(198, 92, 49, 0.24);
+}
+
+.drag-overlay-tile {
+  width: min(320px, calc(100vw - 48px));
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px;
+  border-radius: 22px;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow);
+  backdrop-filter: blur(18px);
+  transform-origin: left center;
+  transition: opacity 90ms linear, filter 90ms linear, transform 90ms linear;
+  pointer-events: none;
+  will-change: transform, opacity, filter;
+}
+
+.drag-overlay-tile.compact {
+  width: 72px;
+  justify-content: center;
+  padding: 10px;
+}
+
+.app-main-hitbox {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  background: transparent;
+  text-align: left;
+  padding: 4px;
+  cursor: pointer;
+  user-select: none;
+}
+
+.sidebar.compact .app-main-hitbox {
+  justify-content: center;
+  padding: 4px;
+}
+
+.app-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 14px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  box-shadow: inset 0 -12px 24px rgba(0, 0, 0, 0.12);
+}
+
+.dashboard-icon-surface {
+  background: var(--panel-strong);
+  border: 0;
+  box-shadow: none;
+}
+
+.app-icon-image {
+  width: 24px;
+  height: 24px;
+  object-fit: contain;
+}
+
+.app-meta {
+  display: flex;
+  min-width: 0;
+  flex: 1;
+}
+
+.app-meta strong {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  font-size: 0.9rem;
+  overflow: visible;
+  white-space: nowrap;
+}
+
+.app-name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.default-app-badge {
+  color: #df9f55;
+  font-size: 0.88rem;
+  line-height: 1;
+}
+
+.app-external-icon {
+  color: var(--muted);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 8px;
+  height: 8px;
+  margin-left: 2px;
+  margin-right: 4px;
+  vertical-align: super;
+  opacity: 0.5;
+  line-height: 1;
+  flex: 0 0 auto;
+  pointer-events: none;
+}
+
+.app-external-icon svg {
+  display: block;
+}
+
+.app-status-dot {
+  width: 8px;
+  height: 8px;
+  flex: 0 0 8px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.32);
+  box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.06);
+}
+
+.app-status-dot.online {
+  background: #12b76a;
+}
+
+.app-status-dot.offline {
+  background: #f04438;
+}
+
+.app-status-dot.unknown {
+  background: #98a2b3;
+}
+
+.resolved-icon-debug {
+  color: var(--accent);
+  font-size: 0.78rem;
+  letter-spacing: 0.02em;
+}
+
+.resolved-icon-debug {
+  display: block;
+  margin-top: 6px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.app-main-hitbox.draggable {
+  cursor: grab;
+}
+
+.app-main-hitbox.draggable:active {
+  cursor: grabbing;
+}

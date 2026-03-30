@@ -1,0 +1,83 @@
+.editor-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: var(--modal-overlay);
+  backdrop-filter: blur(14px);
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  z-index: 20;
+}
+
+.confirm-modal-overlay {
+  z-index: 40;
+}
+
+.editor-modal {
+  width: min(680px, 100%);
+  max-height: min(88vh, 920px);
+  overflow: auto;
+  padding: 22px;
+  background: var(--modal-surface);
+  display: flex;
+  flex-direction: column;
+}
+
+.editor-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 14px;
+  align-items: flex-start;
+  margin-bottom: 8px;
+}
+
+.editor-header h3 {
+  margin: 8px 0 0;
+  font-size: 1.5rem;
+}
+
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 120px;
+  gap: 12px;
+}
+
+.editor-logo-row {
+  align-items: start;
+}
+
+.editor-field-note {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 12px;
+  margin-top: 6px;
+  color: var(--muted);
+  font-size: 0.78rem;
+}
+
+.editor-field-note a {
+  color: var(--accent);
+  text-decoration: none;
+}
+
+.editor-field-note a:hover {
+  color: var(--accent-strong);
+}
+
+.editor-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+input[type="color"] {
+  min-height: 48px;
+  padding: 6px;
+}
+
+button:disabled,
+a[aria-disabled="true"] {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
