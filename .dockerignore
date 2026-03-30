@@ -8,7 +8,9 @@ apps/api/data
 .env.*
 .git
 .gitignore
+.github
 README.md
 README/
+docs/
 *.log
 .DS_Store

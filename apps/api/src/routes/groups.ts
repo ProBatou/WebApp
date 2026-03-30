@@ -1,8 +1,8 @@
-import type { FastifyInstance, FastifyReply } from "fastify";
+import type { FastifyInstance } from "fastify";
 import { z } from "zod";
 import { requireAdmin, requireSession } from "../lib/auth.js";
 import { db } from "../lib/db.js";
-import { isDemoMode } from "../lib/demo.js";
+import { blockDemoWrites } from "../lib/demo-guard.js";
 import { createGroupRepository } from "../lib/group-repository.js";
 
 const groupRepository = createGroupRepository(db);
@@ -18,15 +18,6 @@ const reorderGroupsSchema = z.object({
     })
   ).min(1),
 });
-
-function blockDemoWrites(reply: FastifyReply) {
-  if (!isDemoMode) {
-    return false;
-  }
-
-  reply.code(403).send({ message: "errors.demoMode" });
-  return true;
-}
 
 export async function registerGroupRoutes(server: FastifyInstance) {
   const writeRouteConfig = {

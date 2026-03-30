@@ -20,7 +20,14 @@ export const db = new Database(databasePath);
 db.pragma("journal_mode = WAL");
 db.pragma("foreign_keys = ON");
 
-function hasColumn(database: SqliteDatabase, tableName: string, columnName: string) {
+const KNOWN_TABLES = ["apps", "users", "groups", "sessions", "invitations", "user_preferences"] as const;
+type KnownTable = typeof KNOWN_TABLES[number];
+
+function hasColumn(database: SqliteDatabase, tableName: KnownTable, columnName: string) {
+  if (!KNOWN_TABLES.includes(tableName)) {
+    throw new Error(`hasColumn called with unknown table: ${tableName}`);
+  }
+
   const columns = database.prepare(`PRAGMA table_info(${tableName})`).all() as Array<{ name: string }>;
   return columns.some((column) => column.name === columnName);
 }

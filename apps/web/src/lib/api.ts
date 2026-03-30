@@ -4,6 +4,7 @@ export async function apiFetch<T>(input: string, init?: RequestInit) {
   const response = await fetch(input, {
     credentials: "include",
     headers: {
+      "X-Requested-With": "webapp-v2",
       ...(hasBody ? { "Content-Type": "application/json" } : {}),
       ...(init?.headers ?? {}),
     },

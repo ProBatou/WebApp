@@ -148,7 +148,7 @@ test("requireSession returns 401 with the expected payload when unauthenticated"
 
     assert.equal(repository.requireSession(request, replyState.reply), null);
     assert.equal(replyState.getStatusCode(), 401);
-    assert.deepEqual(replyState.getPayload(), { message: "Authentification requise." });
+    assert.deepEqual(replyState.getPayload(), { message: "errors.authRequired" });
   } finally {
     database.close();
   }
@@ -173,7 +173,7 @@ test("requireAdmin rejects viewer users and allows admin users", () => {
       null
     );
     assert.equal(viewerReplyState.getStatusCode(), 403);
-    assert.deepEqual(viewerReplyState.getPayload(), { message: "Acces administrateur requis." });
+    assert.deepEqual(viewerReplyState.getPayload(), { message: "errors.adminRequired" });
 
     const admin = repository.createUser("admin", "hash");
     const adminReplyState = createReply();
@@ -193,6 +193,25 @@ test("requireAdmin rejects viewer users and allows admin users", () => {
       }
     );
     assert.equal(adminReplyState.getStatusCode(), null);
+  } finally {
+    database.close();
+  }
+});
+
+test("purgeExpiredSessions deletes only expired sessions", () => {
+  const { database, repository } = createTestAuthRepository();
+  try {
+    const user = repository.createUser("alice", "hash");
+    database
+      .prepare("INSERT INTO sessions (id, user_id, expires_at, created_at) VALUES (?, ?, ?, ?)")
+      .run("expired-session", user.id, "2000-01-01T00:00:00.000Z", "1999-01-01T00:00:00.000Z");
+    database
+      .prepare("INSERT INTO sessions (id, user_id, expires_at, created_at) VALUES (?, ?, ?, ?)")
+      .run("active-session", user.id, "2099-01-01T00:00:00.000Z", "2026-01-01T00:00:00.000Z");
+
+    assert.equal(repository.purgeExpiredSessions(), 1);
+    assert.equal(database.prepare("SELECT id FROM sessions WHERE id = ?").get("expired-session"), undefined);
+    assert.deepEqual(database.prepare("SELECT id FROM sessions WHERE id = ?").get("active-session"), { id: "active-session" });
   } finally {
     database.close();
   }

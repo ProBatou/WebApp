@@ -7,6 +7,7 @@ import cookie from "@fastify/cookie";
 import rateLimit from "@fastify/rate-limit";
 import staticPlugin from "@fastify/static";
 import { db } from "./lib/db.js";
+import { purgeExpiredSessions } from "./lib/auth.js";
 import { ensureDemoState } from "./lib/demo.js";
 import { registerAuthRoutes } from "./routes/auth.js";
 import { registerAppRoutes } from "./routes/apps.js";
@@ -25,15 +26,47 @@ const server = Fastify({
 
 await ensureDemoState();
 
+try {
+  purgeExpiredSessions();
+} catch {}
+
 await server.register(cors, {
-  origin: ["http://localhost:5173"],
+  origin: process.env.CORS_ORIGIN ? process.env.CORS_ORIGIN.split(",") : ["http://localhost:5173"],
   credentials: true,
+  allowedHeaders: ["Content-Type", "X-Requested-With"],
 });
 
 await server.register(cookie);
 await server.register(rateLimit, {
-  global: false,
+  global: true,
+  max: 120,
+  timeWindow: "1 minute",
+  allowList: [],
 });
+
+server.addHook("onRequest", async (request, reply) => {
+  const isMutation = request.method !== "GET" && request.method !== "HEAD" && request.method !== "OPTIONS";
+  const isApiRoute = request.url.startsWith("/api/");
+
+  if (isMutation && isApiRoute) {
+    const xRequestedWith = request.headers["x-requested-with"];
+    if (xRequestedWith !== "webapp-v2") {
+      return reply.code(403).send({ message: "Forbidden: missing CSRF header." });
+    }
+  }
+});
+
+const SESSION_PURGE_INTERVAL_MS = 1000 * 60 * 60;
+setInterval(() => {
+  try {
+    const purged = purgeExpiredSessions();
+    if (purged > 0) {
+      server.log.info({ purged }, "Expired sessions purged");
+    }
+  } catch (error) {
+    server.log.error(error, "Failed to purge expired sessions");
+  }
+}, SESSION_PURGE_INTERVAL_MS);
 
 server.addHook("onSend", async (_request, reply, payload) => {
   reply.header(

@@ -32,6 +32,7 @@ test("parseImportedApps parses a plain array payload", () => {
       openMode: "external",
       isShared: true,
       groupId: null,
+      groupName: null,
     },
   ]);
 });
@@ -63,6 +64,7 @@ test("parseImportedApps supports object payloads with items and defaults invalid
       openMode: "iframe",
       isShared: true,
       groupId: null,
+      groupName: null,
     },
   ]);
 });
@@ -96,6 +98,7 @@ test("parseImportedApps supports Homarr-like JSON exports", () => {
       openMode: "iframe",
       isShared: true,
       groupId: null,
+      groupName: null,
     },
   ]);
 });
@@ -121,6 +124,7 @@ test("parseImportedApps supports Homepage YAML exports", () => {
       openMode: "iframe",
       isShared: true,
       groupId: null,
+      groupName: null,
     },
     {
       name: "Grafana",
@@ -132,6 +136,7 @@ test("parseImportedApps supports Homepage YAML exports", () => {
       openMode: "iframe",
       isShared: true,
       groupId: null,
+      groupName: null,
     },
   ]);
 });

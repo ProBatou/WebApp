@@ -291,6 +291,8 @@ export async function registerAuthRoutes(server: FastifyInstance) {
         if (result.error === "last_admin") {
           return reply.code(400).send({ message: "errors.lastAdmin" });
         }
+
+        return reply.code(500).send({ message: "errors.api" });
       }
 
       return { items: listUsers() };
@@ -334,6 +336,8 @@ export async function registerAuthRoutes(server: FastifyInstance) {
         if (result.error === "last_admin") {
           return reply.code(400).send({ message: "errors.lastAdmin" });
         }
+
+        return reply.code(500).send({ message: "errors.api" });
       }
 
       return { items: listUsers() };
@@ -404,7 +408,8 @@ export async function registerAuthRoutes(server: FastifyInstance) {
       const result = deleteSelf(user.id);
       if ("error" in result) {
         if (result.error === "last_admin") return reply.code(400).send({ message: "errors.lastAdmin" });
-        return reply.code(404).send({ message: "errors.notFound" });
+        if (result.error === "not_found") return reply.code(404).send({ message: "errors.notFound" });
+        return reply.code(500).send({ message: "errors.api" });
       }
 
       clearSession(request, reply);

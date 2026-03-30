@@ -1,7 +1,7 @@
-import { mkdir, readFile, writeFile } from "node:fs/promises";
+import { access, mkdir, readFile, writeFile } from "node:fs/promises";
+import { constants } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import { accessSync, constants } from "node:fs";
 import type { FastifyInstance } from "fastify";
 
 const iconSlugPattern = /^[a-z0-9-]+$/;
@@ -13,9 +13,9 @@ function getIconCachePath(slug: string) {
   return resolve(iconsCacheDir, `${slug}.svg`);
 }
 
-function hasCachedIcon(path: string) {
+async function hasCachedIcon(path: string) {
   try {
-    accessSync(path, constants.R_OK);
+    await access(path, constants.R_OK);
     return true;
   } catch {
     return false;
@@ -33,7 +33,7 @@ export async function registerIconRoutes(server: FastifyInstance) {
     }
 
     const cachePath = getIconCachePath(slug);
-    const cached = hasCachedIcon(cachePath);
+    const cached = await hasCachedIcon(cachePath);
     if (cached) {
       const data = await readFile(cachePath);
       reply.header("Content-Type", "image/svg+xml; charset=utf-8");
@@ -50,6 +50,21 @@ export async function registerIconRoutes(server: FastifyInstance) {
       }
 
       const iconSvg = await response.text();
+      const trimmedSvg = iconSvg.trimStart();
+      if (!trimmedSvg.startsWith("<svg") && !trimmedSvg.startsWith("<?xml")) {
+        return reply.code(400).send({ message: "errors.invalidIcon" });
+      }
+
+      const lowerSvg = iconSvg.toLowerCase();
+      if (
+        lowerSvg.includes("<script") ||
+        lowerSvg.includes("javascript:") ||
+        lowerSvg.includes("onload=") ||
+        lowerSvg.includes("onerror=")
+      ) {
+        return reply.code(400).send({ message: "errors.invalidIcon" });
+      }
+
       await writeFile(cachePath, iconSvg, "utf8");
 
       reply.header("Content-Type", "image/svg+xml; charset=utf-8");

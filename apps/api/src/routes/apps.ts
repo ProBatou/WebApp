@@ -1,11 +1,10 @@
-import type { FastifyInstance, FastifyReply } from "fastify";
+import type { FastifyInstance } from "fastify";
 import { z } from "zod";
 import { createAppRepository } from "../lib/app-repository.js";
 import { db } from "../lib/db.js";
-import { isDemoMode } from "../lib/demo.js";
+import { blockDemoWrites } from "../lib/demo-guard.js";
 import { createGroupRepository } from "../lib/group-repository.js";
 import { requireAdmin, requireSession } from "../lib/auth.js";
-import type { AppRecord } from "../lib/types.js";
 
 const appSchema = z.object({
   name: z.string().trim().min(2).max(64),
@@ -55,15 +54,6 @@ const importAppsSchema = z.object({
 const appRepository = createAppRepository(db);
 const groupRepository = createGroupRepository(db);
 
-function blockDemoWrites(reply: FastifyReply) {
-  if (!isDemoMode) {
-    return false;
-  }
-
-  reply.code(403).send({ message: "errors.demoMode" });
-  return true;
-}
-
 export async function registerAppRoutes(server: FastifyInstance) {
   const writeRouteConfig = {
     config: { rateLimit: { max: 30, timeWindow: "1 minute" } },
@@ -91,14 +81,12 @@ export async function registerAppRoutes(server: FastifyInstance) {
       return reply.code(400).send({ message: "errors.invalidId" });
     }
 
-    const app = db.prepare("SELECT id, url, is_shared FROM apps WHERE id = ?").get(id) as
-      | Pick<AppRecord, "id" | "url" | "is_shared">
-      | undefined;
+    const app = appRepository.getAppById(id);
     if (!app) {
       return reply.code(404).send({ message: "errors.invalidApp" });
     }
 
-    if (user.role !== "admin" && app.is_shared !== 1) {
+    if (user.role !== "admin" && !app.is_shared) {
       return reply.code(404).send({ message: "errors.invalidApp" });
     }
 
@@ -156,7 +144,7 @@ export async function registerAppRoutes(server: FastifyInstance) {
       return reply.code(400).send({ message: "errors.invalidId" });
     }
 
-    const app = db.prepare("SELECT id FROM apps WHERE id = ?").get(id) as Pick<AppRecord, "id"> | undefined;
+    const app = appRepository.getAppById(id);
     if (!app) {
       return reply.code(404).send({ message: "errors.invalidApp" });
     }
@@ -185,7 +173,7 @@ export async function registerAppRoutes(server: FastifyInstance) {
       return reply.code(400).send({ message: "errors.invalidId" });
     }
 
-    const app = db.prepare("SELECT id FROM apps WHERE id = ?").get(id) as Pick<AppRecord, "id"> | undefined;
+    const app = appRepository.getAppById(id);
     if (!app) {
       return reply.code(404).send({ message: "errors.invalidApp" });
     }
@@ -250,31 +238,12 @@ export async function registerAppRoutes(server: FastifyInstance) {
       return reply.code(400).send({ message: "errors.invalidGroup" });
     }
 
-    const now = new Date().toISOString();
-    db.prepare(
-      `UPDATE apps
-       SET name = ?, url = ?, icon = ?, icon_variant_mode = ?, icon_variant_inverted = ?, accent = ?, open_mode = ?, is_shared = ?, group_id = ?, updated_at = ?
-       WHERE id = ?`
-    ).run(
-      parsed.data.name,
-      parsed.data.url,
-      parsed.data.icon.trim(),
-      parsed.data.iconVariantMode,
-      parsed.data.iconVariantInverted ? 1 : 0,
-      parsed.data.accent,
-      parsed.data.openMode,
-      parsed.data.isShared ? 1 : 0,
-      parsed.data.groupId ?? null,
-      now,
-      id
-    );
-
-    const app = db.prepare("SELECT * FROM apps WHERE id = ?").get(id) as AppRecord | undefined;
+    const app = appRepository.updateApp(id, parsed.data);
     if (!app) {
       return reply.code(404).send({ message: "errors.invalidApp" });
     }
 
-    return { item: appRepository.listApps().find((item) => item.id === app.id) };
+    return { item: app };
   });
 
   server.delete("/api/apps/:id", writeRouteConfig, async (request, reply) => {
