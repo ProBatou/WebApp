@@ -205,3 +205,103 @@ test("DELETE /api/apps/:id returns 404 for missing apps", async () => {
     await server.close();
   }
 });
+
+test("GET /api/user/preferences returns default preferences for a new user", async () => {
+  const server = await createServer();
+
+  try {
+    const setupResponse = await server.inject({
+      method: "POST",
+      url: "/api/setup",
+      headers: {
+        "x-requested-with": "webapp-v2",
+      },
+      payload: {
+        username: "admin",
+        password: "supersecret",
+      },
+    });
+    const sessionCookie = getSessionCookie(setupResponse.headers["set-cookie"]);
+
+    const response = await server.inject({
+      method: "GET",
+      url: "/api/user/preferences",
+      headers: {
+        cookie: sessionCookie,
+      },
+    });
+
+    assert.equal(response.statusCode, 200);
+    assert.deepEqual(response.json(), {
+      theme: "auto",
+      language: "auto",
+      defaultAppId: null,
+      accentColor: null,
+      sidebarColor: null,
+      accentColorDark: null,
+      sidebarColorDark: null,
+    });
+  } finally {
+    await server.close();
+  }
+});
+
+test("PUT /api/user/preferences persists and returns the updated preferences", async () => {
+  const server = await createServer();
+
+  try {
+    const setupResponse = await server.inject({
+      method: "POST",
+      url: "/api/setup",
+      headers: {
+        "x-requested-with": "webapp-v2",
+      },
+      payload: {
+        username: "admin",
+        password: "supersecret",
+      },
+    });
+    const sessionCookie = getSessionCookie(setupResponse.headers["set-cookie"]);
+
+    const updateResponse = await server.inject({
+      method: "PUT",
+      url: "/api/user/preferences",
+      headers: {
+        cookie: sessionCookie,
+        "x-requested-with": "webapp-v2",
+      },
+      payload: {
+        theme: "dark",
+        language: "fr",
+        accentColor: "#112233",
+        sidebarColor: "#445566",
+        accentColorDark: "#778899",
+        sidebarColorDark: "#aabbcc",
+      },
+    });
+
+    assert.equal(updateResponse.statusCode, 200);
+    assert.deepEqual(updateResponse.json(), {
+      theme: "dark",
+      language: "fr",
+      defaultAppId: null,
+      accentColor: "#112233",
+      sidebarColor: "#445566",
+      accentColorDark: "#778899",
+      sidebarColorDark: "#aabbcc",
+    });
+
+    const fetchResponse = await server.inject({
+      method: "GET",
+      url: "/api/user/preferences",
+      headers: {
+        cookie: sessionCookie,
+      },
+    });
+
+    assert.equal(fetchResponse.statusCode, 200);
+    assert.deepEqual(fetchResponse.json(), updateResponse.json());
+  } finally {
+    await server.close();
+  }
+});
