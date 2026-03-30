@@ -1,4 +1,4 @@
-import { useRef, type ChangeEvent, type Dispatch, type FormEvent, type SetStateAction } from "react";
+import { useEffect, useRef, useState, type ChangeEvent, type Dispatch, type FormEvent, type SetStateAction } from "react";
 import { AppIcon, DashboardIconPreviewImage, getPreviewVariants } from "./AppIcon";
 import { Dropdown } from "./Dropdown";
 import {
@@ -7,6 +7,7 @@ import {
   getFallbackIconLabel,
   isCustomIconUrl,
   isDashboardIconSlug,
+  parseHttpUrl,
 } from "../lib/app-utils";
 import { useTranslation } from "../lib/i18n";
 import type {
@@ -65,6 +66,11 @@ export function AppEditor({
 }) {
   const { t } = useTranslation();
   const customIconFileInputRef = useRef<HTMLInputElement | null>(null);
+  const [customIconDraft, setCustomIconDraft] = useState(
+    editorState.icon.startsWith("data:image/") || isDashboardIconSlug(editorState.icon)
+      ? ""
+      : editorState.icon
+  );
   const openModeItems = [
     { label: t("app.openMode.embedded"), value: "iframe", active: editorState.openMode === "iframe" },
     { label: t("app.openMode.newTab"), value: "external", active: editorState.openMode === "external" },
@@ -82,20 +88,71 @@ export function AppEditor({
     })),
   ];
 
+  useEffect(() => {
+    const trimmedIcon = editorState.icon.trim();
+    if (!trimmedIcon && customIconDraft.trim()) {
+      return;
+    }
+
+    if (!trimmedIcon || trimmedIcon.startsWith("data:image/") || isDashboardIconSlug(trimmedIcon)) {
+      setCustomIconDraft("");
+      return;
+    }
+
+    if (isCustomIconUrl(trimmedIcon)) {
+      setCustomIconDraft(trimmedIcon);
+      return;
+    }
+
+    setCustomIconDraft("");
+  }, [customIconDraft, editorState.icon]);
+
   if (!open) {
     return null;
   }
 
   const customIconUrl = isCustomIconUrl(editorState.icon) ? editorState.icon : "";
-  const selectedIconPreviewVariants = isDashboardIconSlug(editorState.icon)
+  const hasCustomIconPreview = Boolean(customIconUrl);
+  const hasCatalogSelection = isDashboardIconSlug(editorState.icon);
+  const hasCatalogQuery = iconQuery.trim().length > 0;
+  const iconSource = hasCatalogSelection || hasCatalogQuery
+    ? "catalog"
+    : hasCustomIconPreview || customIconDraft.trim()
+      ? "custom"
+      : "none";
+  const selectedIconPreviewVariants = hasCatalogSelection
     ? getPreviewVariants(editorState.icon, dashboardIconsMetadata)
     : null;
   const effectiveSelectedIconPreviewVariants = selectedIconPreviewVariants
     ? getEffectivePreviewVariants(selectedIconPreviewVariants, editorState.iconVariantInverted)
     : null;
   const previewAccent = editorMode === "create" ? inheritedAccent : editorState.accent;
+  const previewAccentLight = editorMode === "create" ? "var(--preview-light-accent)" : previewAccent;
+  const previewAccentDark = editorMode === "create" ? "var(--preview-dark-accent)" : previewAccent;
   const previewName = editorState.name || t("app.nameFallback");
-  const hasPreviewActions = Boolean(editorState.icon);
+  const previewStatus = (() => {
+    const trimmedUrl = editorState.url.trim();
+    if (!trimmedUrl) {
+      return "unknown";
+    }
+
+    try {
+      parseHttpUrl(trimmedUrl);
+      return "online";
+    } catch {
+      return "offline";
+    }
+  })();
+  const previewStatusClassName =
+    previewStatus === "online" ? "app-status-dot online" : previewStatus === "offline" ? "app-status-dot offline" : "app-status-dot unknown";
+  const previewStatusAriaLabel =
+    previewStatus === "online" ? t("status.appOnline") : previewStatus === "offline" ? t("status.appOffline") : t("status.appUnknown");
+  const previewStatusTitle = previewStatus === "online" ? t("status.online") : previewStatus === "offline" ? t("status.offline") : t("status.unknown");
+  const clearCatalogSearch = () => {
+    setIconQuery("");
+    setDebouncedIconQuery("");
+    setIconSelectionLocked(false);
+  };
   const handleCustomIconFileChange = (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file || !file.type.startsWith("image/")) {
@@ -111,9 +168,8 @@ export function AppEditor({
       }
 
       setEditorState((current) => ({ ...current, icon: result }));
-      setIconQuery("");
-      setDebouncedIconQuery("");
-      setIconSelectionLocked(false);
+      setCustomIconDraft("");
+      clearCatalogSearch();
       event.target.value = "";
     };
     reader.readAsDataURL(file);
@@ -140,7 +196,7 @@ export function AppEditor({
             <div className="app-editor-main-column">
               <div className="app-editor-section app-editor-basics">
                 <div className="app-editor-section-header">
-                  <p className="eyebrow">{t("common.save")}</p>
+                  <p className="eyebrow">{t("app.details")}</p>
                 </div>
                 <div className="app-editor-fields-grid">
                   <label>
@@ -157,9 +213,15 @@ export function AppEditor({
                   <label>
                     <span>{t("app.url")}</span>
                     <input
-                      type="url"
+                      type="text"
+                      inputMode="url"
+                      autoCapitalize="off"
+                      autoCorrect="off"
+                      spellCheck={false}
                       value={editorState.url}
-                      onChange={(event) => setEditorState((current) => ({ ...current, url: event.target.value }))}
+                      onChange={(event) => {
+                        setEditorState((current) => ({ ...current, url: event.target.value }));
+                      }}
                       required
                     />
                   </label>
@@ -207,28 +269,78 @@ export function AppEditor({
                 <div className="app-editor-section-header app-editor-section-header-row">
                   <div>
                     <p className="eyebrow">{t("app.iconCatalog")}</p>
+                    <div className="app-editor-source-pills" aria-live="polite">
+                      <span className={iconSource === "catalog" ? "app-editor-source-pill active" : "app-editor-source-pill"}>
+                        {t("app.iconCatalog")}
+                      </span>
+                      <span className={iconSource === "custom" ? "app-editor-source-pill active" : "app-editor-source-pill"}>
+                        {t("app.iconCustom")}
+                      </span>
+                    </div>
                   </div>
-                  <a className="app-editor-catalog-link" href="https://dashboardicons.com/icons" target="_blank" rel="noreferrer">
-                    {t("app.openCatalog")}
-                  </a>
                 </div>
                 <div className="editor-logo-row">
-                  <label>
+                  <label className="app-editor-catalog-search-field">
                     <span>{t("app.icon")}</span>
+                    <a className="app-editor-catalog-link" href="https://dashboardicons.com/icons" target="_blank" rel="noreferrer">
+                      {t("app.openCatalog")}
+                    </a>
                     <input
                       type="text"
                       value={iconQuery}
                       onChange={(event) => {
+                        const nextQuery = event.target.value.toLowerCase();
                         setIconSelectionLocked(false);
-                        setIconQuery(event.target.value.toLowerCase());
+                        setIconQuery(nextQuery);
+                        if (nextQuery.trim()) {
+                          setCustomIconDraft("");
+                          setEditorState((current) => {
+                            if (!isCustomIconUrl(current.icon) && !current.icon.startsWith("data:image/")) {
+                              return current;
+                            }
+
+                            return {
+                              ...current,
+                              icon: "",
+                              iconVariantMode: "auto",
+                              iconVariantInverted: false,
+                            };
+                          });
+                        }
+                        if (!nextQuery.trim()) {
+                          setDebouncedIconQuery("");
+                          setEditorState((current) => {
+                            if (!isDashboardIconSlug(current.icon)) {
+                              return current;
+                            }
+
+                            return {
+                              ...current,
+                              icon: "",
+                              iconVariantMode: "auto",
+                              iconVariantInverted: false,
+                            };
+                          });
+                        }
                       }}
                       placeholder={t("app.searchDashboardIcons")}
                       autoComplete="off"
                     />
-                    <div className="editor-field-note">
-                      <span>{iconSelectionLocked ? editorState.icon : t("app.searchDashboardIcons")}</span>
-                    </div>
                   </label>
+                  <button
+                    className={editorState.iconVariantInverted ? "secondary-button icon-invert-button active app-editor-catalog-invert-button" : "secondary-button icon-invert-button app-editor-catalog-invert-button"}
+                    type="button"
+                    disabled={!effectiveSelectedIconPreviewVariants}
+                    onClick={() => {
+                      setEditorState((current) => ({
+                        ...current,
+                        iconVariantInverted: !current.iconVariantInverted,
+                        iconVariantMode: current.iconVariantMode === "base" ? "auto" : current.iconVariantMode,
+                      }));
+                    }}
+                  >
+                    {editorState.iconVariantInverted ? t("app.inverted") : t("app.normal")}
+                  </button>
                 </div>
                 <div className="icon-search-panel">
                   {dashboardIconsError ? <p className="form-error">{t(dashboardIconsError)}</p> : null}
@@ -246,6 +358,7 @@ export function AppEditor({
                             onClick={() => {
                               setIconSelectionLocked(true);
                               setEditorState((current) => ({ ...current, icon }));
+                              setCustomIconDraft("");
                               setIconQuery(icon);
                               setDebouncedIconQuery(icon);
                             }}
@@ -269,6 +382,50 @@ export function AppEditor({
                     </div>
                   ) : null}
                 </div>
+
+              <div className="app-editor-custom-icon-inline">
+                <div className="app-editor-custom-icon-grid">
+                  <label className="app-editor-custom-icon-row">
+                    <span>{t("app.url")}</span>
+                    <input
+                      type="text"
+                      inputMode="url"
+                      autoCapitalize="off"
+                      autoCorrect="off"
+                      spellCheck={false}
+                      value={customIconDraft}
+                      placeholder="https://..."
+                      onChange={(event) => {
+                        const nextValue = event.target.value;
+                        const trimmedNextValue = nextValue.trim();
+                        setCustomIconDraft(nextValue);
+                        setEditorState((current) => ({
+                          ...current,
+                          icon: isCustomIconUrl(trimmedNextValue) || trimmedNextValue === "" ? trimmedNextValue : "",
+                        }));
+                        clearCatalogSearch();
+                      }}
+                    />
+                    </label>
+                    <div className="app-editor-field app-editor-upload-field">
+                      <span>{t("app.fileLabel")}</span>
+                      <input
+                        ref={customIconFileInputRef}
+                        className="app-editor-file-input"
+                        type="file"
+                        accept="image/*"
+                        onChange={handleCustomIconFileChange}
+                      />
+                      <button
+                        className="secondary-button app-editor-upload-button"
+                        type="button"
+                        onClick={() => customIconFileInputRef.current?.click()}
+                      >
+                        {t("app.importIconFile")}
+                      </button>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
 
@@ -278,133 +435,151 @@ export function AppEditor({
                   <p className="eyebrow">{t("app.preview")}</p>
                   <p className="app-editor-section-copy">{t("app.previewHelp")}</p>
                 </div>
-                <div className={effectiveSelectedIconPreviewVariants ? "preview-card preview-card-with-variants" : "preview-card preview-card-simple"}>
-                  {!selectedIconPreviewVariants ? (
-                    <AppIcon
-                      icon={editorState.icon}
-                      name={editorState.name}
-                      url={editorState.url}
-                      accent={previewAccent}
-                      themeMode={themeMode}
-                      dashboardIconsMetadata={dashboardIconsMetadata}
-                      iconVariantMode={editorState.iconVariantMode}
-                      iconVariantInverted={editorState.iconVariantInverted}
-                    />
-                  ) : null}
-                  <div className={hasPreviewActions ? "preview-card-content preview-card-content-with-actions" : "preview-card-content preview-card-content-simple"}>
+                <div className="preview-card preview-card-with-variants">
+                  <div className="preview-card-content preview-card-content-simple">
                     <div className="preview-card-top">
                       <div className="preview-card-copy">
                         <strong>
                           <span className="preview-card-title">{previewName}</span>
                           <span
-                            className="app-status-dot unknown"
-                            aria-label={t("status.appUnknown")}
-                            title={t("status.unknown")}
+                            className={previewStatusClassName}
+                            aria-label={previewStatusAriaLabel}
+                            title={previewStatusTitle}
                           />
                         </strong>
                       </div>
                     </div>
-                    {editorState.icon ? (
-                      <div className="preview-card-actions">
-                        {effectiveSelectedIconPreviewVariants ? (
-                          <button
-                            className={editorState.iconVariantInverted ? "secondary-button icon-invert-button active" : "secondary-button icon-invert-button"}
-                            type="button"
-                            onClick={() => {
-                              setEditorState((current) => ({
-                                ...current,
-                                iconVariantInverted: !current.iconVariantInverted,
-                                iconVariantMode: current.iconVariantMode === "base" ? "auto" : current.iconVariantMode,
-                              }));
-                            }}
-                          >
-                            {editorState.iconVariantInverted ? t("app.normal") : t("app.inverted")}
-                          </button>
-                        ) : null}
-                        <button
-                          className="secondary-button icon-reset-button"
-                          type="button"
-                          onClick={() => {
-                            setEditorState((current) => ({ ...current, icon: "" }));
-                            setIconQuery("");
-                            setDebouncedIconQuery("");
-                            setIconSelectionLocked(false);
-                          }}
-                        >
-                          {t("app.removeIcon")}
-                        </button>
-                      </div>
-                    ) : null}
-                    {effectiveSelectedIconPreviewVariants ? (
-                      <div className="selected-icon-variants-grid preview-variants-grid">
-                        <div className={themeMode === "light" ? "selected-icon-variant-card active" : "selected-icon-variant-card"}>
-                          <span className="selected-icon-variant-preview icon-search-preview-light">
-                            <DashboardIconPreviewImage
-                              icon={effectiveSelectedIconPreviewVariants.lightBackgroundIcon}
-                              fallbackIcon={effectiveSelectedIconPreviewVariants.baseIcon}
-                            />
-                          </span>
-                          <div>
-                            <strong>{t("app.lightBackground")}</strong>
+
+                    <div className="selected-icon-variants-grid preview-variants-grid">
+                      {effectiveSelectedIconPreviewVariants ? (
+                        <>
+                          <div className={themeMode === "light" ? "selected-icon-variant-card preview-light active" : "selected-icon-variant-card preview-light"}>
+                            <span className="selected-icon-variant-preview icon-search-preview-light">
+                              <DashboardIconPreviewImage
+                                icon={effectiveSelectedIconPreviewVariants.lightBackgroundIcon}
+                                fallbackIcon={effectiveSelectedIconPreviewVariants.baseIcon}
+                              />
+                            </span>
+                            <div>
+                              <strong>
+                                <span className="preview-card-title">{previewName}</span>
+                                <span
+                                  className={previewStatusClassName}
+                                  aria-label={previewStatusAriaLabel}
+                                  title={previewStatusTitle}
+                                />
+                              </strong>
+                            </div>
                           </div>
-                        </div>
-                        <div className={themeMode === "dark" ? "selected-icon-variant-card active" : "selected-icon-variant-card"}>
-                          <span className="selected-icon-variant-preview icon-search-preview-dark">
-                            <DashboardIconPreviewImage
-                              icon={effectiveSelectedIconPreviewVariants.darkBackgroundIcon}
-                              fallbackIcon={effectiveSelectedIconPreviewVariants.baseIcon}
-                            />
-                          </span>
-                          <div>
-                            <strong>{t("app.darkBackground")}</strong>
+                          <div className={themeMode === "dark" ? "selected-icon-variant-card preview-dark active" : "selected-icon-variant-card preview-dark"}>
+                            <span className="selected-icon-variant-preview icon-search-preview-dark">
+                              <DashboardIconPreviewImage
+                                icon={effectiveSelectedIconPreviewVariants.darkBackgroundIcon}
+                                fallbackIcon={effectiveSelectedIconPreviewVariants.baseIcon}
+                              />
+                            </span>
+                            <div>
+                              <strong>
+                                <span className="preview-card-title">{previewName}</span>
+                                <span
+                                  className={previewStatusClassName}
+                                  aria-label={previewStatusAriaLabel}
+                                  title={previewStatusTitle}
+                                />
+                              </strong>
+                            </div>
                           </div>
-                        </div>
-                      </div>
-                    ) : null}
+                        </>
+                      ) : hasCustomIconPreview ? (
+                        <>
+                          <div className={themeMode === "light" ? "selected-icon-variant-card preview-light active" : "selected-icon-variant-card preview-light"}>
+                            <span className="selected-icon-variant-preview icon-search-preview-light">
+                              <img src={customIconUrl} alt="" loading="lazy" />
+                            </span>
+                            <div>
+                              <strong>
+                                <span className="preview-card-title">{previewName}</span>
+                                <span
+                                  className={previewStatusClassName}
+                                  aria-label={previewStatusAriaLabel}
+                                  title={previewStatusTitle}
+                                />
+                              </strong>
+                            </div>
+                          </div>
+                          <div className={themeMode === "dark" ? "selected-icon-variant-card preview-dark active" : "selected-icon-variant-card preview-dark"}>
+                            <span className="selected-icon-variant-preview icon-search-preview-dark">
+                              <img src={customIconUrl} alt="" loading="lazy" />
+                            </span>
+                            <div>
+                              <strong>
+                                <span className="preview-card-title">{previewName}</span>
+                                <span
+                                  className={previewStatusClassName}
+                                  aria-label={previewStatusAriaLabel}
+                                  title={previewStatusTitle}
+                                />
+                              </strong>
+                            </div>
+                          </div>
+                        </>
+                      ) : (
+                        <>
+                          <div className="selected-icon-variant-card preview-light">
+                            <span className="selected-icon-variant-preview">
+                              <AppIcon
+                                icon={editorState.icon}
+                                name={editorState.name}
+                                url={editorState.url}
+                                accent={previewAccentLight}
+                                themeMode="light"
+                                dashboardIconsMetadata={dashboardIconsMetadata}
+                                iconVariantMode={editorState.iconVariantMode}
+                                iconVariantInverted={editorState.iconVariantInverted}
+                              />
+                            </span>
+                            <div>
+                              <strong>
+                                <span className="preview-card-title">{previewName}</span>
+                                <span
+                                  className={previewStatusClassName}
+                                  aria-label={previewStatusAriaLabel}
+                                  title={previewStatusTitle}
+                                />
+                              </strong>
+                            </div>
+                          </div>
+                          <div className="selected-icon-variant-card preview-dark">
+                            <span className="selected-icon-variant-preview">
+                              <AppIcon
+                                icon={editorState.icon}
+                                name={editorState.name}
+                                url={editorState.url}
+                                accent={previewAccentDark}
+                                themeMode="dark"
+                                dashboardIconsMetadata={dashboardIconsMetadata}
+                                iconVariantMode={editorState.iconVariantMode}
+                                iconVariantInverted={editorState.iconVariantInverted}
+                              />
+                            </span>
+                            <div>
+                              <strong>
+                                <span className="preview-card-title">{previewName}</span>
+                                <span
+                                  className={previewStatusClassName}
+                                  aria-label={previewStatusAriaLabel}
+                                  title={previewStatusTitle}
+                                />
+                              </strong>
+                            </div>
+                          </div>
+                        </>
+                      )}
+                    </div>
                   </div>
                 </div>
               </div>
 
-              <div className="app-editor-section app-editor-custom-icon-section">
-                <div className="app-editor-section-header">
-                  <p className="eyebrow">{t("app.iconCustom")}</p>
-                  <p className="app-editor-section-copy">{t("app.iconCustomCompactHelp")}</p>
-                </div>
-                <div className="app-editor-custom-icon-grid">
-                  <label className="app-editor-custom-icon-row">
-                    <span>{t("app.url")}</span>
-                    <input
-                      type="url"
-                      value={customIconUrl}
-                      placeholder="https://..."
-                      onChange={(event) => {
-                        const nextValue = event.target.value.trim();
-                        setEditorState((current) => ({ ...current, icon: nextValue }));
-                        setIconQuery("");
-                        setDebouncedIconQuery("");
-                        setIconSelectionLocked(false);
-                      }}
-                    />
-                  </label>
-                  <div className="app-editor-field app-editor-upload-field">
-                    <span>{t("app.fileLabel")}</span>
-                    <input
-                      ref={customIconFileInputRef}
-                      className="app-editor-file-input"
-                      type="file"
-                      accept="image/*"
-                      onChange={handleCustomIconFileChange}
-                    />
-                    <button
-                      className="secondary-button app-editor-upload-button"
-                      type="button"
-                      onClick={() => customIconFileInputRef.current?.click()}
-                    >
-                      {t("app.importIconFile")}
-                    </button>
-                  </div>
-                </div>
-              </div>
             </div>
           </div>
 

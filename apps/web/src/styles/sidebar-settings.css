@@ -36,7 +36,7 @@
   font-weight: 600;
   letter-spacing: 0.04em;
   text-transform: uppercase;
-  color: var(--muted);
+  color: var(--text-secondary);
   background: none;
   border: none;
   cursor: pointer;
@@ -44,12 +44,12 @@
 }
 
 .settings-tab:hover {
-  color: var(--text);
+  color: var(--text-primary);
   background: var(--ghost-surface);
 }
 
 .settings-tab.active {
-  color: var(--accent);
+  color: var(--text-link);
   background: var(--accent-soft);
 }
 
@@ -75,7 +75,7 @@
 
 .settings-popup-item.active {
   background: var(--accent-soft);
-  color: var(--accent);
+  color: var(--text-link);
 }
 
 .settings-modal {
@@ -97,7 +97,7 @@
   border-radius: 10px 10px 0 0;
   font-size: 0.88rem;
   font-weight: 600;
-  color: var(--muted);
+  color: var(--text-secondary);
   background: none;
   border: none;
   border-bottom: 2px solid transparent;
@@ -108,12 +108,12 @@
 }
 
 .settings-modal-tab:hover {
-  color: var(--text);
+  color: var(--text-primary);
   background: var(--ghost-surface);
 }
 
 .settings-modal-tab.active {
-  color: var(--accent);
+  color: var(--text-link);
   background: var(--accent-soft);
   border-bottom-color: var(--accent);
 }
@@ -164,7 +164,7 @@
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  color: var(--muted);
+  color: var(--text-secondary);
   margin: 0 0 4px;
 }
 
@@ -177,7 +177,7 @@
 
 .personalization-label {
   font-size: 0.875rem;
-  color: var(--text);
+  color: var(--text-primary);
   white-space: nowrap;
 }
 
@@ -247,7 +247,7 @@
 .personalization-reset-color {
   background: none;
   border: none;
-  color: var(--muted);
+  color: var(--text-secondary);
   cursor: pointer;
   font-size: 1rem;
   line-height: 1;
@@ -255,7 +255,7 @@
 }
 
 .personalization-reset-color:hover {
-  color: var(--danger);
+  color: var(--text-danger);
 }
 
 .account-form {
@@ -272,7 +272,7 @@
   border-radius: 6px;
   border: 1px solid var(--border);
   background: var(--field-bg);
-  color: var(--text);
+  color: var(--text-primary);
   font-size: 0.875rem;
 }
 
@@ -290,18 +290,18 @@
 
 .account-error {
   background: var(--banner-bg);
-  color: var(--danger);
+  color: var(--text-danger);
   border: 1px solid var(--banner-border);
 }
 
 .account-info {
   background: var(--accent-soft);
-  color: var(--accent);
+  color: var(--text-link);
 }
 
 .account-delete-warning {
   font-size: 0.8rem;
-  color: var(--muted);
+  color: var(--text-secondary);
   margin-bottom: 8px;
 }
 
@@ -321,7 +321,7 @@
 }
 
 .about-row dt {
-  color: var(--color-text-muted, #888);
+  color: var(--text-secondary);
   white-space: nowrap;
 }
 
@@ -348,7 +348,7 @@
 
 .section-title {
   margin: 0 0 8px;
-  color: var(--muted);
+  color: var(--text-secondary);
   font-size: 0.84rem;
 }
 
@@ -433,7 +433,7 @@
 }
 
 .user-meta small {
-  color: var(--muted);
+  color: var(--text-secondary);
 }
 
 .user-actions {

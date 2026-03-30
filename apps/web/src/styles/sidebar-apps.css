@@ -12,7 +12,7 @@
 
 .sidebar-empty-state {
   margin: 8px 4px 0;
-  color: var(--muted);
+  color: var(--text-secondary);
   font-size: 0.92rem;
 }
 
@@ -44,7 +44,7 @@
 
 .app-tile.active {
   background: var(--accent-soft);
-  border-color: rgba(198, 92, 49, 0.24);
+  border-color: var(--accent-border-soft);
 }
 
 .drag-overlay-tile {
@@ -96,13 +96,13 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  color: #fff;
+  color: var(--icon-fill-on-accent);
   font-weight: 700;
   letter-spacing: 0.08em;
-  box-shadow: inset 0 -12px 24px rgba(0, 0, 0, 0.12);
+  box-shadow: var(--icon-shadow-inset);
 }
 
-.dashboard-icon-surface {
+.app-icon-surface {
   background: var(--panel-strong);
   border: 0;
   box-shadow: none;
@@ -138,13 +138,13 @@
 }
 
 .default-app-badge {
-  color: #df9f55;
+  color: var(--default-app-badge);
   font-size: 0.88rem;
   line-height: 1;
 }
 
 .app-external-icon {
-  color: var(--muted);
+  color: var(--text-secondary);
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -168,24 +168,24 @@
   height: 8px;
   flex: 0 0 8px;
   border-radius: 999px;
-  border: 1px solid rgba(255, 255, 255, 0.32);
-  box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.06);
+  border: 1px solid var(--status-dot-border);
+  box-shadow: 0 0 0 3px var(--status-dot-ring);
 }
 
 .app-status-dot.online {
-  background: #12b76a;
+  background: var(--status-online);
 }
 
 .app-status-dot.offline {
-  background: #f04438;
+  background: var(--status-offline);
 }
 
 .app-status-dot.unknown {
-  background: #98a2b3;
+  background: var(--status-unknown);
 }
 
 .resolved-icon-debug {
-  color: var(--accent);
+  color: var(--text-link);
   font-size: 0.78rem;
   letter-spacing: 0.02em;
 }

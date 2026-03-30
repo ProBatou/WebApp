@@ -1,5 +1,5 @@
 .preview-card {
-  padding: 16px;
+  padding: 12px;
   border-radius: 22px;
   display: flex;
   gap: 12px;
@@ -58,7 +58,7 @@
 
 .preview-card p {
   margin: 0;
-  color: var(--muted);
+  color: var(--text-secondary);
   font-size: 0.95rem;
 }
 
@@ -69,17 +69,17 @@
 .app-editor-modal .preview-card {
   padding: 12px;
   border-radius: 16px;
-  min-height: 188px;
+  min-height: 132px;
   background:
     linear-gradient(180deg, color-mix(in srgb, var(--panel-strong) 92%, transparent), color-mix(in srgb, var(--preview-surface) 86%, transparent));
 }
 
 .app-editor-modal .preview-card-content {
   min-height: 0;
-  gap: 10px;
+  gap: 8px;
   justify-content: flex-start;
 }
 
 .app-editor-modal .preview-card-with-variants {
-  min-height: 246px;
+  min-height: 170px;
 }

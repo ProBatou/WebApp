@@ -94,7 +94,7 @@
   display: grid;
   place-items: center;
   text-align: center;
-  color: var(--muted);
+  color: var(--text-secondary);
   padding: 24px;
 }
 

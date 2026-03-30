@@ -43,9 +43,9 @@
   width: 150px;
   padding: 14px 16px;
   border-radius: 20px;
-  background: rgba(180, 35, 24, 0.12);
-  border: 1px solid rgba(180, 35, 24, 0.2);
-  color: var(--danger);
+  background: var(--danger-soft);
+  border: 1px solid var(--danger-border-strong);
+  color: var(--text-danger);
   text-align: center;
   font-size: 0.92rem;
   backdrop-filter: blur(12px);
@@ -57,8 +57,8 @@
 .sidebar-trash-hint.active {
   opacity: 1;
   transform: translateY(-50%) scale(1.04);
-  background: rgba(180, 35, 24, 0.16);
-  border-color: rgba(180, 35, 24, 0.32);
+  background: color-mix(in srgb, var(--danger-soft) 86%, var(--panel-strong));
+  border-color: color-mix(in srgb, var(--danger) 36%, var(--border));
 }
 
 .brand-block {
@@ -184,14 +184,14 @@
 
 .group-section-title {
   margin: 0;
-  color: var(--muted);
+  color: var(--text-secondary);
   font-size: 0.76rem;
   text-transform: uppercase;
   letter-spacing: 0.08em;
 }
 
 .group-chevron {
-  color: var(--muted);
+  color: var(--text-secondary);
   transform: rotate(0deg);
   transition: transform 140ms ease;
 }
@@ -206,7 +206,7 @@
 }
 
 .group-drop-zone.active {
-  background: rgba(198, 92, 49, 0.08);
+  background: color-mix(in srgb, var(--accent) 10%, transparent);
 }
 
 .sidebar-bottom-actions {
@@ -262,7 +262,7 @@
   width: 100%;
   padding: 0;
   line-height: 1;
-  color: var(--muted);
+  color: var(--text-secondary);
 }
 
 .sidebar-bottom-actions .ghost-icon-button svg {
@@ -270,12 +270,12 @@
 }
 
 .sidebar-bottom-actions .ghost-icon-button:hover {
-  color: var(--accent);
+  color: var(--text-link);
   border-color: color-mix(in srgb, var(--accent) 24%, var(--border));
 }
 
 .sidebar-bottom-actions .ghost-icon-button.active {
-  color: var(--accent);
+  color: var(--text-link);
   border-color: color-mix(in srgb, var(--accent) 30%, var(--border));
   background: color-mix(in srgb, var(--accent-soft) 86%, var(--ghost-surface));
 }
@@ -331,7 +331,7 @@
 
 .dropdown-trigger-icon {
   flex: 0 0 auto;
-  color: var(--muted);
+  color: var(--text-secondary);
   font-size: 0.82rem;
   line-height: 1;
   transition: transform 140ms ease, color 140ms ease;
@@ -339,7 +339,7 @@
 
 .dropdown-trigger-icon.open {
   transform: rotate(180deg);
-  color: var(--accent);
+  color: var(--text-link);
 }
 
 .sidebar-actions-menu.open .sidebar-actions-trigger {
@@ -395,7 +395,7 @@
 
 .sidebar-actions-popover .dropdown-item.active {
   background: var(--accent-soft);
-  color: var(--accent);
+  color: var(--text-link);
 }
 
 .sidebar-actions-popover .secondary-button:hover {

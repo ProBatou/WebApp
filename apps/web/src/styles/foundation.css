@@ -3,16 +3,42 @@
   --bg-top: #f7efe2;
   --bg-bottom: #ead9c4;
   --bg-end: #f6efe6;
+  --color-primary: #fff8ee;
+  --color-secondary: #c65c31;
+  --color-text: #21160e;
   --panel: rgba(255, 250, 244, 0.82);
-  --panel-strong: #fff8ee;
+  --panel-strong: var(--color-primary);
   --panel-muted: rgba(255, 248, 238, 0.56);
   --border: rgba(96, 64, 40, 0.14);
-  --text: #21160e;
+  --text: var(--color-text);
   --muted: #6d5b4b;
-  --accent: #c65c31;
+  --text-placeholder: color-mix(in srgb, var(--text) 56%, transparent);
+  --accent: var(--color-secondary);
   --accent-strong: #a74622;
   --accent-soft: rgba(198, 92, 49, 0.14);
+  --accent-border-soft: color-mix(in srgb, var(--accent) 24%, var(--border));
+  --accent-border-medium: color-mix(in srgb, var(--accent) 32%, var(--border));
+  --accent-border-strong: color-mix(in srgb, var(--accent) 36%, var(--border));
+  --accent-ring-soft: color-mix(in srgb, var(--accent) 22%, transparent);
+  --accent-highlight: #df9f55;
+  --on-accent: #fff;
+  --text-primary: var(--text);
+  --text-secondary: var(--muted);
+  --text-link: var(--accent);
+  --text-danger: var(--danger);
+  --text-on-accent: var(--on-accent);
   --danger: #b42318;
+  --danger-soft: color-mix(in srgb, var(--danger) 14%, transparent);
+  --danger-border-strong: color-mix(in srgb, var(--danger) 24%, var(--border));
+  --status-online: #12b76a;
+  --status-offline: #f04438;
+  --status-unknown: #98a2b3;
+  --status-dot-border: color-mix(in srgb, var(--text) 24%, transparent);
+  --status-dot-ring: color-mix(in srgb, var(--text) 10%, transparent);
+  --default-app-badge: #df9f55;
+  --form-error: #8f1239;
+  --icon-fill-on-accent: #fff;
+  --icon-shadow-inset: inset 0 -12px 24px rgba(0, 0, 0, 0.12);
   --mark: rgba(33, 22, 14, 0.8);
   --field-bg: rgba(255, 255, 255, 0.72);
   --field-border: rgba(96, 64, 40, 0.14);
@@ -29,6 +55,14 @@
   --modal-surface: rgba(255, 248, 238, 0.92);
   --preview-surface: rgba(255, 255, 255, 0.52);
   --preview-border: rgba(96, 64, 40, 0.08);
+  --preview-light-bg: rgba(255, 255, 255, 0.52);
+  --preview-dark-bg: rgba(40, 33, 28, 0.9);
+  --preview-light-accent: #c65c31;
+  --preview-dark-accent: #df7a42;
+  --preview-light-text: #21160e;
+  --preview-dark-text: #f4ede4;
+  --preview-light-muted: rgba(33, 22, 14, 0.64);
+  --preview-dark-muted: rgba(244, 237, 228, 0.74);
   --shadow: 0 24px 80px rgba(74, 43, 20, 0.14);
 }
 
@@ -37,16 +71,37 @@
   --bg-top: #17120f;
   --bg-bottom: #0d0a08;
   --bg-end: #090705;
+  --color-primary: #211b17;
+  --color-secondary: #df7a42;
+  --color-text: #f4ede4;
   --panel: rgba(24, 20, 17, 0.84);
-  --panel-strong: #211b17;
+  --panel-strong: var(--color-primary);
   --panel-muted: rgba(27, 22, 19, 0.72);
   --border: rgba(255, 234, 214, 0.12);
-  --text: #f4ede4;
+  --text: var(--color-text);
   --muted: #b7a898;
-  --accent: #df7a42;
+  --text-placeholder: color-mix(in srgb, var(--text) 56%, transparent);
+  --accent: var(--color-secondary);
   --accent-strong: #f08e59;
   --accent-soft: rgba(223, 122, 66, 0.16);
+  --accent-border-soft: color-mix(in srgb, var(--accent) 24%, var(--border));
+  --accent-border-medium: color-mix(in srgb, var(--accent) 32%, var(--border));
+  --accent-border-strong: color-mix(in srgb, var(--accent) 36%, var(--border));
+  --accent-ring-soft: color-mix(in srgb, var(--accent) 22%, transparent);
+  --accent-highlight: #df9f55;
+  --on-accent: #fff;
   --danger: #ff8f7a;
+  --danger-soft: color-mix(in srgb, var(--danger) 14%, transparent);
+  --danger-border-strong: color-mix(in srgb, var(--danger) 24%, var(--border));
+  --status-online: #3ddc97;
+  --status-offline: #ff8f7a;
+  --status-unknown: #c0b3a5;
+  --status-dot-border: color-mix(in srgb, var(--text) 24%, transparent);
+  --status-dot-ring: color-mix(in srgb, var(--text) 10%, transparent);
+  --default-app-badge: #dfb06a;
+  --form-error: #ff9db7;
+  --icon-fill-on-accent: #fff;
+  --icon-shadow-inset: inset 0 -12px 24px rgba(0, 0, 0, 0.24);
   --mark: rgba(244, 237, 228, 0.82);
   --field-bg: rgba(40, 33, 28, 0.86);
   --field-border: rgba(255, 234, 214, 0.12);
@@ -63,6 +118,14 @@
   --modal-surface: rgba(26, 21, 18, 0.94);
   --preview-surface: rgba(40, 33, 28, 0.9);
   --preview-border: rgba(255, 234, 214, 0.08);
+  --preview-light-bg: rgba(255, 255, 255, 0.52);
+  --preview-dark-bg: rgba(40, 33, 28, 0.9);
+  --preview-light-accent: #c65c31;
+  --preview-dark-accent: #df7a42;
+  --preview-light-text: #21160e;
+  --preview-dark-text: #f4ede4;
+  --preview-light-muted: rgba(33, 22, 14, 0.64);
+  --preview-dark-muted: rgba(244, 237, 228, 0.74);
   --shadow: 0 24px 80px rgba(0, 0, 0, 0.34);
 }
 
@@ -81,7 +144,7 @@ body,
 
 body {
   font-family: "Avenir Next", "Segoe UI Variable", "Helvetica Neue", sans-serif;
-  color: var(--text);
+  color: var(--text-primary);
   background:
     radial-gradient(circle at top left, rgba(198, 92, 49, 0.24), transparent 24%),
     radial-gradient(circle at bottom right, rgba(17, 132, 127, 0.18), transparent 28%),
@@ -183,8 +246,8 @@ button {
 }
 
 .toast-card.error {
-  border-color: rgba(180, 35, 24, 0.18);
-  background: linear-gradient(135deg, rgba(180, 35, 24, 0.08), var(--panel-strong));
+  border-color: var(--danger-border-strong);
+  background: linear-gradient(135deg, var(--danger-soft), var(--panel-strong));
 }
 
 .toast-card p {
@@ -311,7 +374,7 @@ button {
 
 .auth-subtitle {
   margin: 0;
-  color: var(--muted);
+  color: var(--text-secondary);
   line-height: 1.5;
 }
 
@@ -320,7 +383,7 @@ button {
   text-transform: uppercase;
   letter-spacing: 0.18em;
   font-size: 0.72rem;
-  color: var(--muted);
+  color: var(--text-secondary);
 }
 
 .auth-form,
@@ -337,9 +400,8 @@ button {
   gap: 8px;
 }
 
-.auth-form span,
-.editor-form span {
-  color: var(--muted);
+:is(.auth-form, .editor-form) label > span {
+  color: var(--text-secondary);
   font-size: 0.94rem;
 }
 
@@ -349,10 +411,16 @@ select {
   width: 100%;
   border: 1px solid var(--field-border);
   background: var(--field-bg);
-  color: var(--text);
+  color: var(--text-primary);
   border-radius: 16px;
   padding: 13px 14px;
   outline: none;
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: var(--text-placeholder);
+  opacity: 1;
 }
 
 input:focus,
@@ -365,7 +433,7 @@ select:focus {
 input::selection,
 textarea::selection {
   background: color-mix(in srgb, var(--accent) 28%, transparent);
-  color: var(--text);
+  color: var(--text-primary);
 }
 
 textarea {
@@ -401,7 +469,7 @@ textarea {
 .primary-button,
 .auth-submit {
   background: var(--btn-bg, var(--accent));
-  color: #fff;
+  color: var(--text-on-accent);
   padding: 12px 18px;
 }
 
@@ -412,15 +480,15 @@ textarea {
 
 .secondary-button {
   background: var(--panel-strong);
-  color: var(--text);
+  color: var(--text-primary);
   padding: 12px 18px;
   border-color: var(--border);
 }
 
 .danger-button {
-  background: rgba(180, 35, 24, 0.1);
-  color: var(--danger);
-  border-color: rgba(180, 35, 24, 0.18);
+  background: var(--danger-soft);
+  color: var(--text-danger);
+  border-color: var(--danger-border-strong);
   padding: 12px 18px;
 }
 
@@ -471,7 +539,7 @@ textarea {
   align-items: center;
   gap: 10px;
   padding-top: 6px;
-  color: var(--muted);
+  color: var(--text-secondary);
   font-size: 0.92rem;
 }
 
@@ -484,11 +552,11 @@ textarea {
   height: 10px;
   flex: 0 0 10px;
   border-radius: 999px;
-  background: linear-gradient(135deg, var(--accent), #df9f55);
-  box-shadow: 0 0 0 6px rgba(198, 92, 49, 0.08);
+  background: linear-gradient(135deg, var(--accent), var(--accent-highlight));
+  box-shadow: 0 0 0 6px var(--accent-ring-soft);
 }
 
 .form-error,
 .error-state {
-  color: #8f1239;
+  color: var(--form-error);
 }

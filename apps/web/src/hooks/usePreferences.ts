@@ -45,15 +45,60 @@ function lightenHex(hex: string, factor = 0.35): string {
 function applyColors(prefs: UserPreferences, themeMode: ThemeMode) {
   const root = document.documentElement;
   const isDarkTheme = themeMode === "dark";
+  const defaultText = isDarkTheme ? "#f4ede4" : "#21160e";
+  const defaultMuted = isDarkTheme ? "#b7a898" : "#6d5b4b";
+  const defaultBorder = isDarkTheme ? "rgba(255, 234, 214, 0.12)" : "rgba(96, 64, 40, 0.14)";
+  const defaultLightAccent = "#c65c31";
+  const defaultDarkAccent = "#df7a42";
+  const defaultLightText = "#21160e";
+  const defaultDarkText = "#f4ede4";
 
   const accentColor = isDarkTheme ? prefs.accentColorDark : prefs.accentColor;
   const sidebarColor = isDarkTheme ? prefs.sidebarColorDark : prefs.sidebarColor;
+  const textColor = isDarkTheme ? prefs.textColorDark : prefs.textColor;
+  const previewLightAccent = prefs.accentColor ?? defaultLightAccent;
+  const previewDarkAccent = prefs.accentColorDark ?? defaultDarkAccent;
+  const previewLightText = prefs.textColor ?? defaultLightText;
+  const previewDarkText = prefs.textColorDark ?? defaultDarkText;
+  const previewLightSource = prefs.sidebarColor;
+  const previewDarkSource = prefs.sidebarColorDark;
+  const previewLightBackground = previewLightSource ? hexToRgba(previewLightSource, 0.52) : "rgba(255, 255, 255, 0.52)";
+  const previewDarkBackground = previewDarkSource ? hexToRgba(previewDarkSource, 0.9) : "rgba(40, 33, 28, 0.9)";
+  const previewBorderSource = sidebarColor;
+
+  root.style.setProperty("--preview-light-bg", previewLightBackground);
+  root.style.setProperty("--preview-dark-bg", previewDarkBackground);
+  root.style.setProperty("--preview-light-accent", previewLightAccent);
+  root.style.setProperty("--preview-dark-accent", previewDarkAccent);
+  root.style.setProperty("--preview-light-text", previewLightText);
+  root.style.setProperty("--preview-dark-text", previewDarkText);
+  root.style.setProperty("--preview-light-muted", hexToRgba(previewLightText, 0.64));
+  root.style.setProperty("--preview-dark-muted", hexToRgba(previewDarkText, 0.74));
+  root.style.setProperty("--color-text", defaultText);
+  root.style.setProperty("--text", defaultText);
+  root.style.setProperty("--muted", defaultMuted);
+  root.style.setProperty("--border", defaultBorder);
+
+  if (textColor) {
+    root.style.setProperty("--color-text", textColor);
+    root.style.setProperty("--text", textColor);
+    root.style.setProperty("--muted", hexToRgba(textColor, isDarkTheme ? 0.74 : 0.64));
+    root.style.setProperty("--border", hexToRgba(textColor, isDarkTheme ? 0.2 : 0.16));
+  }
+
+  if (previewBorderSource) {
+    root.style.setProperty("--preview-border", hexToRgba(previewBorderSource, isDarkTheme ? 0.2 : 0.14));
+  } else {
+    root.style.removeProperty("--preview-border");
+  }
 
   if (accentColor) {
+    root.style.setProperty("--color-secondary", accentColor);
     root.style.setProperty("--accent", accentColor);
     root.style.setProperty("--accent-strong", darkenHex(accentColor));
     root.style.setProperty("--accent-soft", hexToRgba(accentColor, 0.14));
   } else {
+    root.style.removeProperty("--color-secondary");
     root.style.removeProperty("--accent");
     root.style.removeProperty("--accent-strong");
     root.style.removeProperty("--accent-soft");
@@ -65,8 +110,9 @@ function applyColors(prefs: UserPreferences, themeMode: ThemeMode) {
     const fieldBg = isSidebarDark
       ? hexToRgba(lightenHex(sidebarColor, 0.18), 0.86)
       : hexToRgba(lightenHex(sidebarColor, 0.5), 0.72);
+    root.style.setProperty("--color-primary", sidebarColor);
     root.style.setProperty("--panel", sidebarColor);
-    root.style.setProperty("--panel-strong", darkenHex(sidebarColor, 0.05));
+    root.style.setProperty("--panel-strong", sidebarColor);
     root.style.setProperty("--panel-muted", hexToRgba(sidebarColor, 0.56));
     root.style.setProperty("--menu-bg", hexToRgba(sidebarColor, 0.96));
     root.style.setProperty("--modal-surface", hexToRgba(sidebarColor, 0.92));
@@ -75,16 +121,14 @@ function applyColors(prefs: UserPreferences, themeMode: ThemeMode) {
     root.style.setProperty("--viewer-surface", hexToRgba(sidebarColor, 0.16));
     root.style.setProperty("--preview-surface", hexToRgba(sidebarColor, 0.52));
     root.style.setProperty("--field-bg", fieldBg);
-    if (isSidebarDark) {
+    if (isSidebarDark && !textColor) {
+      root.style.setProperty("--color-text", "#f4ede4");
       root.style.setProperty("--text", "#f4ede4");
       root.style.setProperty("--muted", "rgba(244, 237, 228, 0.54)");
       root.style.setProperty("--border", "rgba(255, 234, 214, 0.12)");
-    } else {
-      root.style.removeProperty("--text");
-      root.style.removeProperty("--muted");
-      root.style.removeProperty("--border");
     }
   } else {
+    root.style.removeProperty("--color-primary");
     root.style.removeProperty("--panel");
     root.style.removeProperty("--panel-strong");
     root.style.removeProperty("--panel-muted");
@@ -95,9 +139,6 @@ function applyColors(prefs: UserPreferences, themeMode: ThemeMode) {
     root.style.removeProperty("--viewer-surface");
     root.style.removeProperty("--preview-surface");
     root.style.removeProperty("--field-bg");
-    root.style.removeProperty("--text");
-    root.style.removeProperty("--muted");
-    root.style.removeProperty("--border");
   }
 
   if (accentColor) {
@@ -115,8 +156,10 @@ const defaultPreferences: UserPreferences = {
   defaultAppId: null,
   accentColor: null,
   sidebarColor: null,
+  textColor: null,
   accentColorDark: null,
   sidebarColorDark: null,
+  textColorDark: null,
 };
 
 export function usePreferences({

@@ -14,7 +14,7 @@
 }
 
 .selected-icon-variant-card small {
-  color: var(--muted);
+  color: var(--text-secondary);
   font-size: 0.9rem;
 }
 
@@ -40,16 +40,22 @@
   min-width: 0;
   max-width: 100%;
   width: 100%;
+  min-height: 38px;
+}
+
+.preview-card-actions-placeholder {
+  visibility: hidden;
+  pointer-events: none;
 }
 
 .app-editor-modal .preview-card-actions .secondary-button {
   min-width: 0;
-  padding: 10px 14px;
+  padding: 8px 12px;
 }
 
 .icon-invert-button.active {
   background: var(--accent-soft);
-  border-color: rgba(198, 92, 49, 0.32);
+  border-color: var(--accent-border-medium);
 }
 
 .selected-icon-variant-card {
@@ -63,9 +69,35 @@
   background: var(--panel-strong);
 }
 
+.selected-icon-variant-card.preview-light {
+  background: var(--preview-light-bg);
+  color: var(--preview-light-text);
+  border-color: color-mix(in srgb, var(--preview-light-text) 16%, transparent);
+}
+
+.selected-icon-variant-card.preview-dark {
+  background: var(--preview-dark-bg);
+  color: var(--preview-dark-text);
+  border-color: color-mix(in srgb, var(--preview-dark-text) 16%, transparent);
+}
+
 .selected-icon-variant-card.active {
-  border-color: rgba(198, 92, 49, 0.32);
+  border-color: var(--accent-border-medium);
   background: var(--accent-soft);
+}
+
+.selected-icon-variant-card.preview-light.active {
+  background: var(--preview-light-bg);
+  border-color: var(--accent-border-medium);
+}
+
+.selected-icon-variant-card.preview-dark.active {
+  background: var(--preview-dark-bg);
+  border-color: var(--accent-border-medium);
+}
+
+.selected-icon-variant-card-placeholder {
+  opacity: 0.66;
 }
 
 .selected-icon-variant-preview {
@@ -79,17 +111,53 @@
   border: 1px solid var(--border);
 }
 
+.selected-icon-variant-card.preview-light .selected-icon-variant-preview {
+  border-color: color-mix(in srgb, currentColor 16%, transparent);
+}
+
+.selected-icon-variant-card.preview-dark .selected-icon-variant-preview {
+  border-color: color-mix(in srgb, currentColor 16%, transparent);
+}
+
 .selected-icon-variant-preview img {
   width: 30px;
   height: 30px;
   object-fit: contain;
 }
 
+.selected-icon-variant-preview-placeholder {
+  background:
+    radial-gradient(circle at 38% 35%, rgba(255, 255, 255, 0.6), rgba(255, 255, 255, 0) 45%),
+    color-mix(in srgb, var(--panel-strong) 72%, var(--field-bg));
+}
+
 .selected-icon-variant-card div {
   min-width: 0;
+  flex: 1;
   display: flex;
   flex-direction: column;
   gap: 4px;
+}
+
+.selected-icon-variant-card strong {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.selected-icon-variant-card.preview-light .app-status-dot,
+.selected-icon-variant-card.preview-dark .app-status-dot {
+  border-color: color-mix(in srgb, currentColor 28%, transparent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, currentColor 12%, transparent);
+}
+
+.selected-icon-variant-card.preview-light small {
+  color: var(--preview-light-muted);
+}
+
+.selected-icon-variant-card.preview-dark small {
+  color: var(--preview-dark-muted);
 }
 
 .selected-icon-variant-card small {
@@ -120,7 +188,7 @@
 
 .icon-variant-copy p {
   margin-top: 4px;
-  color: var(--muted);
+  color: var(--text-secondary);
   font-size: 0.92rem;
 }
 
@@ -137,7 +205,7 @@
 .icon-variant-option {
   border: 0;
   background: transparent;
-  color: var(--muted);
+  color: var(--text-secondary);
   border-radius: 999px;
   padding: 8px 14px;
   cursor: pointer;
@@ -145,7 +213,7 @@
 
 .icon-variant-option.active {
   background: var(--accent-soft);
-  color: var(--text);
+  color: var(--text-primary);
 }
 
 .icon-reset-button {
@@ -167,7 +235,7 @@
   padding: 12px;
   border: 1px solid var(--border);
   background: var(--preview-surface);
-  color: var(--text);
+  color: var(--text-primary);
   border-radius: 18px;
   cursor: pointer;
   text-align: left;
@@ -176,12 +244,12 @@
 
 .icon-search-item:hover {
   transform: translateY(-1px);
-  border-color: rgba(198, 92, 49, 0.28);
+  border-color: var(--accent-border-soft);
 }
 
 .icon-search-item.active {
   background: var(--accent-soft);
-  border-color: rgba(198, 92, 49, 0.32);
+  border-color: var(--accent-border-medium);
 }
 
 .icon-variant-badge {
@@ -191,7 +259,7 @@
   border-radius: 999px;
   background: var(--panel-strong);
   border: 1px solid var(--border);
-  color: var(--muted);
+  color: var(--text-secondary);
   font-size: 0.78rem;
   text-transform: uppercase;
   letter-spacing: 0.08em;
@@ -216,11 +284,11 @@
 }
 
 .icon-search-preview-dark {
-  background: #15110e;
+  background: var(--preview-dark-bg);
 }
 
 .icon-search-preview-light {
-  background: #f5efe6;
+  background: var(--preview-light-bg);
 }
 
 .icon-search-preview img {
@@ -244,13 +312,13 @@
 }
 
 .icon-search-copy small {
-  color: var(--muted);
+  color: var(--text-secondary);
 }
 
 .app-editor-modal .icon-search-results {
   grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 8px;
-  max-height: 330px;
+  max-height: 168px;
   overflow-y: auto;
   padding-right: 2px;
 }
@@ -281,21 +349,21 @@
 
 .app-editor-modal .selected-icon-variants-grid {
   gap: 8px;
-  grid-template-columns: 1fr;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
 .app-editor-modal .selected-icon-variant-card {
-  padding: 12px;
+  padding: 10px;
   border-radius: 14px;
 }
 
 .app-editor-modal .selected-icon-variant-preview {
-  width: 46px;
-  height: 46px;
-  flex: 0 0 46px;
+  width: 40px;
+  height: 40px;
+  flex: 0 0 40px;
 }
 
 .app-editor-modal .selected-icon-variant-preview img {
-  width: 26px;
-  height: 26px;
+  width: 22px;
+  height: 22px;
 }

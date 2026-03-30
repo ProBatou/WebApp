@@ -8,15 +8,14 @@ export function useAppRuntime({
   editorOpen,
   iconSelectionLocked,
   normalizedIconQuery,
-  themeMode,
-  error,
   dashboardIcons,
   editorIcon,
+  themeMode,
+  error,
   setThemeMode,
   setError,
   setContextMenu,
   setEditorState,
-  setIconQuery,
   pushErrorToast,
   reloadGroups,
   updatePreferences,
@@ -26,15 +25,14 @@ export function useAppRuntime({
   editorOpen: boolean;
   iconSelectionLocked: boolean;
   normalizedIconQuery: string;
-  themeMode: ThemeMode;
-  error: string | null;
   dashboardIcons: string[];
   editorIcon: string;
+  themeMode: ThemeMode;
+  error: string | null;
   setThemeMode: Dispatch<SetStateAction<ThemeMode>>;
   setError: Dispatch<SetStateAction<string | null>>;
   setContextMenu: (value: null) => void;
   setEditorState: Dispatch<SetStateAction<AppEditorState>>;
-  setIconQuery: (value: string) => void;
   pushErrorToast: (message: string) => void;
   reloadGroups: () => Promise<unknown>;
   updatePreferences: (patch: Partial<UserPreferences>) => void;
@@ -78,8 +76,7 @@ export function useAppRuntime({
     }
 
     setEditorState((current) => ({ ...current, icon: nextIcon }));
-    setIconQuery(nextIcon);
-  }, [dashboardIcons, editorIcon, editorOpen, iconSelectionLocked, normalizedIconQuery, setEditorState, setIconQuery]);
+  }, [dashboardIcons, editorIcon, editorOpen, iconSelectionLocked, normalizedIconQuery, setEditorState]);
 
   const toggleThemeMode = useCallback(() => {
     setThemeMode((current) => {

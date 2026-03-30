@@ -68,6 +68,10 @@
 
   .app-editor-layout {
     grid-template-columns: 1fr;
+    grid-template-areas:
+      "basics"
+      "icon"
+      "preview";
   }
 
   .app-editor-fields-grid {
@@ -88,6 +92,10 @@
 
   .app-editor-modal .icon-search-results {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .app-editor-modal .selected-icon-variants-grid {
+    grid-template-columns: 1fr;
   }
 }
 
@@ -170,7 +178,6 @@
   }
 
   .preview-card-top,
-  .editor-field-note,
   .icon-variant-panel {
     flex-direction: column;
     align-items: flex-start;

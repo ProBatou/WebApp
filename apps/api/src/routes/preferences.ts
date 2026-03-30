@@ -11,8 +11,10 @@ const updatePreferencesSchema = z.object({
   defaultAppId: z.number().int().positive().nullable().optional(),
   accentColor: hexColor,
   sidebarColor: hexColor,
+  textColor: hexColor,
   accentColorDark: hexColor,
   sidebarColorDark: hexColor,
+  textColorDark: hexColor,
 });
 
 function toResponse(record: ReturnType<typeof getPreferences>) {
@@ -22,8 +24,10 @@ function toResponse(record: ReturnType<typeof getPreferences>) {
     defaultAppId: record.default_app_id,
     accentColor: record.accent_color,
     sidebarColor: record.sidebar_color,
+    textColor: record.text_color,
     accentColorDark: record.accent_color_dark,
     sidebarColorDark: record.sidebar_color_dark,
+    textColorDark: record.text_color_dark,
   };
 }
 
@@ -43,15 +47,26 @@ export async function registerPreferencesRoutes(server: FastifyInstance) {
       return reply.code(400).send({ message: "errors.invalidData" });
     }
 
-    const { defaultAppId, accentColor, sidebarColor, accentColorDark, sidebarColorDark, ...rest } = parsed.data;
+    const {
+      defaultAppId,
+      accentColor,
+      sidebarColor,
+      textColor,
+      accentColorDark,
+      sidebarColorDark,
+      textColorDark,
+      ...rest
+    } = parsed.data;
     const updated = upsertPreferences(user.id, {
       ...rest,
       default_app_id: defaultAppId,
       accent_color: accentColor,
       sidebar_color: sidebarColor,
+      text_color: textColor,
       button_color: null,
       accent_color_dark: accentColorDark,
       sidebar_color_dark: sidebarColorDark,
+      text_color_dark: textColorDark,
       button_color_dark: null,
     });
 

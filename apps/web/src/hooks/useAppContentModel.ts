@@ -87,7 +87,6 @@ export function useAppContentModel() {
     setEditorState,
     iconQuery,
     setIconQuery,
-    debouncedIconQuery,
     iconSelectionLocked,
     setIconSelectionLocked,
     closeEditor,
@@ -108,7 +107,7 @@ export function useAppContentModel() {
     editorOpen,
     apps,
     editorIcon: editorState.icon,
-    iconQuery: debouncedIconQuery,
+    iconQuery,
   });
 
   const mountedIframeApps = mountedIframeIds
