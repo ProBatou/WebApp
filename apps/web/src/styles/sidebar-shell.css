@@ -136,14 +136,31 @@
 }
 
 .app-section-list {
+  --sidebar-scroll-fade: 14px;
   display: flex;
   flex-direction: column;
   gap: 14px;
   overflow-x: hidden;
   overflow-y: auto;
-  padding-right: 4px;
+  padding: 8px 4px 12px 0;
   scrollbar-width: none;
   -ms-overflow-style: none;
+  -webkit-mask-image: linear-gradient(
+    to bottom,
+    transparent 0,
+    #000 var(--sidebar-scroll-fade),
+    #000 calc(100% - var(--sidebar-scroll-fade)),
+    transparent 100%
+  );
+  mask-image: linear-gradient(
+    to bottom,
+    transparent 0,
+    #000 var(--sidebar-scroll-fade),
+    #000 calc(100% - var(--sidebar-scroll-fade)),
+    transparent 100%
+  );
+  -webkit-mask-size: 100% 100%;
+  mask-size: 100% 100%;
 }
 
 .app-section-list::-webkit-scrollbar {

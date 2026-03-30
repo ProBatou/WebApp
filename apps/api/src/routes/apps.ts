@@ -90,13 +90,16 @@ export async function registerAppRoutes(server: FastifyInstance) {
       return reply.code(404).send({ message: "errors.invalidApp" });
     }
 
+    const isReachableResponseStatus = (status: number) =>
+      (status >= 200 && status < 300) || status === 401 || status === 403;
+
     const checkUrl = async (method: "HEAD" | "GET") => {
       const response = await fetch(app.url, {
         method,
         signal: AbortSignal.timeout(3000),
       });
 
-      return response.ok;
+      return isReachableResponseStatus(response.status);
     };
 
     try {
