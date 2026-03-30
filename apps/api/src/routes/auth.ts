@@ -365,8 +365,12 @@ export async function registerAuthRoutes(server: FastifyInstance) {
       if (!parsed.success) return reply.code(400).send({ message: "errors.invalidData" });
 
       const result = updateUsername(user.id, parsed.data.username);
-      if ("error" in result && result.error === "username_taken") {
-        return reply.code(409).send({ message: "errors.usernameTaken" });
+      if ("error" in result) {
+        if (result.error === "username_taken") {
+          return reply.code(409).send({ message: "errors.usernameTaken" });
+        }
+
+        return reply.code(500).send({ message: "errors.api" });
       }
 
       return { username: parsed.data.username };
@@ -385,7 +389,13 @@ export async function registerAuthRoutes(server: FastifyInstance) {
       if (!parsed.success) return reply.code(400).send({ message: "errors.invalidData" });
 
       const check = updatePassword(user.id, parsed.data.currentPassword, "");
-      if ("error" in check) return reply.code(404).send({ message: "errors.notFound" });
+      if ("error" in check) {
+        if (check.error === "not_found") {
+          return reply.code(404).send({ message: "errors.notFound" });
+        }
+
+        return reply.code(500).send({ message: "errors.api" });
+      }
 
       const valid = await verifyPassword(parsed.data.currentPassword, check.currentPasswordHash);
       if (!valid) return reply.code(401).send({ message: "errors.invalidCredentials" });
