@@ -12,7 +12,7 @@
     "dev:web": "npm --workspace apps/web run dev",
     "dev:api": "npm --workspace apps/api run dev",
     "build": "npm run build --workspace apps/web && npm run build --workspace apps/api",
-    "test": "node --import tsx --test apps/web/src/**/*.test.ts apps/api/src/**/*.test.ts"
+    "test": "node --import tsx --test apps/web/src/*.test.ts apps/web/src/**/*.test.ts apps/api/src/*.test.ts apps/api/src/**/*.test.ts"
   },
   "devDependencies": {
     "concurrently": "^9.1.2",
