@@ -2,7 +2,7 @@
   "services": {
     "webapp-v2": {
       "container_name": "webapp-v2",
-      "image": "ghcr.io/example-org/webapp:latest",
+      "image": "ghcr.io/probatou/webapp:latest",
       "environment": [
         "NODE_ENV=production",
         "PORT=3004",
