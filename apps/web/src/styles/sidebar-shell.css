@@ -1,15 +1,25 @@
 .app-shell {
-  min-height: 100vh;
+  height: 100dvh;
+  min-height: 100dvh;
   position: relative;
+  background: var(--panel-strong);
 }
 
 .sidebar {
+  --sidebar-pad-top: 16px;
+  --sidebar-pad-right: 16px;
+  --sidebar-pad-bottom: 16px;
+  --sidebar-pad-left: 16px;
   position: fixed;
   top: 0;
   left: 0;
   bottom: 0;
   width: min(316px, calc(100vw - 28px));
-  padding: 16px;
+  padding:
+    calc(var(--sidebar-pad-top) + env(safe-area-inset-top))
+    calc(var(--sidebar-pad-right) + env(safe-area-inset-right))
+    calc(var(--sidebar-pad-bottom) + env(safe-area-inset-bottom))
+    calc(var(--sidebar-pad-left) + env(safe-area-inset-left));
   display: flex;
   flex-direction: column;
   overflow: visible;
@@ -24,7 +34,10 @@
 
 .sidebar.compact {
   width: 84px;
-  padding: 12px 8px;
+  --sidebar-pad-top: 12px;
+  --sidebar-pad-right: 8px;
+  --sidebar-pad-bottom: 12px;
+  --sidebar-pad-left: 8px;
 }
 
 .sidebar.expanded {

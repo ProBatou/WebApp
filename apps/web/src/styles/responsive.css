@@ -6,7 +6,7 @@
   .empty-state,
   .external-state,
   .app-frame {
-    min-height: 100dvh;
+    min-height: 0;
   }
 }
 
@@ -292,12 +292,18 @@
 
   .app-shell .sidebar {
     width: min(286px, calc(100vw - 18px));
-    padding: 12px;
+    --sidebar-pad-top: 12px;
+    --sidebar-pad-right: 12px;
+    --sidebar-pad-bottom: 12px;
+    --sidebar-pad-left: 12px;
   }
 
   .app-shell .sidebar.compact {
     width: 78px;
-    padding: 10px 6px;
+    --sidebar-pad-top: 10px;
+    --sidebar-pad-right: 6px;
+    --sidebar-pad-bottom: 10px;
+    --sidebar-pad-left: 6px;
   }
 
   .app-shell .sidebar.compact .primary-button,
@@ -415,6 +421,7 @@
   }
 
   .app-shell .sidebar-bottom-actions {
+    position: relative;
     gap: 6px;
     padding-top: 10px;
   }
@@ -616,7 +623,7 @@
   .app-frame,
   .empty-state,
   .external-state {
-    min-height: 100dvh;
+    min-height: 0;
   }
 
   .editor-modal-overlay {
@@ -678,12 +685,18 @@
 @media (max-width: 420px) {
   .app-shell .sidebar {
     width: min(268px, calc(100vw - 14px));
-    padding: 10px;
+    --sidebar-pad-top: 10px;
+    --sidebar-pad-right: 10px;
+    --sidebar-pad-bottom: 10px;
+    --sidebar-pad-left: 10px;
   }
 
   .app-shell .sidebar.compact {
     width: 72px;
-    padding: 8px 5px;
+    --sidebar-pad-top: 8px;
+    --sidebar-pad-right: 5px;
+    --sidebar-pad-bottom: 8px;
+    --sidebar-pad-left: 5px;
   }
 
   .app-shell .brand-copy h1 {
@@ -729,6 +742,105 @@
     min-height: 38px;
     height: 38px;
     font-size: 0.82rem;
+  }
+
+}
+
+@media (max-width: 640px) and (orientation: portrait) {
+  .app-shell .sidebar-language-menu {
+    position: static;
+  }
+
+  .app-shell .sidebar-language-menu .sidebar-actions-menu {
+    position: static;
+  }
+
+  .app-shell .sidebar-language-menu .sidebar-actions-popover {
+    left: 50%;
+    right: auto;
+    transform: translateX(-50%);
+    width: min(224px, calc(100% - 20px));
+    min-width: 0;
+    max-width: none;
+    padding: 10px;
+    border-radius: 18px;
+  }
+
+  .app-shell .sidebar-language-menu .sidebar-actions-popover.open-above,
+  .app-shell .sidebar-language-menu .sidebar-actions-popover.open-below {
+    top: auto;
+    bottom: calc(100% + 8px);
+  }
+
+  .app-shell .sidebar-language-menu .sidebar-actions-popover-list {
+    max-height: min(248px, 30vh);
+    margin-right: -6px;
+    padding-right: 2px;
+  }
+
+  .app-shell .sidebar-language-menu .sidebar-actions-popover-content {
+    padding-right: 6px;
+  }
+
+  .app-shell .sidebar-language-menu .secondary-button.dropdown-item {
+    display: flex;
+    align-items: center;
+    min-height: 40px;
+    padding: 8px 10px;
+    border-radius: 14px;
+    font-size: 0.84rem;
+    justify-content: center;
+  }
+
+  .app-shell .sidebar-language-menu .dropdown-item-label {
+    display: flex;
+    flex: 0 1 auto;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .app-shell .language-dropdown-item {
+    width: 100%;
+    justify-content: center;
+    gap: 10px;
+  }
+
+  .app-shell .language-dropdown-chip {
+    width: 32px;
+    min-width: 32px;
+    height: 32px;
+    border-radius: 10px;
+    font-size: 0.68rem;
+  }
+
+  .app-shell .language-dropdown-trigger {
+    font-size: 0.74rem;
+  }
+}
+
+@media (max-width: 420px) and (orientation: portrait) {
+  .app-shell .sidebar-language-menu .sidebar-actions-popover {
+    padding: 8px;
+    border-radius: 16px;
+  }
+
+  .app-shell .sidebar-language-menu .secondary-button.dropdown-item {
+    min-height: 38px;
+    padding: 7px 9px;
+    border-radius: 13px;
+    font-size: 0.8rem;
+  }
+
+  .app-shell .language-dropdown-item {
+    gap: 8px;
+  }
+
+  .app-shell .language-dropdown-chip {
+    width: 30px;
+    min-width: 30px;
+    height: 30px;
+    border-radius: 9px;
+    font-size: 0.64rem;
   }
 }
 
