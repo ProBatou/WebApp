@@ -1,4 +1,5 @@
 @import "./styles/foundation.css";
+@import "./styles/picker-shared.css";
 @import "./styles/sidebar-shell.css";
 @import "./styles/sidebar-settings.css";
 @import "./styles/sidebar-apps.css";

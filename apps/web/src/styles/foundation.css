@@ -302,7 +302,7 @@ button {
     radial-gradient(circle at top left, rgba(198, 92, 49, 0.16), transparent 34%),
     radial-gradient(circle at bottom right, rgba(17, 132, 127, 0.1), transparent 26%);
   position: relative;
-  overflow: hidden;
+  overflow: visible;
 }
 
 :root[data-theme="dark"] .auth-card {
@@ -324,7 +324,6 @@ button {
 .auth-form,
 .auth-footer-note {
   position: relative;
-  z-index: 1;
 }
 
 .auth-card-header {
@@ -332,12 +331,42 @@ button {
   align-items: flex-start;
   justify-content: space-between;
   gap: 18px;
+  z-index: 8;
+}
+
+.auth-copy-block,
+.auth-form,
+.auth-footer-note {
+  z-index: 1;
 }
 
 .auth-header-actions {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   gap: 10px;
+}
+
+.auth-language-menu {
+  width: 42px;
+  min-width: 42px;
+  position: relative;
+  z-index: 6;
+}
+
+.sidebar-actions-trigger.auth-language-switch {
+  width: 100%;
+  min-width: 42px;
+  height: 42px;
+  min-height: 42px;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+}
+
+.auth-language-menu .sidebar-actions-popover {
+  z-index: 40;
 }
 
 .auth-title {
@@ -350,7 +379,8 @@ button {
 .auth-mark {
   display: grid;
   gap: 7px;
-  padding-top: 6px;
+  min-height: 42px;
+  align-content: center;
 }
 
 .auth-mark span {
@@ -507,7 +537,12 @@ textarea {
 .theme-toggle {
   width: 42px;
   min-width: 42px;
-  padding: 10px 0;
+  height: 42px;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
 }
 
 .compact-theme-toggle {

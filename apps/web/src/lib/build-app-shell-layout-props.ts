@@ -260,6 +260,7 @@ export function buildAppShellLayoutProps({
       onToggleTheme,
       lang,
       setLang,
+      onUpdatePreferences,
       onSelectApp,
       onEditApp,
       onOpenContextMenu,
@@ -353,6 +354,7 @@ export function buildAppShellLayoutProps({
       onLogout,
       preferences,
       themeMode,
+      dashboardIconsMetadata,
       onUpdatePreferences,
       onUpdateUsername,
       onUpdatePassword,
@@ -401,6 +403,7 @@ function buildSidebarProps({
   onToggleTheme,
   lang,
   setLang,
+  onUpdatePreferences,
   onSelectApp,
   onEditApp,
   onOpenContextMenu,
@@ -432,6 +435,7 @@ function buildSidebarProps({
   | "onToggleTheme"
   | "lang"
   | "setLang"
+  | "onUpdatePreferences"
   | "onSelectApp"
   | "onEditApp"
   | "onOpenContextMenu"
@@ -462,7 +466,10 @@ function buildSidebarProps({
     onToggleReorderApps,
     onToggleTheme,
     lang,
-    setLang,
+    setLang: (nextLang) => {
+      setLang(nextLang);
+      onUpdatePreferences({ language: nextLang });
+    },
     onSelectApp,
     onEditApp,
     onOpenContextMenu,
@@ -658,6 +665,7 @@ function buildSettingsModalProps({
   onLogout,
   preferences,
   themeMode,
+  dashboardIconsMetadata,
   onUpdatePreferences,
   onUpdateUsername,
   onUpdatePassword,
@@ -702,6 +710,7 @@ function buildSettingsModalProps({
   | "onLogout"
   | "preferences"
   | "themeMode"
+  | "dashboardIconsMetadata"
   | "onUpdatePreferences"
   | "onUpdateUsername"
   | "onUpdatePassword"
@@ -746,6 +755,7 @@ function buildSettingsModalProps({
     onLogout,
     preferences,
     themeMode,
+    dashboardIconsMetadata,
     onUpdatePreferences,
     onUpdateUsername,
     onUpdatePassword,

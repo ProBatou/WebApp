@@ -1,7 +1,7 @@
-import { useEffect } from "react";
+import { memo, useEffect } from "react";
 import { useTranslation } from "../lib/i18n";
 
-export function ShortcutHelpModal({
+export const ShortcutHelpModal = memo(function ShortcutHelpModal({
   open,
   onClose,
 }: {
@@ -64,4 +64,4 @@ export function ShortcutHelpModal({
       </aside>
     </div>
   );
-}
+});

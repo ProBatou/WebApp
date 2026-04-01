@@ -1,8 +1,8 @@
-import { useEffect, useRef } from "react";
+import { memo, useEffect, useRef } from "react";
 import { useTranslation } from "../lib/i18n";
 import type { ContextMenuState, SidebarMode } from "../types";
 
-export function ContextMenu({
+export const ContextMenu = memo(function ContextMenu({
   contextMenu,
   sidebarMode,
   canManageApps,
@@ -48,7 +48,7 @@ export function ContextMenu({
   return (
     <div
       ref={menuRef}
-      className="sidebar-context-menu"
+      className="sidebar-context-menu picker-surface"
       style={{ left: contextMenu.x, top: contextMenu.y }}
       onClick={(event) => event.stopPropagation()}
       role="menu"
@@ -91,44 +91,48 @@ export function ContextMenu({
         }
       }}
     >
-      {contextMenu.app ? (
-        <>
-          {contextMenu.app.open_mode === "iframe" ? (
-            <button type="button" className="sidebar-context-item" role="menuitem" onClick={onRefresh}>
-              {t("app.refresh")}
-            </button>
-          ) : null}
-          {canManageApps ? (
+      <div className="sidebar-context-menu-list picker-scroll-shell">
+        <div className="sidebar-context-menu-content picker-scroll-content">
+          {contextMenu.app ? (
             <>
-              <button type="button" className="sidebar-context-item" role="menuitem" onClick={onEdit}>
-                {t("common.edit")}
+              {contextMenu.app.open_mode === "iframe" ? (
+                <button type="button" className="secondary-button sidebar-context-item picker-card-option" role="menuitem" onClick={onRefresh}>
+                  {t("app.refresh")}
+                </button>
+              ) : null}
+              {canManageApps ? (
+                <>
+                  <button type="button" className="secondary-button sidebar-context-item picker-card-option" role="menuitem" onClick={onEdit}>
+                    {t("common.edit")}
+                  </button>
+                  <button type="button" className="secondary-button sidebar-context-item picker-card-option" role="menuitem" onClick={onToggleDefault}>
+                    {contextMenu.app.is_default ? t("app.removeDefault") : t("app.setDefault")}
+                  </button>
+                  <button type="button" className="secondary-button sidebar-context-item picker-card-option sidebar-context-item-danger" role="menuitem" onClick={onDelete}>
+                    {t("common.delete")}
+                  </button>
+                </>
+              ) : null}
+            </>
+          ) : null}
+          {!contextMenu.app && canManageApps ? (
+            <>
+              <button type="button" className="secondary-button sidebar-context-item picker-card-option" role="menuitem" onClick={onCreate}>
+                {t("app.new")}
               </button>
-              <button type="button" className="sidebar-context-item" role="menuitem" onClick={onToggleDefault}>
-                {contextMenu.app.is_default ? t("app.removeDefault") : t("app.setDefault")}
+              <button type="button" className="secondary-button sidebar-context-item picker-card-option" role="menuitem" onClick={onImport}>
+                {t("app.importJson")}
               </button>
-              <button type="button" className="sidebar-context-item" role="menuitem" onClick={onDelete}>
-                {t("common.delete")}
+              <button type="button" className="secondary-button sidebar-context-item picker-card-option" role="menuitem" onClick={onExport}>
+                {t("app.exportJson")}
+              </button>
+              <button type="button" className="secondary-button sidebar-context-item picker-card-option" role="menuitem" onClick={onToggleSidebarMode}>
+                {sidebarMode === "expanded" ? t("app.switchCompact") : t("app.switchExpanded")}
               </button>
             </>
           ) : null}
-        </>
-      ) : null}
-      {!contextMenu.app && canManageApps ? (
-        <>
-          <button type="button" className="sidebar-context-item" role="menuitem" onClick={onCreate}>
-            {t("app.new")}
-          </button>
-          <button type="button" className="sidebar-context-item" role="menuitem" onClick={onImport}>
-            {t("app.importJson")}
-          </button>
-          <button type="button" className="sidebar-context-item" role="menuitem" onClick={onExport}>
-            {t("app.exportJson")}
-          </button>
-          <button type="button" className="sidebar-context-item" role="menuitem" onClick={onToggleSidebarMode}>
-            {sidebarMode === "expanded" ? t("app.switchCompact") : t("app.switchExpanded")}
-          </button>
-        </>
-      ) : null}
+        </div>
+      </div>
     </div>
   );
-}
+});

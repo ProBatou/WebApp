@@ -1,7 +1,7 @@
-import { useEffect } from "react";
+import { memo, useEffect } from "react";
 import { useTranslation } from "../lib/i18n";
 
-export function ConfirmModal({
+export const ConfirmModal = memo(function ConfirmModal({
   message,
   onConfirm,
   onCancel,
@@ -56,4 +56,4 @@ export function ConfirmModal({
       </aside>
     </div>
   );
-}
+});

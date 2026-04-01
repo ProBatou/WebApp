@@ -130,31 +130,37 @@
   position: fixed;
   z-index: 30;
   min-width: 180px;
-  padding: 8px;
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  background: var(--menu-bg);
-  border: 1px solid var(--border);
-  box-shadow: var(--menu-shadow);
-  backdrop-filter: blur(14px);
+}
+
+.sidebar-context-menu-list {
+  max-height: min(320px, 34vh);
+  margin-right: -8px;
+  padding-right: 2px;
+}
+
+.sidebar-context-menu-content {
+  padding-right: 10px;
 }
 
 .sidebar-context-item {
-  width: 100%;
-  padding: 10px 12px;
-  border: 0;
-  background: transparent;
-  text-align: left;
-  border-radius: 10px;
-  cursor: pointer;
+  min-height: 46px;
+  padding: 11px 14px;
+  border-radius: 16px;
+  justify-content: flex-start;
+  font-size: 0.9rem;
+  font-weight: 600;
+  line-height: 1.2;
+  white-space: nowrap;
 }
 
-.sidebar-context-item:hover {
-  background: var(--accent-soft);
+.sidebar-context-item-danger {
+  color: var(--text-danger);
+  border-color: color-mix(in srgb, var(--danger) 26%, var(--border));
+  background: color-mix(in srgb, var(--danger-soft) 58%, var(--tile-surface));
 }
 
-.sidebar-context-item:focus-visible {
-  outline: none;
-  background: var(--accent-soft);
+.sidebar-context-item-danger:hover,
+.sidebar-context-item-danger:focus-visible {
+  border-color: color-mix(in srgb, var(--danger) 42%, var(--border));
+  background: color-mix(in srgb, var(--danger-soft) 72%, var(--tile-surface));
 }

@@ -82,12 +82,25 @@
     grid-template-columns: 1fr;
   }
 
+  .app-editor-catalog-toolbar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .app-editor-catalog-picker {
+    z-index: 16;
+  }
+
   .app-editor-group-field {
     grid-column: auto;
   }
 
   .app-editor-preview-shell {
     position: static;
+  }
+
+  .app-editor-catalog-invert-button {
+    width: 100%;
   }
 
   .app-editor-modal .icon-search-results {
@@ -138,6 +151,8 @@
   }
 
   .settings-tab-content {
+    display: flex;
+    flex-direction: column;
     flex: 1 1 auto;
     min-height: 0;
     min-width: 0;
@@ -154,6 +169,30 @@
   .settings-modal .json-panel {
     margin-top: 14px;
     gap: 12px;
+  }
+
+  .settings-modal .settings-json-panel {
+    flex: 1 1 auto;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    padding-bottom: 8px;
+    box-sizing: border-box;
+  }
+
+  .settings-modal .json-textarea-field {
+    flex: 1 1 auto;
+    min-height: 0;
+  }
+
+  .settings-modal .json-textarea {
+    flex: 1 1 auto;
+    min-height: 228px;
+  }
+
+  .settings-modal .settings-json-panel .editor-actions {
+    margin-top: auto;
+    padding-bottom: 2px;
   }
 
   .group-create-row,
@@ -311,8 +350,27 @@
     gap: 10px;
   }
 
+  .settings-modal .settings-json-panel {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    padding-bottom: 8px;
+    box-sizing: border-box;
+  }
+
+  .settings-modal .json-textarea-field {
+    flex: 1 1 auto;
+    min-height: 0;
+  }
+
   .settings-modal .json-textarea {
-    min-height: 220px;
+    flex: 1 1 auto;
+    min-height: 228px;
+  }
+
+  .settings-modal .settings-json-panel .editor-actions {
+    margin-top: auto;
+    padding-bottom: 2px;
   }
 
   .user-create-grid,
@@ -459,6 +517,6 @@
   }
 
   .settings-modal .json-textarea {
-    min-height: 180px;
+    min-height: 220px;
   }
 }
