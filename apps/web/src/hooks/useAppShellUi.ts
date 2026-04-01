@@ -1,6 +1,7 @@
 import {
   useCallback,
   useEffect,
+  useRef,
   useState,
   type Dispatch,
   type MouseEvent,
@@ -9,6 +10,14 @@ import {
 } from "react";
 import type { DragCancelEvent, DragEndEvent, DragMoveEvent, DragStartEvent } from "@dnd-kit/core";
 import type { SettingsTab } from "../components/SettingsModal";
+import {
+  SIDEBAR_DELETE_THRESHOLD_SELECTOR,
+  getDraggedPointerLeft,
+  getEventClientX,
+  getSidebarDeleteThresholdLeft,
+  getSidebarDeleteZoneProgress,
+  isPastSidebarDeleteThreshold,
+} from "../lib/sidebar-delete-zone";
 import type { AppEditorState, ContextMenuState, GroupEntry, SidebarMode, WebAppEntry } from "../types";
 
 type UseAppShellUiOptions = {
@@ -82,6 +91,7 @@ export function useAppShellUi({
   const [reorderAppsEnabled, setReorderAppsEnabled] = useState(false);
   const [settingsInitialTab, setSettingsInitialTab] = useState<SettingsTab | undefined>(undefined);
   const [settingsInitialJsonMode, setSettingsInitialJsonMode] = useState<"import" | "export" | undefined>(undefined);
+  const dragPointerStartXRef = useRef<number | null>(null);
 
   useEffect(() => {
     if (!editorOpen && !shortcutHelpOpen && !settingsOpen) {
@@ -217,33 +227,56 @@ export function useAppShellUi({
     });
   }, [canManageApps, closeAuxiliaryModals]);
 
-  const getDragOutProgress = useCallback((translated: { left: number; right: number; width: number; height: number }) => {
+  const getDeleteThresholdLeft = useCallback(() => {
     const sidebarBounds = sidebarRef.current?.getBoundingClientRect();
     if (!sidebarBounds) {
-      return 0;
+      return null;
     }
 
-    const fullExitDistance = translated.left - sidebarBounds.right;
-    const visibleExitOffset = 24;
-    if (fullExitDistance <= visibleExitOffset) {
-      return 0;
-    }
-
-    return Math.min(1, (fullExitDistance - visibleExitOffset) / 180);
+    const thresholdMarker = sidebarRef.current?.querySelector<HTMLElement>(SIDEBAR_DELETE_THRESHOLD_SELECTOR);
+    return getSidebarDeleteThresholdLeft({
+      sidebarRight: sidebarBounds.right,
+      markerLeft: thresholdMarker?.getBoundingClientRect().left ?? null,
+    });
   }, [sidebarRef]);
 
+  const getCurrentDragLeft = useCallback((deltaX: number, fallbackLeft?: number | null) => {
+    return getDraggedPointerLeft({
+      initialPointerLeft: dragPointerStartXRef.current,
+      deltaX,
+    }) ?? fallbackLeft ?? null;
+  }, []);
+
+  const getDragOutProgress = useCallback((deltaX: number, fallbackLeft?: number | null) => {
+    const thresholdLeft = getDeleteThresholdLeft();
+    const currentLeft = getCurrentDragLeft(deltaX, fallbackLeft);
+    if (thresholdLeft === null || currentLeft === null) {
+      return 0;
+    }
+
+    return getSidebarDeleteZoneProgress({
+      currentLeft,
+      thresholdLeft,
+    });
+  }, [getCurrentDragLeft, getDeleteThresholdLeft]);
+
   const isDroppedOutsideSidebar = useCallback((event: DragEndEvent) => {
-    const sidebarBounds = sidebarRef.current?.getBoundingClientRect();
     const translated = event.active.rect.current.translated;
-    if (!sidebarBounds || !translated) {
+    const thresholdLeft = getDeleteThresholdLeft();
+    const currentLeft = getCurrentDragLeft(event.delta.x, translated?.left);
+    if (thresholdLeft === null || currentLeft === null) {
       return false;
     }
 
-    return translated.left > sidebarBounds.right + 72;
-  }, [sidebarRef]);
+    return isPastSidebarDeleteThreshold({
+      currentLeft,
+      thresholdLeft,
+    });
+  }, [getCurrentDragLeft, getDeleteThresholdLeft]);
 
   const handleDragStart = useCallback((event: DragStartEvent) => {
     const nextId = Number(event.active.id);
+    dragPointerStartXRef.current = getEventClientX(event.activatorEvent);
     setDraggingAppId(Number.isNaN(nextId) ? null : nextId);
     setDragOutProgress(0);
     setContextMenu(null);
@@ -252,15 +285,17 @@ export function useAppShellUi({
 
   const handleDragMove = useCallback((event: DragMoveEvent) => {
     const translated = event.active.rect.current.translated;
-    if (!translated) {
+    const currentLeft = getCurrentDragLeft(event.delta.x, translated?.left);
+    if (currentLeft === null) {
       setDragOutProgress(0);
       return;
     }
 
-    setDragOutProgress(getDragOutProgress(translated));
-  }, [getDragOutProgress]);
+    setDragOutProgress(getDragOutProgress(event.delta.x, translated?.left));
+  }, [getCurrentDragLeft, getDragOutProgress]);
 
   const handleDragCancel = useCallback((_event: DragCancelEvent) => {
+    dragPointerStartXRef.current = null;
     setDraggingAppId(null);
     setDragOutProgress(0);
   }, []);
@@ -268,7 +303,11 @@ export function useAppShellUi({
   const handleDragEnd = useCallback(async (event: DragEndEvent) => {
     setDraggingAppId(null);
     setDragOutProgress(0);
-    await handleReorder(event, isDroppedOutsideSidebar, groups);
+    try {
+      await handleReorder(event, isDroppedOutsideSidebar, groups);
+    } finally {
+      dragPointerStartXRef.current = null;
+    }
   }, [groups, handleReorder, isDroppedOutsideSidebar]);
 
   const handleOpenSettings = useCallback((tab?: SettingsTab, jsonMode?: "import" | "export") => {

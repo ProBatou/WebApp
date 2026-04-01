@@ -35,30 +35,64 @@
   transform: translateX(0);
 }
 
-.sidebar-trash-hint {
+.sidebar-delete-zone {
+  --sidebar-delete-threshold-offset: 72px;
   position: absolute;
-  top: 50%;
-  right: -170px;
-  transform: translateY(-50%);
-  width: 150px;
-  padding: 14px 16px;
-  border-radius: 20px;
-  background: var(--danger-soft);
-  border: 1px solid var(--danger-border-strong);
-  color: var(--text-danger);
-  text-align: center;
-  font-size: 0.92rem;
-  backdrop-filter: blur(12px);
+  left: 100%;
+  top: 0;
+  height: 100vh;
+  width: 60vw;
   pointer-events: none;
-  opacity: 0.72;
-  transition: opacity 140ms ease, transform 140ms ease, background-color 140ms ease, border-color 140ms ease;
+  display: flex;
+  align-items: center;
 }
 
-.sidebar-trash-hint.active {
-  opacity: 1;
-  transform: translateY(-50%) scale(1.04);
-  background: color-mix(in srgb, var(--danger-soft) 86%, var(--panel-strong));
-  border-color: color-mix(in srgb, var(--danger) 36%, var(--border));
+.sidebar-delete-zone-background {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    to right,
+    color-mix(in srgb, var(--danger) 32%, transparent) 0%,
+    color-mix(in srgb, var(--danger) 22%, transparent) 35%,
+    color-mix(in srgb, var(--danger) 10%, transparent) 65%,
+    transparent 100%
+  );
+}
+
+.sidebar-delete-threshold {
+  position: absolute;
+  z-index: 1;
+  left: var(--sidebar-delete-threshold-offset);
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  background: linear-gradient(
+    to bottom,
+    transparent 0%,
+    color-mix(in srgb, var(--danger) 55%, transparent) 15%,
+    var(--danger) 40%,
+    var(--danger) 60%,
+    color-mix(in srgb, var(--danger) 55%, transparent) 85%,
+    transparent 100%
+  );
+}
+
+.sidebar-delete-zone-hint {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding-left: 18px;
+  color: var(--danger);
+  pointer-events: none;
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-align: center;
+  line-height: 1.2;
+  max-width: 72px;
 }
 
 .brand-block {

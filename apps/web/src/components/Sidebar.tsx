@@ -1,10 +1,11 @@
-import { useEffect, useMemo, useRef, useState, type Dispatch, type MouseEvent, type ReactNode, type RefObject, type SetStateAction } from "react";
+import { useEffect, useMemo, useRef, useState, type CSSProperties, type Dispatch, type MouseEvent, type ReactNode, type RefObject, type SetStateAction } from "react";
 import { useDroppable } from "@dnd-kit/core";
 import { SortableContext, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { AppIcon } from "./AppIcon";
 import { LanguageDropdown } from "./LanguageDropdown";
 import { useTranslation, type SupportedLanguage } from "../lib/i18n";
+import { SIDEBAR_DELETE_THRESHOLD_OFFSET_PX } from "../lib/sidebar-delete-zone";
 import type { AppStatusEntry, ContextMenuState, DashboardIconsMetadataMap, GroupEntry, SidebarMode, ThemeMode, WebAppEntry } from "../types";
 
 const collapsedGroupsStorageKey = "webapp-v2-collapsed-groups";
@@ -69,9 +70,20 @@ function SortableAppTile({
   reorderAppsEnabled: boolean;
 }) {
   const { t } = useTranslation();
-  const reorderModeActive = canManageApps && reorderAppsEnabled;
+  // Drag is disabled entirely in compact mode
+  const reorderModeActive = canManageApps && reorderAppsEnabled && !compact;
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: app.id, disabled: !reorderModeActive });
   const constrainedTransform = transform ? { ...transform, x: 0 } : null;
+
+  // Allow dragging from anywhere on the card for mouse users only.
+  // Touch users must use the dedicated drag handle (touch-action: none is set there).
+  const handleCardPointerDown = (reorderModeActive && listeners)
+    ? (event: React.PointerEvent<HTMLDivElement>) => {
+        if (event.pointerType === "mouse") {
+          (listeners as Record<string, (e: React.PointerEvent) => void>).onPointerDown?.(event);
+        }
+      }
+    : undefined;
 
   return (
     <div
@@ -82,6 +94,7 @@ function SortableAppTile({
         opacity: isDragging ? 0.6 : 1,
       }}
       className={isDragging ? (active ? "app-tile active dragging" : "app-tile dragging") : active ? "app-tile active" : "app-tile"}
+      onPointerDown={handleCardPointerDown}
       onContextMenu={(event) => {
         event.stopPropagation();
         onContextMenu(event, app);
@@ -92,14 +105,24 @@ function SortableAppTile({
         }
       }}
     >
+      {reorderModeActive ? (
+        <div className="drag-handle" {...attributes} {...listeners} aria-label={t("app.dragHandle")}>
+          <svg width="12" height="16" viewBox="0 0 12 16" fill="currentColor" aria-hidden="true" focusable="false">
+            <circle cx="3" cy="4" r="1.5" />
+            <circle cx="9" cy="4" r="1.5" />
+            <circle cx="3" cy="8" r="1.5" />
+            <circle cx="9" cy="8" r="1.5" />
+            <circle cx="3" cy="12" r="1.5" />
+            <circle cx="9" cy="12" r="1.5" />
+          </svg>
+        </div>
+      ) : null}
       <button
-        className={canManageApps && reorderAppsEnabled ? "app-main-hitbox draggable" : "app-main-hitbox"}
+        className="app-main-hitbox"
         type="button"
         onClick={() => onSelect(app)}
         title={app.name}
         aria-label={t("app.openAppAria", { name: app.name })}
-        {...(canManageApps && reorderAppsEnabled ? attributes : {})}
-        {...(canManageApps && reorderAppsEnabled ? listeners : {})}
       >
         <AppIcon
           icon={app.icon}
@@ -127,7 +150,6 @@ function SortableAppTile({
                   </svg>
                 </span>
               ) : null}
-              {app.is_default ? <span className="default-app-badge" title={t("app.default")}>★</span> : null}
               <span
                 className={appStatus?.status === "online"
                   ? "app-status-dot online"
@@ -149,6 +171,7 @@ function SortableAppTile({
                       : t("status.unknown")
                 }
               />
+              {app.is_default ? <span className="default-app-badge" title={t("app.default")}>★</span> : null}
             </strong>
           </span>
         ) : null}
@@ -164,12 +187,14 @@ export function DragOverlayTile({
   themeMode,
   dashboardIconsMetadata,
   dragOutProgress,
+  appStatus,
 }: {
   app: WebAppEntry;
   compact: boolean;
   themeMode: ThemeMode;
   dashboardIconsMetadata: DashboardIconsMetadataMap;
   dragOutProgress: number;
+  appStatus?: AppStatusEntry;
 }) {
   const { t } = useTranslation();
   const fadeProgress = dragOutProgress <= 0.72 ? 0 : (dragOutProgress - 0.72) / 0.28;
@@ -198,8 +223,21 @@ export function DragOverlayTile({
       />
       {!compact ? (
         <span className="app-meta">
-          <strong>{app.name}</strong>
-          <small>{app.open_mode === "iframe" ? t("app.openMode.embedded") : t("app.openMode.external")}</small>
+          <strong>
+            <span className="app-name">{app.name}</span>
+            {app.open_mode === "external" ? (
+              <span className="app-external-icon" aria-hidden="true">
+                <svg width="8" height="8" viewBox="0 0 8 8" fill="none" focusable="false" aria-hidden="true">
+                  <path d="M2 1h5v5M7 1L1 7" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" />
+                </svg>
+              </span>
+            ) : null}
+            <span
+              className={appStatus?.status === "online" ? "app-status-dot online" : appStatus?.status === "offline" ? "app-status-dot offline" : "app-status-dot unknown"}
+              aria-hidden="true"
+            />
+            {app.is_default ? <span className="default-app-badge" title={t("app.default")}>★</span> : null}
+          </strong>
         </span>
       ) : null}
     </div>
@@ -223,7 +261,6 @@ export function Sidebar({
   reorderAppsEnabled,
   themeMode,
   dashboardIconsMetadata,
-  busy,
   contextMenu,
   appStatuses,
   onOpenSidebarContextMenu,
@@ -234,7 +271,6 @@ export function Sidebar({
   lang,
   setLang,
   onSelectApp,
-  onEditApp,
   onOpenContextMenu,
   onReorderGroups,
 }: {
@@ -253,7 +289,6 @@ export function Sidebar({
   reorderAppsEnabled: boolean;
   themeMode: ThemeMode;
   dashboardIconsMetadata: DashboardIconsMetadataMap;
-  busy: boolean;
   contextMenu: ContextMenuState;
   appStatuses: Record<number, AppStatusEntry>;
   onOpenSidebarContextMenu: (event: MouseEvent<HTMLElement>) => void;
@@ -264,7 +299,6 @@ export function Sidebar({
   lang: SupportedLanguage;
   setLang: (lang: SupportedLanguage) => void;
   onSelectApp: (app: WebAppEntry) => void;
-  onEditApp: (app: WebAppEntry) => void;
   onOpenContextMenu: (event: MouseEvent<HTMLDivElement>, app: WebAppEntry) => void;
   onReorderGroups: (groupIds: number[]) => Promise<void>;
 }) {
@@ -564,103 +598,123 @@ export function Sidebar({
         </div>
 
         {draggingAppId !== null ? (
-          <div className={dragOutProgress > 0 ? "sidebar-trash-hint active" : "sidebar-trash-hint"}>{t("app.dragToDelete")}</div>
+          <div
+            className="sidebar-delete-zone"
+            style={{
+              "--sidebar-delete-threshold-offset": `${SIDEBAR_DELETE_THRESHOLD_OFFSET_PX}px`,
+            } as CSSProperties}
+            aria-hidden="true"
+          >
+            <div className="sidebar-delete-zone-background" style={{ opacity: dragOutProgress }} />
+            <div className="sidebar-delete-threshold" style={{ opacity: dragOutProgress }} />
+            <div
+              className="sidebar-delete-zone-hint"
+              style={{ opacity: dragOutProgress <= 0 ? 0 : Math.min(1, 0.35 + dragOutProgress * 1.45) }}
+            >
+              <svg width="22" height="22" viewBox="0 0 22 22" fill="none" focusable="false" aria-hidden="true">
+                <path d="M4 6h14M9 6V4h4v2M8 10v6M14 10v6M5 6l1 12a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1l1-12" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+              <span>{t("app.dragToDelete")}</span>
+            </div>
+          </div>
         ) : null}
 
-        <div className="sidebar-bottom-actions">
-          {canManageApps ? (
+        {sidebarMode !== "compact" ? (
+          <div className="sidebar-bottom-actions">
+            {canManageApps ? (
+              <button
+                className="primary-button sidebar-bottom-button sidebar-icon-button"
+                type="button"
+                onClick={onOpenCreateEditor}
+                title={t("app.new")}
+                aria-label={t("app.new")}
+              >
+                +
+              </button>
+            ) : null}
+            {canManageApps ? (
+              <button
+                className={reorderAppsEnabled ? "ghost-icon-button sidebar-bottom-button active" : "ghost-icon-button sidebar-bottom-button"}
+                type="button"
+                onClick={onToggleReorderApps}
+                aria-label={reorderAppsEnabled ? t("app.disableReorderMode") : t("app.enableReorderMode")}
+                title={reorderAppsEnabled ? t("app.disableReorderMode") : t("app.enableReorderMode")}
+              >
+                {reorderAppsEnabled ? (
+                  <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true" focusable="false">
+                    <path
+                      d="M5 7V5.3a3 3 0 0 1 5.1-2.12"
+                      stroke="currentColor"
+                      strokeWidth="1.6"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                    <path
+                      d="M10.1 3.25 11.55 4.75"
+                      stroke="currentColor"
+                      strokeWidth="1.6"
+                      strokeLinecap="round"
+                    />
+                    <rect
+                      x="4"
+                      y="7"
+                      width="8"
+                      height="6"
+                      rx="1.5"
+                      stroke="currentColor"
+                      strokeWidth="1.4"
+                    />
+                  </svg>
+                ) : (
+                  <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true" focusable="false">
+                    <path
+                      d="M5 7V5.3a3 3 0 0 1 6 0V7"
+                      stroke="currentColor"
+                      strokeWidth="1.6"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                    <rect
+                      x="4"
+                      y="7"
+                      width="8"
+                      height="6"
+                      rx="1.5"
+                      stroke="currentColor"
+                      strokeWidth="1.4"
+                    />
+                  </svg>
+                )}
+              </button>
+            ) : null}
             <button
-              className="primary-button sidebar-bottom-button sidebar-icon-button"
+              className="ghost-icon-button sidebar-bottom-button sidebar-settings-button"
               type="button"
-              onClick={onOpenCreateEditor}
-              title={t("app.new")}
-              aria-label={t("app.new")}
+              onClick={() => onOpenSettings()}
+              aria-label={t("settings.open")}
+              title={t("settings.open")}
             >
-              +
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true" focusable="false">
+                <path
+                  d="M6.89 1.73a1.2 1.2 0 0 1 2.22 0l.3.78a1.2 1.2 0 0 0 1.2.75l.84-.06a1.2 1.2 0 0 1 1.57 1.57l-.06.84a1.2 1.2 0 0 0 .75 1.2l.78.3a1.2 1.2 0 0 1 0 2.22l-.78.3a1.2 1.2 0 0 0-.75 1.2l.06.84a1.2 1.2 0 0 1-1.57 1.57l-.84-.06a1.2 1.2 0 0 0-1.2.75l-.3.78a1.2 1.2 0 0 1-2.22 0l-.3-.78a1.2 1.2 0 0 0-1.2-.75l-.84.06a1.2 1.2 0 0 1-1.57-1.57l.06-.84a1.2 1.2 0 0 0-.75-1.2l-.78-.3a1.2 1.2 0 0 1 0-2.22l.78-.3a1.2 1.2 0 0 0 .75-1.2l-.06-.84A1.2 1.2 0 0 1 4.55 3.2l.84.06a1.2 1.2 0 0 0 1.2-.75l.3-.78Z"
+                  stroke="currentColor"
+                  strokeWidth="1.2"
+                  strokeLinejoin="round"
+                />
+                <circle cx="8" cy="8" r="2.2" stroke="currentColor" strokeWidth="1.2" />
+              </svg>
             </button>
-          ) : null}
-          {canManageApps ? (
-            <button
-              className={reorderAppsEnabled ? "ghost-icon-button sidebar-bottom-button active" : "ghost-icon-button sidebar-bottom-button"}
-              type="button"
-              onClick={onToggleReorderApps}
-              aria-label={reorderAppsEnabled ? t("app.disableReorderMode") : t("app.enableReorderMode")}
-              title={reorderAppsEnabled ? t("app.disableReorderMode") : t("app.enableReorderMode")}
-            >
-              {reorderAppsEnabled ? (
-                <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true" focusable="false">
-                  <path
-                    d="M5 7V5.3a3 3 0 0 1 5.1-2.12"
-                    stroke="currentColor"
-                    strokeWidth="1.6"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                  <path
-                    d="M10.1 3.25 11.55 4.75"
-                    stroke="currentColor"
-                    strokeWidth="1.6"
-                    strokeLinecap="round"
-                  />
-                  <rect
-                    x="4"
-                    y="7"
-                    width="8"
-                    height="6"
-                    rx="1.5"
-                    stroke="currentColor"
-                    strokeWidth="1.4"
-                  />
-                </svg>
-              ) : (
-                <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true" focusable="false">
-                  <path
-                    d="M5 7V5.3a3 3 0 0 1 6 0V7"
-                    stroke="currentColor"
-                    strokeWidth="1.6"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                  <rect
-                    x="4"
-                    y="7"
-                    width="8"
-                    height="6"
-                    rx="1.5"
-                    stroke="currentColor"
-                    strokeWidth="1.4"
-                  />
-                </svg>
-              )}
+            <LanguageDropdown
+              lang={lang}
+              setLang={setLang}
+              menuClassName="sidebar-language-menu"
+              triggerClassName="ghost-icon-button sidebar-language-switch sidebar-bottom-button"
+            />
+            <button className="ghost-icon-button theme-toggle sidebar-bottom-button" type="button" onClick={onToggleTheme} aria-label={t("app.themeToggleAria")} title={t("app.themeToggleTitle")}>
+              {themeMode === "light" ? "◐" : "◑"}
             </button>
-          ) : null}
-          <button
-            className="ghost-icon-button sidebar-bottom-button sidebar-settings-button"
-            type="button"
-            onClick={() => onOpenSettings()}
-            aria-label={t("settings.open")}
-            title={t("settings.open")}
-          >
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true" focusable="false">
-              <path
-                d="M6.89 1.73a1.2 1.2 0 0 1 2.22 0l.3.78a1.2 1.2 0 0 0 1.2.75l.84-.06a1.2 1.2 0 0 1 1.57 1.57l-.06.84a1.2 1.2 0 0 0 .75 1.2l.78.3a1.2 1.2 0 0 1 0 2.22l-.78.3a1.2 1.2 0 0 0-.75 1.2l.06.84a1.2 1.2 0 0 1-1.57 1.57l-.84-.06a1.2 1.2 0 0 0-1.2.75l-.3.78a1.2 1.2 0 0 1-2.22 0l-.3-.78a1.2 1.2 0 0 0-1.2-.75l-.84.06a1.2 1.2 0 0 1-1.57-1.57l.06-.84a1.2 1.2 0 0 0-.75-1.2l-.78-.3a1.2 1.2 0 0 1 0-2.22l.78-.3a1.2 1.2 0 0 0 .75-1.2l-.06-.84A1.2 1.2 0 0 1 4.55 3.2l.84.06a1.2 1.2 0 0 0 1.2-.75l.3-.78Z"
-                stroke="currentColor"
-                strokeWidth="1.2"
-                strokeLinejoin="round"
-              />
-              <circle cx="8" cy="8" r="2.2" stroke="currentColor" strokeWidth="1.2" />
-            </svg>
-          </button>
-          <LanguageDropdown
-            lang={lang}
-            setLang={setLang}
-            menuClassName="sidebar-language-menu"
-            triggerClassName="ghost-icon-button sidebar-language-switch sidebar-bottom-button"
-          />
-          <button className="ghost-icon-button theme-toggle sidebar-bottom-button" type="button" onClick={onToggleTheme} aria-label={t("app.themeToggleAria")} title={t("app.themeToggleTitle")}>
-            {themeMode === "light" ? "◐" : "◑"}
-          </button>
-        </div>
+          </div>
+        ) : null}
       </aside>
     </>
   );
