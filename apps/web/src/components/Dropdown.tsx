@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
 
 export type DropdownItem = {
-  label: string;
+  label: ReactNode;
   value: string;
   active?: boolean;
 };
@@ -12,12 +12,18 @@ export function Dropdown({
   onSelect,
   className,
   disabled = false,
+  hideChevron = false,
+  ariaLabel,
+  title,
 }: {
   trigger: ReactNode;
   items: DropdownItem[];
   onSelect: (value: string) => void;
   className?: string;
   disabled?: boolean;
+  hideChevron?: boolean;
+  ariaLabel?: string;
+  title?: string;
 }) {
   const [open, setOpen] = useState(false);
   const [placement, setPlacement] = useState<"above" | "below">("below");
@@ -89,6 +95,8 @@ export function Dropdown({
         className={className ? `sidebar-actions-trigger ${className}` : "sidebar-actions-trigger"}
         type="button"
         disabled={disabled}
+        aria-label={ariaLabel}
+        title={title}
         onClick={(event) => {
           event.stopPropagation();
           setOpen((current) => !current);
@@ -97,33 +105,39 @@ export function Dropdown({
         aria-expanded={open}
       >
         <span className="dropdown-trigger-label">{trigger}</span>
-        <span className={open ? "dropdown-trigger-icon open" : "dropdown-trigger-icon"} aria-hidden="true">
-          ▾
-        </span>
+        {hideChevron ? null : (
+          <span className={open ? "dropdown-trigger-icon open" : "dropdown-trigger-icon"} aria-hidden="true">
+            ▾
+          </span>
+        )}
       </button>
 
       {open ? (
         <div
           ref={popoverRef}
-          className={placement === "above" ? "sidebar-actions-popover open-above" : "sidebar-actions-popover open-below"}
+          className={placement === "above" ? "sidebar-actions-popover picker-surface open-above" : "sidebar-actions-popover picker-surface open-below"}
           role="menu"
         >
-          {items.map((item) => (
-            <button
-              key={item.value}
-              className={item.active ? "secondary-button dropdown-item active" : "secondary-button dropdown-item"}
-              type="button"
-              onClick={(event) => {
-                event.stopPropagation();
-                setOpen(false);
-                queueMicrotask(() => {
-                  onSelect(item.value);
-                });
-              }}
-            >
-              {item.label}
-            </button>
-          ))}
+          <div className="sidebar-actions-popover-list picker-scroll-shell">
+            <div className="sidebar-actions-popover-content picker-scroll-content">
+              {items.map((item) => (
+                <button
+                  key={item.value}
+                  className={item.active ? "secondary-button dropdown-item picker-card-option active" : "secondary-button dropdown-item picker-card-option"}
+                  type="button"
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    setOpen(false);
+                    queueMicrotask(() => {
+                      onSelect(item.value);
+                    });
+                  }}
+                >
+                  <span className="dropdown-item-label">{item.label}</span>
+                </button>
+              ))}
+            </div>
+          </div>
         </div>
       ) : null}
     </div>

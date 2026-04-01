@@ -1,7 +1,8 @@
+import { memo } from "react";
 import type { WebAppEntry } from "../types";
 import { useTranslation } from "../lib/i18n";
 
-export function Workspace({
+export const Workspace = memo(function Workspace({
   selectedApp,
   mountedIframeApps,
   iframeReloadTokens,
@@ -44,4 +45,4 @@ export function Workspace({
       </div>
     </main>
   );
-}
+});

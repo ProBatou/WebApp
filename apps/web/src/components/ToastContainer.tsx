@@ -1,7 +1,8 @@
+import { memo } from "react";
 import type { ToastItem } from "../hooks/useToast";
 import { useTranslation } from "../lib/i18n";
 
-export function ToastContainer({
+export const ToastContainer = memo(function ToastContainer({
   toasts,
   onDismiss,
 }: {
@@ -26,4 +27,4 @@ export function ToastContainer({
       ))}
     </div>
   );
-}
+});
