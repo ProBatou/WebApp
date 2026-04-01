@@ -1,4 +1,4 @@
-import { useCallback, useEffect, type Dispatch, type SetStateAction } from "react";
+import { useCallback, useEffect, useLayoutEffect, type Dispatch, type SetStateAction } from "react";
 import { getSuggestedDashboardIcon, themeStorageKey } from "../lib/app-utils";
 import type { AppEditorState, ThemeMode, UserPreferences } from "../types";
 
@@ -37,7 +37,7 @@ export function useAppRuntime({
   reloadGroups: () => Promise<unknown>;
   updatePreferences: (patch: Partial<UserPreferences>) => void;
 }) {
-  useEffect(() => {
+  useLayoutEffect(() => {
     document.documentElement.dataset.theme = themeMode;
     window.localStorage.setItem(themeStorageKey, themeMode);
   }, [themeMode]);

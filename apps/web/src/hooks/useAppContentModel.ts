@@ -10,6 +10,7 @@ import { useGroups } from "./useGroups";
 import { useIframes } from "./useIframes";
 import { useModals } from "./useModals";
 import { usePreferences } from "./usePreferences";
+import { useStatusBarColor } from "./useStatusBarColor";
 import { useToast } from "./useToast";
 import { useAuthenticatedAppShell, type UseAuthenticatedAppShellArgs } from "./useAuthenticatedAppShell";
 import { useI18nContext, useTranslation } from "../lib/i18n";
@@ -173,6 +174,7 @@ export function useAppContentModel() {
     onThemeChange: setThemeMode,
     onLanguageChange: setLang,
   });
+
   const {
     appStatuses,
     inheritedEditorAccent,
@@ -339,6 +341,11 @@ export function useAppContentModel() {
     handlers: authenticatedShellHandlerArgs,
   };
   const { appShellLayoutProps, toggleThemeMode } = useAuthenticatedAppShell(authenticatedShellArgs);
+
+  useStatusBarColor({
+    themeMode,
+    userShellSurfaceColor: themeMode === "dark" ? preferences.sidebarColorDark : preferences.sidebarColor,
+  });
 
   const authScreenProps = {
     needsSetup,
