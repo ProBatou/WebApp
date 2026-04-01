@@ -73,7 +73,7 @@ export type BuildAppShellLayoutPropsArgs = {
   onToggleReorderApps: AppShellLayoutProps["sidebarProps"]["onToggleReorderApps"];
   onToggleTheme: () => void;
   onSelectApp: AppShellLayoutProps["sidebarProps"]["onSelectApp"];
-  onEditApp: AppShellLayoutProps["sidebarProps"]["onEditApp"];
+  onEditApp: (app: WebAppEntry) => void;
   onOpenContextMenu: AppShellLayoutProps["sidebarProps"]["onOpenContextMenu"];
   onReorderGroups: AppShellLayoutProps["sidebarProps"]["onReorderGroups"];
   onCloseContextMenu: () => void;
@@ -183,7 +183,6 @@ export function buildAppShellLayoutProps({
   onToggleReorderApps,
   onToggleTheme,
   onSelectApp,
-  onEditApp,
   onOpenContextMenu,
   onReorderGroups,
   onCloseContextMenu,
@@ -250,7 +249,6 @@ export function buildAppShellLayoutProps({
       reorderAppsEnabled,
       themeMode,
       dashboardIconsMetadata,
-      busy,
       contextMenu,
       appStatuses,
       onOpenSidebarContextMenu,
@@ -262,7 +260,6 @@ export function buildAppShellLayoutProps({
       setLang,
       onUpdatePreferences,
       onSelectApp,
-      onEditApp,
       onOpenContextMenu,
       onReorderGroups,
     }),
@@ -373,6 +370,7 @@ export function buildAppShellLayoutProps({
       themeMode,
       dashboardIconsMetadata,
       dragOutProgress,
+      appStatuses,
     }),
   };
 }
@@ -393,7 +391,6 @@ function buildSidebarProps({
   reorderAppsEnabled,
   themeMode,
   dashboardIconsMetadata,
-  busy,
   contextMenu,
   appStatuses,
   onOpenSidebarContextMenu,
@@ -405,7 +402,6 @@ function buildSidebarProps({
   setLang,
   onUpdatePreferences,
   onSelectApp,
-  onEditApp,
   onOpenContextMenu,
   onReorderGroups,
 }: Pick<
@@ -425,7 +421,6 @@ function buildSidebarProps({
   | "reorderAppsEnabled"
   | "themeMode"
   | "dashboardIconsMetadata"
-  | "busy"
   | "contextMenu"
   | "appStatuses"
   | "onOpenSidebarContextMenu"
@@ -437,7 +432,6 @@ function buildSidebarProps({
   | "setLang"
   | "onUpdatePreferences"
   | "onSelectApp"
-  | "onEditApp"
   | "onOpenContextMenu"
   | "onReorderGroups"
 >): AppShellLayoutProps["sidebarProps"] {
@@ -457,7 +451,6 @@ function buildSidebarProps({
     reorderAppsEnabled,
     themeMode,
     dashboardIconsMetadata,
-    busy,
     contextMenu,
     appStatuses,
     onOpenSidebarContextMenu,
@@ -471,7 +464,6 @@ function buildSidebarProps({
       onUpdatePreferences({ language: nextLang });
     },
     onSelectApp,
-    onEditApp,
     onOpenContextMenu,
     onReorderGroups,
   };
@@ -782,9 +774,10 @@ function buildDragOverlayTileProps({
   themeMode,
   dashboardIconsMetadata,
   dragOutProgress,
+  appStatuses,
 }: Pick<
   BuildAppShellLayoutPropsArgs,
-  "draggedApp" | "sidebarMode" | "themeMode" | "dashboardIconsMetadata" | "dragOutProgress"
+  "draggedApp" | "sidebarMode" | "themeMode" | "dashboardIconsMetadata" | "dragOutProgress" | "appStatuses"
 >): AppShellLayoutProps["dragOverlayTileProps"] {
   return {
     app: draggedApp,
@@ -792,5 +785,6 @@ function buildDragOverlayTileProps({
     themeMode,
     dashboardIconsMetadata,
     dragOutProgress,
+    appStatus: draggedApp ? appStatuses[draggedApp.id] : undefined,
   };
 }

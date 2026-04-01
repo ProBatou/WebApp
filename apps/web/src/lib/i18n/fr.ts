@@ -99,6 +99,7 @@ export const fr: Record<TranslationKey, string> = {
   "app.switchCompact": "Passer en compact",
   "app.switchExpanded": "Passer en étendu",
   "app.dragToDelete": "Glisser à droite pour supprimer",
+  "app.dragHandle": "Glisser pour réordonner",
   "app.noAppsVisible": "Aucune app visible.",
   "app.noAppsMatch": "Aucune app ne correspond à votre recherche.",
   "app.searchApps": "Rechercher des apps",

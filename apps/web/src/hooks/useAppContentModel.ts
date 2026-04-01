@@ -1,5 +1,5 @@
 import { useCallback, useRef } from "react";
-import { PointerSensor, useSensor, useSensors } from "@dnd-kit/core";
+import { PointerSensor, TouchSensor, useSensor, useSensors } from "@dnd-kit/core";
 import { useAppChromeState } from "./useAppChromeState";
 import { useApps } from "./useApps";
 import { useAuth } from "./useAuth";
@@ -23,6 +23,12 @@ export function useAppContentModel() {
     useSensor(PointerSensor, {
       activationConstraint: {
         distance: 8,
+      },
+    }),
+    useSensor(TouchSensor, {
+      activationConstraint: {
+        delay: 150,
+        tolerance: 5,
       },
     })
   );

@@ -97,6 +97,7 @@ export const en = {
   "app.switchCompact": "Switch to compact",
   "app.switchExpanded": "Switch to expanded",
   "app.dragToDelete": "Drag right to delete",
+  "app.dragHandle": "Drag to reorder",
   "app.noAppsVisible": "No visible apps.",
   "app.noAppsMatch": "No apps match your search.",
   "app.searchApps": "Search apps",

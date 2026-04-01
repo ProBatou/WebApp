@@ -290,6 +290,170 @@
     border-radius: 0;
   }
 
+  .app-shell .sidebar {
+    width: min(286px, calc(100vw - 18px));
+    padding: 12px;
+  }
+
+  .app-shell .sidebar.compact {
+    width: 78px;
+    padding: 10px 6px;
+  }
+
+  .app-shell .sidebar.compact .primary-button,
+  .app-shell .sidebar.compact .secondary-button,
+  .app-shell .sidebar.compact .ghost-icon-button,
+  .app-shell .sidebar.compact .sidebar-toggle {
+    width: 42px;
+    min-width: 42px;
+    height: 42px;
+    border-radius: 14px;
+  }
+
+  .app-shell .brand-block {
+    gap: 10px;
+  }
+
+  .app-shell .brand-copy h1 {
+    font-size: 1.24rem;
+  }
+
+  .app-shell .eyebrow {
+    font-size: 0.68rem;
+  }
+
+  .app-shell .sidebar-header-actions {
+    gap: 6px;
+  }
+
+  .app-shell .sidebar-section {
+    margin-top: 12px;
+  }
+
+  .app-shell .section-title {
+    font-size: 0.82rem;
+  }
+
+  .app-shell .sidebar-search {
+    margin-bottom: 8px;
+  }
+
+  .app-shell .sidebar-search input {
+    min-height: 40px;
+    padding: 10px 12px;
+    font-size: 0.88rem;
+  }
+
+  .app-shell .app-section-list {
+    gap: 10px;
+    padding-top: 6px;
+    padding-bottom: 10px;
+  }
+
+  .app-shell .grouped-app-section {
+    gap: 6px;
+  }
+
+  .app-shell .group-section-toggle {
+    padding: 3px;
+  }
+
+  .app-shell .group-section-title {
+    font-size: 0.68rem;
+    letter-spacing: 0.07em;
+  }
+
+  .app-shell .app-list {
+    gap: 6px;
+    padding-right: 2px;
+  }
+
+  .app-shell .app-tile {
+    gap: 4px;
+    padding: 4px;
+    border-radius: 15px;
+  }
+
+  .app-shell .app-main-hitbox {
+    gap: 8px;
+    padding: 3px;
+  }
+
+  .app-shell .app-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: 12px;
+  }
+
+  .app-shell .app-icon-image {
+    width: 20px;
+    height: 20px;
+  }
+
+  .app-shell .app-meta strong {
+    gap: 5px;
+    font-size: 0.83rem;
+  }
+
+  .app-shell .default-app-badge {
+    font-size: 0.8rem;
+  }
+
+  .app-shell .app-status-dot {
+    width: 7px;
+    height: 7px;
+    flex-basis: 7px;
+    box-shadow: 0 0 0 2px var(--status-dot-ring);
+  }
+
+  .app-shell .drag-handle {
+    width: 16px;
+  }
+
+  .app-shell .sidebar-empty-state {
+    font-size: 0.84rem;
+  }
+
+  .app-shell .sidebar-bottom-actions {
+    gap: 6px;
+    padding-top: 10px;
+  }
+
+  .app-shell .sidebar-bottom-actions .primary-button,
+  .app-shell .sidebar-bottom-actions .secondary-button,
+  .app-shell .sidebar-bottom-actions .ghost-icon-button,
+  .app-shell .sidebar-bottom-button,
+  .app-shell .sidebar-language-switch,
+  .app-shell .sidebar-actions-trigger.sidebar-language-switch {
+    min-height: 40px;
+    height: 40px;
+  }
+
+  .app-shell .sidebar-bottom-actions .primary-button,
+  .app-shell .sidebar-bottom-actions .secondary-button {
+    padding-left: 12px;
+    padding-right: 12px;
+    font-size: 0.82rem;
+  }
+
+  .app-shell .sidebar-actions-trigger {
+    min-height: 40px;
+    padding: 0 12px;
+    gap: 10px;
+    font-size: 0.86rem;
+  }
+
+  .app-shell .sidebar-actions-popover {
+    max-width: min(280px, calc(100vw - 20px));
+  }
+
+  .app-shell .sidebar-delete-zone-hint {
+    gap: 6px;
+    padding-left: 14px;
+    font-size: 0.72rem;
+    max-width: 64px;
+  }
+
   .json-toolbar,
   .json-toolbar-actions {
     align-items: stretch;
@@ -508,6 +672,63 @@
 
   .sidebar-tools {
     flex-direction: column;
+  }
+}
+
+@media (max-width: 420px) {
+  .app-shell .sidebar {
+    width: min(268px, calc(100vw - 14px));
+    padding: 10px;
+  }
+
+  .app-shell .sidebar.compact {
+    width: 72px;
+    padding: 8px 5px;
+  }
+
+  .app-shell .brand-copy h1 {
+    font-size: 1.14rem;
+  }
+
+  .app-shell .sidebar-section {
+    margin-top: 10px;
+  }
+
+  .app-shell .sidebar-search input {
+    min-height: 38px;
+    padding: 9px 11px;
+    font-size: 0.84rem;
+  }
+
+  .app-shell .app-tile {
+    border-radius: 14px;
+  }
+
+  .app-shell .app-icon {
+    width: 34px;
+    height: 34px;
+    border-radius: 11px;
+  }
+
+  .app-shell .app-icon-image {
+    width: 18px;
+    height: 18px;
+  }
+
+  .app-shell .app-meta strong {
+    font-size: 0.79rem;
+  }
+
+  .app-shell .sidebar-bottom-actions .primary-button,
+  .app-shell .sidebar-bottom-actions .secondary-button,
+  .app-shell .sidebar-bottom-actions .ghost-icon-button,
+  .app-shell .sidebar-bottom-button,
+  .app-shell .sidebar-language-switch,
+  .app-shell .sidebar-actions-trigger.sidebar-language-switch,
+  .app-shell .sidebar-actions-trigger {
+    min-height: 38px;
+    height: 38px;
+    font-size: 0.82rem;
   }
 }
 

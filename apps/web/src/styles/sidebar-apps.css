@@ -221,10 +221,41 @@
   white-space: nowrap;
 }
 
-.app-main-hitbox.draggable {
+.drag-handle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 20px;
+  align-self: stretch;
   cursor: grab;
+  touch-action: none;
+  color: var(--text-secondary);
+  opacity: 0.4;
+  border-radius: 6px;
 }
 
-.app-main-hitbox.draggable:active {
+.drag-handle:hover {
+  opacity: 0.7;
+}
+
+.drag-handle:active {
   cursor: grabbing;
+  opacity: 1;
+}
+
+/* On pointer/mouse devices the whole card is draggable — hide the handle visually
+   but keep it in the DOM so touch users on hybrid devices still have it */
+@media (hover: hover) and (pointer: fine) {
+  .drag-handle {
+    display: none;
+  }
+
+  .app-tile:has(.drag-handle) {
+    cursor: grab;
+  }
+
+  .app-tile:has(.drag-handle):active {
+    cursor: grabbing;
+  }
 }
