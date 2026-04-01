@@ -11,10 +11,16 @@ type Migration = {
 };
 
 const currentDir = dirname(fileURLToPath(import.meta.url));
+const isNodeTestRunner = process.argv.includes("--test") || process.execArgv.includes("--test");
 const databasePath = process.env.DATABASE_PATH
   ? resolve(process.env.DATABASE_PATH)
-  : resolve(currentDir, "../../data/webapp-v2.db");
-mkdirSync(dirname(databasePath), { recursive: true });
+  : isNodeTestRunner
+    ? ":memory:"
+    : resolve(currentDir, "../../data/webapp-v2.db");
+
+if (databasePath !== ":memory:") {
+  mkdirSync(dirname(databasePath), { recursive: true });
+}
 
 export const db = new Database(databasePath);
 db.pragma("journal_mode = WAL");
