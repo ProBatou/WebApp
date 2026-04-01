@@ -203,6 +203,54 @@
   border-color: color-mix(in srgb, var(--border) 88%, transparent);
 }
 
+.dropdown-app-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  width: 100%;
+}
+
+.dropdown-app-text {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.dropdown-app-label .app-icon,
+.dropdown-app-placeholder {
+  width: 30px;
+  height: 30px;
+  flex: 0 0 30px;
+  border-radius: 11px;
+}
+
+.dropdown-app-label .app-icon {
+  box-shadow: var(--icon-shadow-inset);
+}
+
+.dropdown-app-label .app-icon-image {
+  width: 18px;
+  height: 18px;
+}
+
+.dropdown-app-placeholder {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid color-mix(in srgb, var(--border) 88%, transparent);
+  background: color-mix(in srgb, var(--field-bg) 72%, var(--panel-strong));
+}
+
+.dropdown-app-label-placeholder .dropdown-app-placeholder::before {
+  content: "";
+  width: 10px;
+  height: 10px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--text-secondary) 44%, transparent);
+}
+
 .personalization-row .sidebar-actions-menu {
   width: auto;
   min-width: 188px;
@@ -213,16 +261,10 @@
   right: 0;
   left: auto;
   z-index: 60;
-  max-height: min(180px, 22vh);
-  overflow-x: hidden;
-  overflow-y: auto;
-  overscroll-behavior: contain;
-  scrollbar-width: none;
-  -ms-overflow-style: none;
 }
 
-.personalization-row .sidebar-actions-popover::-webkit-scrollbar {
-  display: none;
+.personalization-row .sidebar-actions-popover-list {
+  max-height: min(180px, 22vh);
 }
 
 .personalization-colors-header {

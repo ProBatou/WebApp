@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type ChangeEvent, type RefObject } from "react";
+import { memo, useEffect, useMemo, useState, type ChangeEvent, type RefObject } from "react";
 import {
   DndContext,
   PointerSensor,
@@ -9,10 +9,11 @@ import {
 } from "@dnd-kit/core";
 import { SortableContext, useSortable, verticalListSortingStrategy, arrayMove } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
+import { AppIcon } from "./AppIcon";
 import { Dropdown } from "./Dropdown";
 import { jsonImportExample } from "../lib/app-utils";
-import type { GroupEntry, JsonImportMode, ThemeMode, UserEntry, UserPreferences, WebAppEntry } from "../types";
-import { useTranslation, type SupportedLanguage } from "../lib/i18n";
+import type { DashboardIconsMetadataMap, GroupEntry, JsonImportMode, ThemeMode, UserEntry, UserPreferences, WebAppEntry } from "../types";
+import { supportedLanguages, useTranslation, type SupportedLanguage } from "../lib/i18n";
 
 export type SettingsTab = "groups" | "users" | "json" | "personalization" | "account" | "about";
 
@@ -350,7 +351,7 @@ function JsonTabContent({
   const { t } = useTranslation();
 
   return (
-    <div className="json-panel">
+    <div className="json-panel settings-json-panel">
       <div className="json-toolbar">
         <div className="json-segmented" role="tablist" aria-label={t("modal.importMode")}>
           <button
@@ -423,7 +424,7 @@ function JsonTabContent({
       {jsonModalError ? <p className="form-error">{t(jsonModalError)}</p> : null}
       {jsonModalInfo ? <p className="json-summary">{t(jsonModalInfo)}</p> : null}
 
-      <label>
+      <label className="json-textarea-field">
         <span>{jsonMode === "import" ? t("common.json") : t("modal.exportedJson")}</span>
         <textarea
           className="json-textarea"
@@ -478,21 +479,24 @@ function PersonalizationTabContent({
   apps,
   preferences,
   themeMode,
+  dashboardIconsMetadata,
   onUpdatePreferences,
   onPreviewTheme,
 }: {
   apps: WebAppEntry[];
   preferences: UserPreferences;
   themeMode: ThemeMode;
+  dashboardIconsMetadata: DashboardIconsMetadataMap;
   onUpdatePreferences: (patch: Partial<UserPreferences>) => void;
   onPreviewTheme: (mode: "light" | "dark") => void;
 }) {
   const { t } = useTranslation();
   const [colorMode, setColorMode] = useState<"light" | "dark">(themeMode);
+  const startupPageActiveApp = apps.find((app) => app.id === preferences.defaultAppId) ?? null;
   const languageItems = [
     { label: t("settings.languageAuto"), value: "auto", active: preferences.language === "auto" },
-    ...(["en", "fr", "de", "es"] as SupportedLanguage[]).map((language) => ({
-      label: t(`lang.${language}`),
+    ...supportedLanguages.map((language) => ({
+      label: t(`settings.languageName.${language}`),
       value: language,
       active: preferences.language === language,
     })),
@@ -503,16 +507,58 @@ function PersonalizationTabContent({
     { label: t("settings.themeDark"), value: "dark", active: preferences.theme === "dark" },
   ];
   const startupPageItems = [
-    { label: t("settings.startupPageNone"), value: "", active: preferences.defaultAppId == null },
+    {
+      label: (
+        <span className="dropdown-app-label dropdown-app-label-placeholder">
+          <span className="dropdown-app-placeholder" aria-hidden="true" />
+          <span className="dropdown-app-text">{t("settings.startupPageNone")}</span>
+        </span>
+      ),
+      value: "",
+      active: preferences.defaultAppId == null,
+    },
     ...apps.map((app) => ({
-      label: app.name,
+      label: (
+        <span className="dropdown-app-label">
+          <AppIcon
+            icon={app.icon}
+            name={app.name}
+            url={app.url}
+            accent={app.accent}
+            themeMode={themeMode}
+            dashboardIconsMetadata={dashboardIconsMetadata}
+            iconVariantMode={app.icon_variant_mode}
+            iconVariantInverted={app.icon_variant_inverted}
+          />
+          <span className="dropdown-app-text">{app.name}</span>
+        </span>
+      ),
       value: String(app.id),
       active: preferences.defaultAppId === app.id,
     })),
   ];
   const activeLanguageLabel = languageItems.find((item) => item.active)?.label ?? t("settings.languageAuto");
   const activeThemeLabel = themeItems.find((item) => item.active)?.label ?? t("settings.themeAuto");
-  const activeStartupPageLabel = startupPageItems.find((item) => item.active)?.label ?? t("settings.startupPageNone");
+  const activeStartupPageLabel = startupPageActiveApp ? (
+    <span className="dropdown-app-label">
+      <AppIcon
+        icon={startupPageActiveApp.icon}
+        name={startupPageActiveApp.name}
+        url={startupPageActiveApp.url}
+        accent={startupPageActiveApp.accent}
+        themeMode={themeMode}
+        dashboardIconsMetadata={dashboardIconsMetadata}
+        iconVariantMode={startupPageActiveApp.icon_variant_mode}
+        iconVariantInverted={startupPageActiveApp.icon_variant_inverted}
+      />
+      <span className="dropdown-app-text">{startupPageActiveApp.name}</span>
+    </span>
+  ) : (
+    <span className="dropdown-app-label dropdown-app-label-placeholder">
+      <span className="dropdown-app-placeholder" aria-hidden="true" />
+      <span className="dropdown-app-text">{t("settings.startupPageNone")}</span>
+    </span>
+  );
 
   useEffect(() => {
     setColorMode(themeMode);
@@ -712,7 +758,7 @@ function AccountTabContent({
   );
 }
 
-export function SettingsModal({
+export const SettingsModal = memo(function SettingsModal({
   open,
   busy,
   canManageApps,
@@ -748,6 +794,7 @@ export function SettingsModal({
   onLogout,
   preferences,
   themeMode,
+  dashboardIconsMetadata,
   onUpdatePreferences,
   onUpdateUsername,
   onUpdatePassword,
@@ -791,6 +838,7 @@ export function SettingsModal({
   onLogout: () => Promise<void>;
   preferences: UserPreferences;
   themeMode: ThemeMode;
+  dashboardIconsMetadata: DashboardIconsMetadataMap;
   onUpdatePreferences: (patch: Partial<UserPreferences>) => void;
   onUpdateUsername: (newUsername: string) => Promise<void>;
   onUpdatePassword: (currentPassword: string, newPassword: string) => Promise<void>;
@@ -981,6 +1029,7 @@ export function SettingsModal({
               apps={apps}
               preferences={preferences}
               themeMode={themeMode}
+              dashboardIconsMetadata={dashboardIconsMetadata}
               onUpdatePreferences={onUpdatePreferences}
               onPreviewTheme={onPreviewTheme}
             />
@@ -1000,4 +1049,4 @@ export function SettingsModal({
       </aside>
     </div>
   );
-}
+});
