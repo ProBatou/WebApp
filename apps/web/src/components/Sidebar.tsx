@@ -1,8 +1,9 @@
-import { useEffect, useMemo, useState, type Dispatch, type MouseEvent, type ReactNode, type RefObject, type SetStateAction } from "react";
+import { useEffect, useMemo, useRef, useState, type Dispatch, type MouseEvent, type ReactNode, type RefObject, type SetStateAction } from "react";
 import { useDroppable } from "@dnd-kit/core";
 import { SortableContext, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { AppIcon } from "./AppIcon";
+import { LanguageDropdown } from "./LanguageDropdown";
 import { useTranslation, type SupportedLanguage } from "../lib/i18n";
 import type { AppStatusEntry, ContextMenuState, DashboardIconsMetadataMap, GroupEntry, SidebarMode, ThemeMode, WebAppEntry } from "../types";
 
@@ -68,7 +69,8 @@ function SortableAppTile({
   reorderAppsEnabled: boolean;
 }) {
   const { t } = useTranslation();
-  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: app.id });
+  const reorderModeActive = canManageApps && reorderAppsEnabled;
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: app.id, disabled: !reorderModeActive });
   const constrainedTransform = transform ? { ...transform, x: 0 } : null;
 
   return (
@@ -154,6 +156,7 @@ function SortableAppTile({
     </div>
   );
 }
+
 
 export function DragOverlayTile({
   app,
@@ -270,7 +273,9 @@ export function Sidebar({
   const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(() => readCollapsedGroups());
   const [draggingGroupId, setDraggingGroupId] = useState<number | null>(null);
   const [dragOverGroupId, setDragOverGroupId] = useState<number | null>(null);
+  const lastModeToggleRef = useRef(0);
   const normalizedFilterQuery = filterQuery.trim().toLowerCase();
+  const reorderModeActive = canManageApps && reorderAppsEnabled;
   const filteredApps = useMemo(() => {
     if (!normalizedFilterQuery) {
       return apps;
@@ -284,18 +289,33 @@ export function Sidebar({
       groupId: number | null;
       label: string;
       apps: WebAppEntry[];
-    }> = groups
-      .map((group) => ({
+    }> = groups.map((group) => ({
         id: `group:${group.id}`,
         groupId: group.id,
         label: group.name,
-        apps: filteredApps.filter((app) => app.group_id === group.id),
-      }))
-      .filter((section) => section.apps.length > 0);
+        apps: [],
+      }));
 
-    const ungroupedApps = filteredApps.filter((app) => app.group_id === null);
+    const groupedAppsById = new Map(groupedApps.map((section) => [section.groupId, section] as const));
+    const ungroupedApps: WebAppEntry[] = [];
+
+    for (const app of filteredApps) {
+      if (app.group_id == null) {
+        ungroupedApps.push(app);
+        continue;
+      }
+
+      const section = groupedAppsById.get(app.group_id);
+      if (section) {
+        section.apps.push(app);
+      } else {
+        ungroupedApps.push(app);
+      }
+    }
+
+    const populatedSections = groupedApps.filter((section) => section.apps.length > 0);
     if (ungroupedApps.length > 0) {
-      groupedApps.push({
+      populatedSections.push({
         id: "group:none",
         groupId: null,
         label: t("app.noGroup"),
@@ -303,7 +323,7 @@ export function Sidebar({
       });
     }
 
-    return groupedApps;
+    return populatedSections;
   }, [filteredApps, groups, t]);
   const visibleAppsInCompact = useMemo(() => {
     const result: WebAppEntry[] = [];
@@ -378,6 +398,10 @@ export function Sidebar({
             return;
           }
 
+          if (Date.now() - lastModeToggleRef.current < 300) {
+            return;
+          }
+
           if (!document.querySelector(".sidebar-context-menu") && !contextMenu) {
             setSidebarOpen(false);
           }
@@ -394,7 +418,7 @@ export function Sidebar({
               <button
                 className="ghost-icon-button burger-button"
                 type="button"
-                onClick={() => setSidebarMode((current) => (current === "expanded" ? "compact" : "expanded"))}
+                onClick={() => { lastModeToggleRef.current = Date.now(); setSidebarMode((current) => (current === "expanded" ? "compact" : "expanded")); }}
                 aria-label={t("app.switchExpandedMode")}
               >
                 <span />
@@ -408,7 +432,7 @@ export function Sidebar({
               <button
                 className="ghost-icon-button burger-button"
                 type="button"
-                onClick={() => setSidebarMode((current) => (current === "expanded" ? "compact" : "expanded"))}
+                onClick={() => { lastModeToggleRef.current = Date.now(); setSidebarMode((current) => (current === "expanded" ? "compact" : "expanded")); }}
                 aria-label={sidebarMode === "expanded" ? t("app.switchIconMode") : t("app.switchExpandedMode")}
               >
                 <span />
@@ -432,97 +456,91 @@ export function Sidebar({
               />
             </label>
           ) : null}
-          <SortableContext
-            items={(sidebarMode === "compact" ? visibleAppsInCompact : filteredApps).map((item) => item.id)}
-            strategy={verticalListSortingStrategy}
-          >
-            {sidebarMode === "expanded" ? (
-              <div className="app-section-list">
-                {groupedSections.map((section) => (
-                  <section
-                    key={section.id}
-                    className={
-                      section.groupId !== null && dragOverGroupId === section.groupId
-                        ? "grouped-app-section drag-over"
-                        : section.groupId !== null && draggingGroupId === section.groupId
-                          ? "grouped-app-section dragging"
-                          : "grouped-app-section"
+          {sidebarMode === "expanded" ? (
+            <div className="app-section-list">
+              {groupedSections.map((section) => (
+                <section
+                  key={section.id}
+                  className={
+                    reorderModeActive && section.groupId !== null && dragOverGroupId === section.groupId
+                      ? "grouped-app-section drag-over"
+                      : reorderModeActive && section.groupId !== null && draggingGroupId === section.groupId
+                        ? "grouped-app-section dragging"
+                        : "grouped-app-section"
+                  }
+                  onDragOver={reorderModeActive ? (event) => {
+                    if (section.groupId === null || draggingGroupId === null || draggingGroupId === section.groupId) {
+                      return;
                     }
-                    onDragOver={(event) => {
-                      if (!canManageApps || section.groupId === null || draggingGroupId === null || draggingGroupId === section.groupId) {
+                    event.preventDefault();
+                    setDragOverGroupId(section.groupId);
+                  } : undefined}
+                  onDragLeave={reorderModeActive ? () => {
+                    if (section.groupId !== null && dragOverGroupId === section.groupId) {
+                      setDragOverGroupId(null);
+                    }
+                  } : undefined}
+                  onDrop={reorderModeActive ? (event) => {
+                    if (section.groupId === null) {
+                      return;
+                    }
+                    event.preventDefault();
+                    void handleGroupDrop(section.groupId);
+                  } : undefined}
+                >
+                  <button
+                    className="group-section-toggle"
+                    type="button"
+                    draggable={reorderModeActive && section.groupId !== null}
+                    onDragStart={reorderModeActive ? (event) => {
+                      if (section.groupId === null) {
                         return;
                       }
-
-                      event.preventDefault();
-                      setDragOverGroupId(section.groupId);
-                    }}
-                    onDragLeave={() => {
-                      if (section.groupId !== null && dragOverGroupId === section.groupId) {
-                        setDragOverGroupId(null);
-                      }
-                    }}
-                    onDrop={(event) => {
-                      if (!canManageApps || section.groupId === null) {
-                        return;
-                      }
-
-                      event.preventDefault();
-                      void handleGroupDrop(section.groupId);
-                    }}
+                      setDraggingGroupId(section.groupId);
+                      setDragOverGroupId(null);
+                      event.dataTransfer.effectAllowed = "move";
+                      event.dataTransfer.setData("text/plain", String(section.groupId));
+                    } : undefined}
+                    onDragEnd={reorderModeActive ? () => {
+                      setDraggingGroupId(null);
+                      setDragOverGroupId(null);
+                    } : undefined}
+                    onClick={() => toggleGroupVisibility(section.id)}
+                    aria-expanded={!collapsedGroups.has(section.id)}
+                    aria-label={collapsedGroups.has(section.id) ? t("app.showGroup", { group: section.label }) : t("app.hideGroup", { group: section.label })}
                   >
-                    <button
-                      className="group-section-toggle"
-                      type="button"
-                      draggable={canManageApps && section.groupId !== null}
-                      onDragStart={(event) => {
-                        if (!canManageApps || section.groupId === null) {
-                          return;
-                        }
-
-                        setDraggingGroupId(section.groupId);
-                        setDragOverGroupId(null);
-                        event.dataTransfer.effectAllowed = "move";
-                        event.dataTransfer.setData("text/plain", String(section.groupId));
-                      }}
-                      onDragEnd={() => {
-                        setDraggingGroupId(null);
-                        setDragOverGroupId(null);
-                      }}
-                      onClick={() => toggleGroupVisibility(section.id)}
-                      aria-expanded={!collapsedGroups.has(section.id)}
-                      aria-label={collapsedGroups.has(section.id) ? t("app.showGroup", { group: section.label }) : t("app.hideGroup", { group: section.label })}
-                    >
-                      <span className="group-section-title">{section.label}</span>
-                      <span className={collapsedGroups.has(section.id) ? "group-chevron collapsed" : "group-chevron"} aria-hidden="true">▾</span>
-                    </button>
-                    {!collapsedGroups.has(section.id) ? (
-                      <GroupDropZone id={section.id}>
-                        <SortableContext items={section.apps.map((item) => item.id)} strategy={verticalListSortingStrategy}>
-                          <div className="app-list grouped-app-list">
-                            {section.apps.map((app) => (
-                              <SortableAppTile
-                                key={app.id}
-                                app={app}
-                                active={app.id === selectedAppId}
-                                compact={false}
-                                onSelect={onSelectApp}
-                                onContextMenu={onOpenContextMenu}
-                                themeMode={themeMode}
+                    <span className="group-section-title">{section.label}</span>
+                    <span className={collapsedGroups.has(section.id) ? "group-chevron collapsed" : "group-chevron"} aria-hidden="true">▾</span>
+                  </button>
+                  {!collapsedGroups.has(section.id) ? (
+                    <GroupDropZone id={section.id}>
+                      <SortableContext items={section.apps.map((item) => item.id)} strategy={verticalListSortingStrategy}>
+                        <div className="app-list grouped-app-list">
+                          {section.apps.map((app) => (
+                            <SortableAppTile
+                              key={app.id}
+                              app={app}
+                              active={app.id === selectedAppId}
+                              compact={false}
+                              onSelect={onSelectApp}
+                              onContextMenu={onOpenContextMenu}
+                              themeMode={themeMode}
                               dashboardIconsMetadata={dashboardIconsMetadata}
                               appStatus={appStatuses[app.id]}
                               canManageApps={canManageApps}
                               reorderAppsEnabled={reorderAppsEnabled}
                             />
-                            ))}
-                          </div>
-                        </SortableContext>
-                      </GroupDropZone>
-                    ) : null}
-                  </section>
-                ))}
-                {filteredApps.length === 0 ? <p className="sidebar-empty-state">{t("app.noAppsMatch")}</p> : null}
-              </div>
-            ) : (
+                          ))}
+                        </div>
+                      </SortableContext>
+                    </GroupDropZone>
+                  ) : null}
+                </section>
+              ))}
+              {filteredApps.length === 0 ? <p className="sidebar-empty-state">{t("app.noAppsMatch")}</p> : null}
+            </div>
+          ) : (
+            <SortableContext items={visibleAppsInCompact.map((item) => item.id)} strategy={verticalListSortingStrategy}>
               <div className="app-list">
                 {visibleAppsInCompact.map((app) => (
                   <SortableAppTile
@@ -541,8 +559,8 @@ export function Sidebar({
                 ))}
                 {visibleAppsInCompact.length === 0 ? <p className="sidebar-empty-state">{t("app.noAppsVisible")}</p> : null}
               </div>
-            )}
-          </SortableContext>
+            </SortableContext>
+          )}
         </div>
 
         {draggingAppId !== null ? (
@@ -633,19 +651,12 @@ export function Sidebar({
               <circle cx="8" cy="8" r="2.2" stroke="currentColor" strokeWidth="1.2" />
             </svg>
           </button>
-          <button
-            className="ghost-icon-button sidebar-language-switch sidebar-bottom-button"
-            type="button"
-            onClick={() => {
-              const order = ["en", "fr", "de", "es"] as const;
-              const next = order[(order.indexOf(lang as typeof order[number]) + 1) % order.length];
-              setLang(next);
-            }}
-            aria-label={t("sidebar.language")}
-            title={t("sidebar.language")}
-          >
-            <span className="sidebar-language-trigger">{lang.toUpperCase()}</span>
-          </button>
+          <LanguageDropdown
+            lang={lang}
+            setLang={setLang}
+            menuClassName="sidebar-language-menu"
+            triggerClassName="ghost-icon-button sidebar-language-switch sidebar-bottom-button"
+          />
           <button className="ghost-icon-button theme-toggle sidebar-bottom-button" type="button" onClick={onToggleTheme} aria-label={t("app.themeToggleAria")} title={t("app.themeToggleTitle")}>
             {themeMode === "light" ? "◐" : "◑"}
           </button>

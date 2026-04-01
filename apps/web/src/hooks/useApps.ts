@@ -92,6 +92,7 @@ export function useApps({
 
     const appsWithoutActive = apps.filter((item) => item.id !== activeId);
     let insertIndex = appsWithoutActive.findIndex((item) => item.id === Number(over.id));
+    const overIndex = typeof over.id === "number" ? apps.findIndex((item) => item.id === Number(over.id)) : -1;
 
     if (insertIndex < 0) {
       const lastIndexInTargetGroup = appsWithoutActive.reduce((lastIndex, item, index) => {
@@ -110,6 +111,10 @@ export function useApps({
           insertIndex = nextGroupIndex >= 0 ? nextGroupIndex : insertIndex;
         }
       }
+    } else if (overIndex > oldIndex) {
+      // Match dnd-kit sortable behavior: when dragging downward over an item,
+      // the active card should land after that item instead of before it.
+      insertIndex += 1;
     }
 
     const nextActiveApp = {

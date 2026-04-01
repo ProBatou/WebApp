@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { apiFetch } from "../lib/api";
 import type { AppPingResponse, AppStatusEntry, WebAppEntry } from "../types";
 
@@ -27,13 +27,16 @@ export function useAppStatus({
   enabled: boolean;
 }) {
   const [appStatuses, setAppStatuses] = useState<AppStatusMap>({});
+  const appsRef = useRef(apps);
+  appsRef.current = apps;
+  const appIds = apps.map((app) => app.id).sort((a, b) => a - b).join(",");
 
   useEffect(() => {
     setAppStatuses((current) => {
-      const nextEntries = apps.map((app) => [app.id, current[app.id] ?? { status: "unknown", checkedAt: null }] as const);
+      const nextEntries = appsRef.current.map((app) => [app.id, current[app.id] ?? { status: "unknown", checkedAt: null }] as const);
       return Object.fromEntries(nextEntries);
     });
-  }, [apps]);
+  }, [appIds]);
 
   useEffect(() => {
     if (!enabled) {
@@ -41,7 +44,7 @@ export function useAppStatus({
       return;
     }
 
-    if (apps.length === 0) {
+    if (!appIds) {
       setAppStatuses({});
       return;
     }
@@ -50,7 +53,7 @@ export function useAppStatus({
 
     const loadStatuses = async () => {
       const results = await Promise.all(
-        apps.map(async (app) => {
+        appsRef.current.map(async (app) => {
           try {
             const result = await apiFetch<AppPingResponse>(`/api/apps/${app.id}/ping`, { method: "GET" });
             return [app.id, { status: result.status, checkedAt: result.checkedAt } satisfies AppStatusEntry] as const;
@@ -67,7 +70,7 @@ export function useAppStatus({
       setAppStatuses(Object.fromEntries(results));
     };
 
-    setAppStatuses(createUnknownStatusMap(apps));
+    setAppStatuses(createUnknownStatusMap(appsRef.current));
     const initialLoadTimeoutId = window.setTimeout(() => {
       void loadStatuses();
     }, initialLoadDelayMs);
@@ -81,7 +84,7 @@ export function useAppStatus({
       window.clearTimeout(initialLoadTimeoutId);
       window.clearInterval(intervalId);
     };
-  }, [apps, enabled]);
+  }, [appIds, enabled]);
 
   return {
     appStatuses,
