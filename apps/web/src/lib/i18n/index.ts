@@ -15,7 +15,7 @@ export const translations = {
 
 export type SupportedLanguage = keyof typeof translations;
 
-const supportedLanguages = Object.keys(translations) as SupportedLanguage[];
+export const supportedLanguages = Object.keys(translations) as SupportedLanguage[];
 
 type TranslationParams = Record<string, string | number>;
 

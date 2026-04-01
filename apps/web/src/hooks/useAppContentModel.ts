@@ -343,6 +343,8 @@ export function useAppContentModel() {
     credentials,
     inviteToken,
     inviteRole,
+    lang,
+    setLang,
     setCredentials,
     onSubmit: handleAuthSubmit,
     onToggleTheme: toggleThemeMode,

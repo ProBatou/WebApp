@@ -1,5 +1,6 @@
 import type { Dispatch, FormEvent, SetStateAction } from "react";
-import { useTranslation } from "../lib/i18n";
+import { LanguageDropdown } from "./LanguageDropdown";
+import { useTranslation, type SupportedLanguage } from "../lib/i18n";
 import type { ThemeMode } from "../types";
 
 export function AuthScreen({
@@ -11,6 +12,8 @@ export function AuthScreen({
   credentials,
   inviteToken,
   inviteRole,
+  lang,
+  setLang,
   setCredentials,
   onSubmit,
   onToggleTheme,
@@ -23,6 +26,8 @@ export function AuthScreen({
   credentials: { username: string; password: string };
   inviteToken: string | null;
   inviteRole: "admin" | "viewer" | null;
+  lang: SupportedLanguage;
+  setLang: (lang: SupportedLanguage) => void;
   setCredentials: Dispatch<SetStateAction<{ username: string; password: string }>>;
   onSubmit: (event: FormEvent<HTMLFormElement>) => Promise<void>;
   onToggleTheme: () => void;
@@ -43,7 +48,7 @@ export function AuthScreen({
       ? t("auth.setupSubtitle")
       : demoMode
         ? t("auth.demoSubtitle")
-        : t("auth.signInSubtitle");
+        : null;
 
   return (
     <div className="auth-shell">
@@ -57,17 +62,18 @@ export function AuthScreen({
             <button className="ghost-icon-button theme-toggle" type="button" onClick={onToggleTheme} aria-label={t("app.themeToggleAria")}>
               {themeMode === "light" ? "◐" : "◑"}
             </button>
-            <div className="auth-mark" aria-hidden="true">
-              <span />
-              <span />
-              <span />
-            </div>
+            <LanguageDropdown
+              lang={lang}
+              setLang={setLang}
+              menuClassName="auth-language-menu"
+              triggerClassName="ghost-icon-button auth-language-switch"
+            />
           </div>
         </div>
 
         <div className="auth-copy-block">
           <h2>{title}</h2>
-          <p className="auth-subtitle">{subtitle}</p>
+          {subtitle ? <p className="auth-subtitle">{subtitle}</p> : null}
         </div>
 
         {demoMode && !inviteMode ? (
