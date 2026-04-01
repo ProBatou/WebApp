@@ -223,6 +223,55 @@ export function findBestDashboardIconMatch(name: string, icons: string[]) {
   return containsMatch ?? "";
 }
 
+function getDashboardIconSearchPriority(icon: string, bestMatch: string, normalizedSearch: string, searchTerms: string[]) {
+  const normalizedIcon = normalizeIconSearchValue(icon);
+  const iconParts = normalizedIcon.split("-").filter(Boolean);
+  const compactIcon = normalizedIcon.replace(/-/g, "");
+  const compactSearch = normalizedSearch.replace(/-/g, "");
+  const prefixMatches = searchTerms.reduce((count, term) => {
+    return count + (iconParts.some((part) => part.startsWith(term)) ? 1 : 0);
+  }, 0);
+  const fullIndex = normalizedIcon.indexOf(normalizedSearch);
+
+  return [
+    icon === bestMatch ? 0 : 1,
+    normalizedIcon === normalizedSearch ? 0 : 1,
+    normalizedIcon.startsWith(normalizedSearch) ? 0 : 1,
+    compactIcon.startsWith(compactSearch) ? 0 : 1,
+    prefixMatches === searchTerms.length ? 0 : 1,
+    fullIndex >= 0 ? fullIndex : Number.MAX_SAFE_INTEGER,
+    normalizedIcon.length,
+    normalizedIcon,
+  ] as const;
+}
+
+export function sortDashboardIconsBySearchQuery(searchValue: string, icons: string[]) {
+  const normalizedSearch = normalizeIconSearchValue(searchValue);
+  if (!normalizedSearch) {
+    return [...icons];
+  }
+
+  const searchTerms = normalizedSearch.split("-").filter(Boolean);
+  const bestMatch = findBestDashboardIconMatch(searchValue, icons);
+
+  return [...icons].sort((left, right) => {
+    const leftPriority = getDashboardIconSearchPriority(left, bestMatch, normalizedSearch, searchTerms);
+    const rightPriority = getDashboardIconSearchPriority(right, bestMatch, normalizedSearch, searchTerms);
+
+    for (let index = 0; index < leftPriority.length; index += 1) {
+      if (leftPriority[index] < rightPriority[index]) {
+        return -1;
+      }
+
+      if (leftPriority[index] > rightPriority[index]) {
+        return 1;
+      }
+    }
+
+    return 0;
+  });
+}
+
 export function getSuggestedDashboardIcon(searchValue: string, icons: string[]) {
   const normalizedSearch = normalizeIconSearchValue(searchValue);
   if (!normalizedSearch) {

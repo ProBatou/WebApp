@@ -4,6 +4,7 @@ import {
   findBestDashboardIconMatch,
   getFallbackIconLabel,
   parseImportedApps,
+  sortDashboardIconsBySearchQuery,
 } from "./app-utils";
 
 test("parseImportedApps parses a plain array payload", () => {
@@ -185,6 +186,15 @@ test("findBestDashboardIconMatch falls back to contains match", () => {
 
   assert.equal(findBestDashboardIconMatch("Paper Ngx", icons), "paperless-ngx");
   assert.equal(findBestDashboardIconMatch("Unknown", icons), "");
+});
+
+test("sortDashboardIconsBySearchQuery keeps the best match visible first", () => {
+  const icons = ["apple", "apple-alt", "apple-maps", "plex", "simple-icons"];
+
+  const sorted = sortDashboardIconsBySearchQuery("ple", icons);
+
+  assert.equal(sorted[0], "plex");
+  assert.deepEqual(sorted.slice(1, 4), ["apple", "apple-alt", "apple-maps"]);
 });
 
 test("getFallbackIconLabel uses explicit custom icons before app initials", () => {

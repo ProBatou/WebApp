@@ -1,12 +1,17 @@
 import { useEffect, useMemo, useState } from "react";
 import {
   dashboardIconsMetadataUrl,
+  sortDashboardIconsBySearchQuery,
   getDashboardIconAssetCandidates,
-  getDashboardIconUrl,
+  getDashboardIconAssetUrls,
   isDashboardIconSlug,
   normalizeIconSearchValue,
 } from "../lib/app-utils";
+import { preloadDashboardAssetUrls } from "../lib/dashboard-icon-assets";
 import type { DashboardIconsMetadataMap, WebAppEntry } from "../types";
+
+const iconPickerResultLimit = 10;
+const iconPreloadLimit = 24;
 
 export function useDashboardIcons({
   editorOpen,
@@ -29,15 +34,21 @@ export function useDashboardIcons({
     [apps, editorIcon]
   );
   const normalizedIconQuery = normalizeIconSearchValue(iconQuery);
-  const normalizedQueryTerms = normalizedIconQuery.split("-").filter(Boolean);
-  const filteredDashboardIcons = normalizedQueryTerms.length
-    ? dashboardIcons
-        .filter((icon) => {
-          const normalizedIcon = normalizeIconSearchValue(icon);
-          return normalizedQueryTerms.every((term) => normalizedIcon.includes(term));
-        })
-        .slice(0, 8)
-    : [];
+  const filteredDashboardIcons = useMemo(() => {
+    const normalizedQueryTerms = normalizedIconQuery.split("-").filter(Boolean);
+    if (normalizedQueryTerms.length === 0) {
+      return [];
+    }
+
+    return sortDashboardIconsBySearchQuery(
+      normalizedIconQuery,
+      dashboardIcons
+      .filter((icon) => {
+        const normalizedIcon = normalizeIconSearchValue(icon);
+        return normalizedQueryTerms.every((term) => normalizedIcon.includes(term));
+      })
+    ).slice(0, iconPickerResultLimit);
+  }, [dashboardIcons, normalizedIconQuery]);
 
   useEffect(() => {
     if ((!editorOpen && !hasDashboardIconsInUse) || dashboardIcons.length > 0 || dashboardIconsLoading) {
@@ -78,26 +89,28 @@ export function useDashboardIcons({
   }, [dashboardIcons.length, dashboardIconsLoading, editorOpen, hasDashboardIconsInUse]);
 
   useEffect(() => {
-    const iconsToPreload = new Set<string>();
+    const assetGroupsToPreload = new Map<string, string[]>();
+    const addAssetGroup = (icon: string) => {
+      const assetUrls = getDashboardIconAssetUrls(icon);
+      assetGroupsToPreload.set(assetUrls.join("\u0000"), assetUrls);
+    };
 
     apps.forEach((app) => {
       if (isDashboardIconSlug(app.icon)) {
-        getDashboardIconAssetCandidates(app.icon, dashboardIconsMetadata).forEach((icon) => iconsToPreload.add(icon));
+        getDashboardIconAssetCandidates(app.icon, dashboardIconsMetadata).forEach(addAssetGroup);
       }
     });
 
     if (isDashboardIconSlug(editorIcon)) {
-      getDashboardIconAssetCandidates(editorIcon, dashboardIconsMetadata).forEach((icon) => iconsToPreload.add(icon));
+      getDashboardIconAssetCandidates(editorIcon, dashboardIconsMetadata).forEach(addAssetGroup);
     }
 
-    filteredDashboardIcons.forEach((icon) => {
-      getDashboardIconAssetCandidates(icon, dashboardIconsMetadata).forEach((candidate) => iconsToPreload.add(candidate));
+    filteredDashboardIcons.slice(0, iconPreloadLimit).forEach((icon) => {
+      getDashboardIconAssetCandidates(icon, dashboardIconsMetadata).forEach(addAssetGroup);
     });
 
-    iconsToPreload.forEach((icon) => {
-      const image = new Image();
-      image.decoding = "async";
-      image.src = getDashboardIconUrl(icon);
+    assetGroupsToPreload.forEach((assetUrls) => {
+      void preloadDashboardAssetUrls(assetUrls);
     });
   }, [apps, dashboardIconsMetadata, editorIcon, filteredDashboardIcons]);
 
