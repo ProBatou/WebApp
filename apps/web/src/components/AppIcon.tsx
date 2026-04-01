@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { memo, useEffect, useState } from "react";
 import {
   getDashboardIconAssetUrls,
   getDashboardIconBaseSlug,
@@ -9,9 +9,15 @@ import {
   isDashboardIconSlug,
   resolveDashboardIcon,
 } from "../lib/app-utils";
+import {
+  getDashboardAssetCacheKey,
+  getInitialDashboardAssetIndex,
+  rememberDashboardAssetFailure,
+  rememberDashboardAssetSuccess,
+} from "../lib/dashboard-icon-assets";
 import type { DashboardIconsMetadataMap, IconVariantMode, ThemeMode } from "../types";
 
-export function AppIcon({
+export const AppIcon = memo(function AppIcon({
   icon,
   name,
   url,
@@ -30,7 +36,6 @@ export function AppIcon({
   iconVariantMode: IconVariantMode;
   iconVariantInverted: boolean;
 }) {
-  const [dashboardAssetIndex, setDashboardAssetIndex] = useState(0);
   const [customIconFailed, setCustomIconFailed] = useState(false);
   const [faviconIndex, setFaviconIndex] = useState(0);
   const customIconUrl = isCustomIconUrl(icon) && !customIconFailed ? icon.trim() : "";
@@ -46,6 +51,8 @@ export function AppIcon({
         ])
       )
     : [];
+  const dashboardAssetCacheKey = getDashboardAssetCacheKey(dashboardAssetUrls);
+  const [dashboardAssetIndex, setDashboardAssetIndex] = useState(() => getInitialDashboardAssetIndex(dashboardAssetUrls));
   const dashboardIconUrl = dashboardAssetUrls[dashboardAssetIndex] ?? "";
   const dashboardIcon = Boolean(dashboardIconUrl);
   const faviconCandidates = getFaviconCandidates(url);
@@ -53,10 +60,10 @@ export function AppIcon({
   const fallbackLabel = getFallbackIconLabel(name, icon);
 
   useEffect(() => {
-    setDashboardAssetIndex(0);
+    setDashboardAssetIndex(getInitialDashboardAssetIndex(dashboardAssetUrls));
     setCustomIconFailed(false);
     setFaviconIndex(0);
-  }, [desiredIcon, baseIcon, url]);
+  }, [dashboardAssetCacheKey, icon, url]);
 
   const imageSurface = Boolean(customIconUrl) || dashboardIcon || Boolean(faviconUrl);
   const iconClassName = imageSurface ? "app-icon app-icon-surface" : "app-icon";
@@ -71,7 +78,11 @@ export function AppIcon({
           src={dashboardIconUrl}
           alt=""
           loading="lazy"
+          onLoad={() => {
+            rememberDashboardAssetSuccess(dashboardAssetUrls, dashboardAssetIndex);
+          }}
           onError={() => {
+            rememberDashboardAssetFailure(dashboardIconUrl);
             setDashboardAssetIndex((current) => current + 1);
           }}
         />
@@ -102,9 +113,9 @@ export function AppIcon({
       )}
     </span>
   );
-}
+});
 
-export function DashboardIconPreviewImage({
+export const DashboardIconPreviewImage = memo(function DashboardIconPreviewImage({
   icon,
   fallbackIcon,
   className,
@@ -114,12 +125,13 @@ export function DashboardIconPreviewImage({
   className?: string;
 }) {
   const assetUrls = Array.from(new Set([...getDashboardIconAssetUrls(icon), ...getDashboardIconAssetUrls(fallbackIcon)]));
-  const [assetIndex, setAssetIndex] = useState(0);
+  const assetCacheKey = getDashboardAssetCacheKey(assetUrls);
+  const [assetIndex, setAssetIndex] = useState(() => getInitialDashboardAssetIndex(assetUrls));
   const currentAssetUrl = assetUrls[assetIndex] ?? "";
 
   useEffect(() => {
-    setAssetIndex(0);
-  }, [icon, fallbackIcon]);
+    setAssetIndex(getInitialDashboardAssetIndex(assetUrls));
+  }, [assetCacheKey]);
 
   if (!currentAssetUrl) {
     return null;
@@ -132,12 +144,16 @@ export function DashboardIconPreviewImage({
       src={currentAssetUrl}
       alt=""
       loading="lazy"
+      onLoad={() => {
+        rememberDashboardAssetSuccess(assetUrls, assetIndex);
+      }}
       onError={() => {
+        rememberDashboardAssetFailure(currentAssetUrl);
         setAssetIndex((current) => current + 1);
       }}
     />
   );
-}
+});
 
 export function getPreviewVariants(icon: string, dashboardIconsMetadata: DashboardIconsMetadataMap) {
   return getDashboardIconPreviewVariants(icon, dashboardIconsMetadata);

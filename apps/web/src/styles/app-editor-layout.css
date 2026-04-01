@@ -91,15 +91,34 @@
   grid-column: 1 / -1;
 }
 
-.app-editor-modal .editor-logo-row {
+.app-editor-modal .editor-logo-row,
+.app-editor-catalog-toolbar {
   display: flex;
   align-items: flex-end;
   gap: 10px;
 }
 
+.app-editor-catalog-picker {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+}
+
 .app-editor-catalog-search-field {
   flex: 1;
   min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.app-editor-catalog-input-shell {
+  position: relative;
+}
+
+.app-editor-catalog-input-shell.active input {
+  border-color: color-mix(in srgb, var(--accent) 36%, var(--field-border));
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 12%, transparent);
 }
 
 .app-editor-catalog-invert-button {

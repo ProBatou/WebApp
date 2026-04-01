@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type ChangeEvent, type Dispatch, type FormEvent, type SetStateAction } from "react";
+import { memo, useEffect, useRef, useState, type ChangeEvent, type Dispatch, type FormEvent, type KeyboardEvent as ReactKeyboardEvent, type SetStateAction } from "react";
 import { AppIcon, DashboardIconPreviewImage, getPreviewVariants } from "./AppIcon";
 import { Dropdown } from "./Dropdown";
 import {
@@ -19,7 +19,7 @@ import type {
   ThemeMode,
 } from "../types";
 
-export function AppEditor({
+export const AppEditor = memo(function AppEditor({
   open,
   busy,
   editorMode,
@@ -66,6 +66,9 @@ export function AppEditor({
 }) {
   const { t } = useTranslation();
   const customIconFileInputRef = useRef<HTMLInputElement | null>(null);
+  const iconPickerRef = useRef<HTMLDivElement | null>(null);
+  const [iconPickerOpen, setIconPickerOpen] = useState(false);
+  const [highlightedIconIndex, setHighlightedIconIndex] = useState(-1);
   const [customIconDraft, setCustomIconDraft] = useState(
     editorState.icon.startsWith("data:image/") || isDashboardIconSlug(editorState.icon)
       ? ""
@@ -107,6 +110,52 @@ export function AppEditor({
     setCustomIconDraft("");
   }, [customIconDraft, editorState.icon]);
 
+  useEffect(() => {
+    if (open) {
+      return;
+    }
+
+    setIconPickerOpen(false);
+    setHighlightedIconIndex(-1);
+  }, [open]);
+
+  useEffect(() => {
+    if (!iconPickerOpen) {
+      return;
+    }
+
+    const handlePointerDown = (event: PointerEvent) => {
+      if (!(event.target instanceof Node) || !iconPickerRef.current?.contains(event.target)) {
+        setIconPickerOpen(false);
+      }
+    };
+
+    document.addEventListener("pointerdown", handlePointerDown);
+
+    return () => {
+      document.removeEventListener("pointerdown", handlePointerDown);
+    };
+  }, [iconPickerOpen]);
+
+  useEffect(() => {
+    if (!iconPickerOpen || filteredDashboardIcons.length === 0) {
+      setHighlightedIconIndex(-1);
+      return;
+    }
+
+    const activeIndex = filteredDashboardIcons.indexOf(editorState.icon);
+    setHighlightedIconIndex(activeIndex >= 0 ? activeIndex : 0);
+  }, [editorState.icon, filteredDashboardIcons, iconPickerOpen]);
+
+  useEffect(() => {
+    if (highlightedIconIndex < 0) {
+      return;
+    }
+
+    const activeOption = iconPickerRef.current?.querySelector<HTMLElement>("[data-icon-highlighted='true']");
+    activeOption?.scrollIntoView({ block: "nearest" });
+  }, [highlightedIconIndex]);
+
   if (!open) {
     return null;
   }
@@ -115,6 +164,7 @@ export function AppEditor({
   const hasCustomIconPreview = Boolean(customIconUrl);
   const hasCatalogSelection = isDashboardIconSlug(editorState.icon);
   const hasCatalogQuery = iconQuery.trim().length > 0;
+  const showIconPicker = iconPickerOpen && (dashboardIconsLoading || Boolean(dashboardIconsError) || hasCatalogQuery);
   const iconSource = hasCatalogSelection || hasCatalogQuery
     ? "catalog"
     : hasCustomIconPreview || customIconDraft.trim()
@@ -152,6 +202,87 @@ export function AppEditor({
     setIconQuery("");
     setDebouncedIconQuery("");
     setIconSelectionLocked(false);
+    setIconPickerOpen(false);
+    setHighlightedIconIndex(-1);
+  };
+  const handleSelectDashboardIcon = (icon: string) => {
+    setIconSelectionLocked(true);
+    setEditorState((current) => ({ ...current, icon }));
+    setCustomIconDraft("");
+    setIconQuery(icon);
+    setDebouncedIconQuery(icon);
+    setIconPickerOpen(false);
+  };
+  const handleCatalogInputChange = (event: ChangeEvent<HTMLInputElement>) => {
+    const nextQuery = event.target.value.toLowerCase();
+    setIconSelectionLocked(false);
+    setIconQuery(nextQuery);
+    setIconPickerOpen(Boolean(nextQuery.trim()));
+
+    if (nextQuery.trim()) {
+      setCustomIconDraft("");
+      setEditorState((current) => {
+        if (!isCustomIconUrl(current.icon) && !current.icon.startsWith("data:image/")) {
+          return current;
+        }
+
+        return {
+          ...current,
+          icon: "",
+          iconVariantMode: "auto",
+          iconVariantInverted: false,
+        };
+      });
+    }
+
+    if (!nextQuery.trim()) {
+      setDebouncedIconQuery("");
+      setHighlightedIconIndex(-1);
+      setEditorState((current) => {
+        if (!isDashboardIconSlug(current.icon)) {
+          return current;
+        }
+
+        return {
+          ...current,
+          icon: "",
+          iconVariantMode: "auto",
+          iconVariantInverted: false,
+        };
+      });
+    }
+  };
+  const handleCatalogInputKeyDown = (event: ReactKeyboardEvent<HTMLInputElement>) => {
+    if (event.key === "Escape") {
+      setIconPickerOpen(false);
+      return;
+    }
+
+    if (filteredDashboardIcons.length === 0) {
+      return;
+    }
+
+    if (event.key === "ArrowDown") {
+      event.preventDefault();
+      setIconPickerOpen(true);
+      setHighlightedIconIndex((current) => (current < 0 || current >= filteredDashboardIcons.length - 1 ? 0 : current + 1));
+      return;
+    }
+
+    if (event.key === "ArrowUp") {
+      event.preventDefault();
+      setIconPickerOpen(true);
+      setHighlightedIconIndex((current) => (current <= 0 ? filteredDashboardIcons.length - 1 : current - 1));
+      return;
+    }
+
+    if (event.key === "Enter" && iconPickerOpen && highlightedIconIndex >= 0) {
+      event.preventDefault();
+      const nextIcon = filteredDashboardIcons[highlightedIconIndex];
+      if (nextIcon) {
+        handleSelectDashboardIcon(nextIcon);
+      }
+    }
   };
   const handleCustomIconFileChange = (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -279,54 +410,98 @@ export function AppEditor({
                     </div>
                   </div>
                 </div>
-                <div className="editor-logo-row">
+                <div className="app-editor-catalog-toolbar">
+                  <div
+                    ref={iconPickerRef}
+                    className="app-editor-catalog-picker"
+                  >
                   <label className="app-editor-catalog-search-field">
                     <span>{t("app.icon")}</span>
                     <a className="app-editor-catalog-link" href="https://dashboardicons.com/icons" target="_blank" rel="noreferrer">
                       {t("app.openCatalog")}
                     </a>
-                    <input
-                      type="text"
-                      value={iconQuery}
-                      onChange={(event) => {
-                        const nextQuery = event.target.value.toLowerCase();
-                        setIconSelectionLocked(false);
-                        setIconQuery(nextQuery);
-                        if (nextQuery.trim()) {
-                          setCustomIconDraft("");
-                          setEditorState((current) => {
-                            if (!isCustomIconUrl(current.icon) && !current.icon.startsWith("data:image/")) {
-                              return current;
-                            }
-
-                            return {
-                              ...current,
-                              icon: "",
-                              iconVariantMode: "auto",
-                              iconVariantInverted: false,
-                            };
-                          });
-                        }
-                        if (!nextQuery.trim()) {
-                          setDebouncedIconQuery("");
-                          setEditorState((current) => {
-                            if (!isDashboardIconSlug(current.icon)) {
-                              return current;
-                            }
-
-                            return {
-                              ...current,
-                              icon: "",
-                              iconVariantMode: "auto",
-                              iconVariantInverted: false,
-                            };
-                          });
-                        }
-                      }}
-                      placeholder={t("app.searchDashboardIcons")}
-                      autoComplete="off"
-                    />
+                    <div className={showIconPicker ? "app-editor-catalog-input-shell active" : "app-editor-catalog-input-shell"}>
+                      <input
+                        type="text"
+                        value={iconQuery}
+                        onChange={handleCatalogInputChange}
+                        onFocus={() => setIconPickerOpen(true)}
+                        onKeyDown={handleCatalogInputKeyDown}
+                        placeholder={t("app.searchDashboardIcons")}
+                        autoComplete="off"
+                        aria-expanded={showIconPicker}
+                        aria-haspopup="listbox"
+                        aria-controls="app-editor-icon-picker"
+                      />
+                    </div>
                   </label>
+                    {showIconPicker ? (
+                      <div className="icon-picker-popover picker-surface">
+                        {dashboardIconsError ? <p className="form-error">{t(dashboardIconsError)}</p> : null}
+                        {dashboardIconsLoading ? <div className="icon-picker-state picker-feedback">{t("common.loading")}</div> : null}
+                        {!dashboardIconsLoading && !dashboardIconsError && filteredDashboardIcons.length > 0 ? (
+                          <div className="icon-picker-list picker-scroll-shell" id="app-editor-icon-picker" role="listbox" aria-label={t("app.iconCatalog")}>
+                            <div className="icon-picker-list-content picker-scroll-content">
+                              {filteredDashboardIcons.map((icon, index) => {
+                                const previewVariants = getPreviewVariants(icon, dashboardIconsMetadata);
+                                const isActive = editorState.icon === icon;
+                                const isHighlighted = highlightedIconIndex === index;
+
+                                return (
+                                  <button
+                                    key={icon}
+                                    type="button"
+                                    role="option"
+                                    aria-selected={isActive}
+                                    data-icon-highlighted={isHighlighted ? "true" : "false"}
+                                    className={
+                                      isActive
+                                        ? isHighlighted
+                                          ? "icon-picker-option picker-card-option active highlighted"
+                                          : "icon-picker-option picker-card-option active"
+                                        : isHighlighted
+                                          ? "icon-picker-option picker-card-option highlighted"
+                                          : "icon-picker-option picker-card-option"
+                                    }
+                                    onMouseEnter={() => setHighlightedIconIndex(index)}
+                                    onMouseDown={(event) => {
+                                      event.preventDefault();
+                                    }}
+                                    onFocus={() => setHighlightedIconIndex(index)}
+                                    onClick={() => handleSelectDashboardIcon(icon)}
+                                  >
+                                    <span className="icon-picker-option-main">
+                                      <span className="icon-search-preview-stack">
+                                        <span className="icon-search-preview icon-search-preview-light" title={t("app.lightBackground")}>
+                                          <DashboardIconPreviewImage icon={previewVariants.lightBackgroundIcon} fallbackIcon={previewVariants.baseIcon} />
+                                        </span>
+                                        <span className="icon-search-preview icon-search-preview-dark" title={t("app.darkBackground")}>
+                                          <DashboardIconPreviewImage icon={previewVariants.darkBackgroundIcon} fallbackIcon={previewVariants.baseIcon} />
+                                        </span>
+                                      </span>
+                                      <span className="icon-search-copy">
+                                        <strong>{formatDashboardIconLabel(icon)}</strong>
+                                        <small>{icon}</small>
+                                      </span>
+                                    </span>
+                                    <span className="icon-picker-option-side">
+                                      {previewVariants.hasVariants ? <span className="icon-variant-badge">{t("app.lightDark")}</span> : null}
+                                    </span>
+                                  </button>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        ) : null}
+                        {!dashboardIconsLoading && !dashboardIconsError && hasCatalogQuery && filteredDashboardIcons.length === 0 ? (
+                          <div className="icon-picker-empty picker-feedback">
+                            <strong>{iconQuery}</strong>
+                            <p>{t("app.iconPickerNoResults")}</p>
+                          </div>
+                        ) : null}
+                      </div>
+                    ) : null}
+                  </div>
                   <button
                     className={editorState.iconVariantInverted ? "secondary-button icon-invert-button active app-editor-catalog-invert-button" : "secondary-button icon-invert-button app-editor-catalog-invert-button"}
                     type="button"
@@ -341,46 +516,6 @@ export function AppEditor({
                   >
                     {editorState.iconVariantInverted ? t("app.inverted") : t("app.normal")}
                   </button>
-                </div>
-                <div className="icon-search-panel">
-                  {dashboardIconsError ? <p className="form-error">{t(dashboardIconsError)}</p> : null}
-
-                  {!dashboardIconsLoading && filteredDashboardIcons.length > 0 ? (
-                    <div className="icon-search-results">
-                      {filteredDashboardIcons.map((icon) => {
-                        const previewVariants = getPreviewVariants(icon, dashboardIconsMetadata);
-
-                        return (
-                          <button
-                            key={icon}
-                            type="button"
-                            className={editorState.icon === icon ? "icon-search-item active" : "icon-search-item"}
-                            onClick={() => {
-                              setIconSelectionLocked(true);
-                              setEditorState((current) => ({ ...current, icon }));
-                              setCustomIconDraft("");
-                              setIconQuery(icon);
-                              setDebouncedIconQuery(icon);
-                            }}
-                          >
-                            <span className="icon-search-preview-stack">
-                              <span className="icon-search-preview icon-search-preview-light" title={t("app.lightBackground")}>
-                                <DashboardIconPreviewImage icon={previewVariants.lightBackgroundIcon} fallbackIcon={previewVariants.baseIcon} />
-                              </span>
-                              <span className="icon-search-preview icon-search-preview-dark" title={t("app.darkBackground")}>
-                                <DashboardIconPreviewImage icon={previewVariants.darkBackgroundIcon} fallbackIcon={previewVariants.baseIcon} />
-                              </span>
-                            </span>
-                            <span className="icon-search-copy">
-                              <strong>{formatDashboardIconLabel(icon)}</strong>
-                              <small>{icon}</small>
-                            </span>
-                            {previewVariants.hasVariants ? <span className="icon-variant-badge">{t("app.lightDark")}</span> : null}
-                          </button>
-                        );
-                      })}
-                    </div>
-                  ) : null}
                 </div>
 
               <div className="app-editor-custom-icon-inline">
@@ -583,4 +718,4 @@ export function AppEditor({
       </aside>
     </div>
   );
-}
+});

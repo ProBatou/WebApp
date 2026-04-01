@@ -197,6 +197,102 @@
   padding: 10px 14px;
 }
 
+.icon-picker-popover {
+  position: absolute;
+  top: calc(100% + 10px);
+  left: 0;
+  right: 0;
+  z-index: 14;
+}
+
+.icon-picker-list {
+  max-height: min(320px, 34vh);
+  margin-right: -12px;
+  padding-top: 2px;
+  padding-bottom: 2px;
+}
+
+.icon-picker-list-content {
+  padding-right: 14px;
+}
+
+.icon-picker-option {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 10px;
+  border-radius: 16px;
+}
+
+.icon-picker-option-main {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  flex: 1;
+}
+
+.icon-picker-option-side {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  flex: 0 0 auto;
+  margin-left: 6px;
+}
+
+.icon-picker-empty,
+.icon-picker-state {
+}
+
+.icon-picker-empty strong,
+.icon-picker-empty p,
+.icon-picker-state {
+  margin: 0;
+}
+
+.icon-picker-empty p,
+.icon-picker-state {
+  color: var(--text-secondary);
+  line-height: 1.45;
+}
+
+.icon-picker-empty strong {
+  display: block;
+  margin-bottom: 6px;
+  color: var(--text-primary);
+}
+
+.icon-picker-option .icon-search-preview-stack {
+  gap: 6px;
+}
+
+.icon-picker-option .icon-search-preview {
+  width: 38px;
+  height: 38px;
+  flex: 0 0 38px;
+  border-radius: 12px;
+}
+
+.icon-picker-option .icon-search-preview img {
+  width: 22px;
+  height: 22px;
+}
+
+.icon-picker-option .icon-search-copy {
+  gap: 2px;
+}
+
+.icon-picker-option .icon-search-copy strong {
+  font-size: 0.96rem;
+  line-height: 1.15;
+}
+
+.icon-picker-option .icon-search-copy small {
+  font-size: 0.72rem;
+  line-height: 1.15;
+}
+
 .icon-search-results {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
