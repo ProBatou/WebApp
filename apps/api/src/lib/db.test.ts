@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import Database from "better-sqlite3";
-import { applyMigrations } from "./db.js";
+import { applyMigrations, isNodeTestEnvironment } from "./db.js";
 
 function getColumnNames(database: Database.Database, table: string) {
   return (database.prepare(`PRAGMA table_info(${table})`).all() as Array<{ name: string }>).map((column) => column.name);
@@ -170,4 +170,14 @@ test("applyMigrations tolerates optional columns already present", () => {
   } finally {
     database.close();
   }
+});
+
+test("isNodeTestEnvironment detects node:test workers via NODE_TEST_CONTEXT", () => {
+  assert.equal(isNodeTestEnvironment(["node", "sample.test.js"], [], { NODE_TEST_CONTEXT: "child-v8" }), true);
+});
+
+test("isNodeTestEnvironment detects direct --test execution flags", () => {
+  assert.equal(isNodeTestEnvironment(["node", "--test", "sample.test.js"], []), true);
+  assert.equal(isNodeTestEnvironment(["node", "sample.test.js"], ["--test"]), true);
+  assert.equal(isNodeTestEnvironment(["node", "sample.test.js"], [], {}), false);
 });

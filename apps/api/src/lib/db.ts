@@ -11,12 +11,24 @@ type Migration = {
 };
 
 const currentDir = dirname(fileURLToPath(import.meta.url));
-const isNodeTestRunner = process.argv.includes("--test") || process.execArgv.includes("--test");
-const databasePath = process.env.DATABASE_PATH
-  ? resolve(process.env.DATABASE_PATH)
-  : isNodeTestRunner
-    ? ":memory:"
-    : resolve(currentDir, "../../data/webapp-v2.db");
+
+export function isNodeTestEnvironment(
+  argv: readonly string[] = process.argv,
+  execArgv: readonly string[] = process.execArgv,
+  env: NodeJS.ProcessEnv = process.env
+) {
+  return argv.includes("--test") || execArgv.includes("--test") || Boolean(env.NODE_TEST_CONTEXT);
+}
+
+function resolveDatabasePath(configuredPath?: string) {
+  if (configuredPath) {
+    return configuredPath === ":memory:" ? configuredPath : resolve(configuredPath);
+  }
+
+  return isNodeTestEnvironment() ? ":memory:" : resolve(currentDir, "../../data/webapp-v2.db");
+}
+
+const databasePath = resolveDatabasePath(process.env.DATABASE_PATH);
 
 if (databasePath !== ":memory:") {
   mkdirSync(dirname(databasePath), { recursive: true });
