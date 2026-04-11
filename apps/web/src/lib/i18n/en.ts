@@ -43,6 +43,9 @@ export const en = {
   "auth.demoAccount": "Demo account: `demo` / `demo`",
   "auth.username": "Username",
   "auth.password": "Password",
+  "auth.signInWithProvider": "Continue with {provider}",
+  "auth.orUseLocalAccount": "Or use a local account",
+  "auth.oidcOnlySubtitle": "Authentication is handled by {provider} on this instance.",
   "auth.activateAccount": "Activate my account",
   "auth.createAccount": "Create account",
   "auth.initialSetup": "One-time initial setup.",
@@ -132,6 +135,7 @@ export const en = {
   "account.newUsername": "New username",
   "account.currentPassword": "Current password",
   "account.newPassword": "New password",
+  "account.passwordManagedByOidc": "Password changes are managed by your identity provider.",
   "account.deleteConfirm": "This will permanently delete your account. This action cannot be undone.",
   "account.save": "Save",
   "about.version": "Version",
@@ -245,6 +249,10 @@ export const en = {
   "errors.invalidIcon": "Invalid icon.",
   "errors.appAlreadyInitialized": "The app is already initialized.",
   "errors.invalidUsernamePassword": "Incorrect username or password.",
+  "errors.useOidcLogin": "Use {provider} to sign in on this instance.",
+  "errors.oidcUnavailable": "OIDC authentication is unavailable.",
+  "errors.oidcSignIn": "OIDC sign-in failed.",
+  "errors.passwordManagedByOidc": "This account password is managed by your identity provider.",
   "errors.setupDisabledInDemo": "Demo mode: account creation is disabled.",
 } as const;
 

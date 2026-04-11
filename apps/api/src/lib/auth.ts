@@ -10,7 +10,11 @@ export async function hashPassword(password: string) {
 }
 
 export async function verifyPassword(password: string, passwordHash: string) {
-  return bcrypt.compare(password, passwordHash);
+  try {
+    return await bcrypt.compare(password, passwordHash);
+  } catch {
+    return false;
+  }
 }
 
 export function hasUsers() {
@@ -27,6 +31,10 @@ export function createInitialUser(username: string, passwordHash: string) {
 
 export function findUserByUsername(username: string) {
   return authRepository.findUserByUsername(username);
+}
+
+export function findUserByOidcIdentity(...args: Parameters<typeof authRepository.findUserByOidcIdentity>) {
+  return authRepository.findUserByOidcIdentity(...args);
 }
 
 export function listUsers(...args: Parameters<typeof authRepository.listUsers>) {
@@ -47,6 +55,22 @@ export function getSessionUser(...args: Parameters<typeof authRepository.getSess
 
 export function purgeExpiredSessions() {
   return authRepository.purgeExpiredSessions();
+}
+
+export function createOidcLoginRequest(...args: Parameters<typeof authRepository.createOidcLoginRequest>) {
+  return authRepository.createOidcLoginRequest(...args);
+}
+
+export function consumeOidcLoginRequest(...args: Parameters<typeof authRepository.consumeOidcLoginRequest>) {
+  return authRepository.consumeOidcLoginRequest(...args);
+}
+
+export function purgeExpiredOidcLoginRequests() {
+  return authRepository.purgeExpiredOidcLoginRequests();
+}
+
+export function syncOidcUser(...args: Parameters<typeof authRepository.syncOidcUser>) {
+  return authRepository.syncOidcUser(...args);
 }
 
 export function requireSession(...args: Parameters<typeof authRepository.requireSession>) {

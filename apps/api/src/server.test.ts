@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import { mkdtemp } from "node:fs/promises";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
+import { exportJWK, generateKeyPair, SignJWT } from "jose";
 
 const tempDir = await mkdtemp(join(tmpdir(), "webapp-v2-api-"));
 process.env.DATABASE_PATH = join(tempDir, "integration.db");
@@ -16,6 +17,7 @@ const [{ createServer }, { db }] = await Promise.all([
 beforeEach(() => {
   db.exec(`
     DELETE FROM sessions;
+    DELETE FROM oidc_login_requests;
     DELETE FROM invitations;
     DELETE FROM user_preferences;
     DELETE FROM apps;
@@ -24,6 +26,38 @@ beforeEach(() => {
     DELETE FROM sqlite_sequence WHERE name IN ('users', 'groups', 'apps');
   `);
 });
+
+async function withPatchedFetch<T>(mockFetch: typeof fetch, callback: () => Promise<T>) {
+  const originalFetch = globalThis.fetch;
+  globalThis.fetch = mockFetch;
+
+  try {
+    return await callback();
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+}
+
+async function withOidcEnv<T>(values: Record<string, string>, callback: () => Promise<T>) {
+  const previous = new Map<string, string | undefined>();
+
+  for (const [key, value] of Object.entries(values)) {
+    previous.set(key, process.env[key]);
+    process.env[key] = value;
+  }
+
+  try {
+    return await callback();
+  } finally {
+    for (const [key, value] of previous.entries()) {
+      if (value === undefined) {
+        delete process.env[key];
+      } else {
+        process.env[key] = value;
+      }
+    }
+  }
+}
 
 function getSessionCookie(setCookieHeader: string | string[] | undefined) {
   const headerValue = Array.isArray(setCookieHeader) ? setCookieHeader[0] : setCookieHeader;
@@ -67,6 +101,159 @@ test("GET /api/bootstrap stays accessible without the CSRF header", async () => 
   }
 });
 
+test("OIDC login creates an authenticated Pocket ID session", async () => {
+  const issuer = "https://id.example.com";
+  const clientId = "webapp-client";
+  const postLoginRedirect = "http://localhost:5173/";
+  const { privateKey, publicKey } = await generateKeyPair("RS256");
+  const publicJwk = await exportJWK(publicKey);
+  publicJwk.kid = "test-key";
+  let capturedNonce: string | null = null;
+
+  await withOidcEnv(
+    {
+      OIDC_ISSUER_URL: issuer,
+      OIDC_CLIENT_ID: clientId,
+      OIDC_CLIENT_SECRET: "super-secret",
+      OIDC_ADMIN_GROUPS: "webapp-admins",
+      OIDC_POST_LOGIN_REDIRECT_URI: postLoginRedirect,
+    },
+    async () => {
+      const mockFetch: typeof fetch = async (input, init) => {
+        const url = String(input);
+
+        if (url === `${issuer}/.well-known/openid-configuration`) {
+          return new Response(
+            JSON.stringify({
+              issuer,
+              authorization_endpoint: `${issuer}/authorize`,
+              token_endpoint: `${issuer}/token`,
+              jwks_uri: `${issuer}/jwks`,
+            }),
+            {
+              status: 200,
+              headers: { "content-type": "application/json" },
+            }
+          );
+        }
+
+        if (url === `${issuer}/token`) {
+          assert.ok(capturedNonce);
+
+          const idToken = await new SignJWT({
+            sub: "pocket-id-user-1",
+            preferred_username: "pocket-admin",
+            groups: ["webapp-admins"],
+            nonce: capturedNonce,
+          })
+            .setProtectedHeader({ alg: "RS256", kid: "test-key" })
+            .setIssuer(issuer)
+            .setAudience(clientId)
+            .setIssuedAt()
+            .setExpirationTime("5m")
+            .sign(privateKey);
+
+          return new Response(
+            JSON.stringify({
+              access_token: "access-token",
+              id_token: idToken,
+              token_type: "Bearer",
+            }),
+            {
+              status: 200,
+              headers: { "content-type": "application/json" },
+            }
+          );
+        }
+
+        if (url === `${issuer}/jwks`) {
+          return new Response(JSON.stringify({ keys: [publicJwk] }), {
+            status: 200,
+            headers: { "content-type": "application/json" },
+          });
+        }
+
+        assert.fail(`Unexpected fetch to ${url}`);
+      };
+
+      await withPatchedFetch(mockFetch, async () => {
+        const server = await createServer();
+
+        try {
+          const bootstrapResponse = await server.inject({
+            method: "GET",
+            url: "/api/bootstrap",
+          });
+
+          assert.equal(bootstrapResponse.statusCode, 200);
+          assert.deepEqual(bootstrapResponse.json().oidc, {
+            enabled: true,
+            providerName: "Pocket ID",
+            loginUrl: "/api/oidc/login",
+            passwordAuthEnabled: true,
+          });
+
+          const loginResponse = await server.inject({
+            method: "GET",
+            url: "/api/oidc/login",
+          });
+
+          assert.equal(loginResponse.statusCode, 302);
+          const oidcState = db
+            .prepare("SELECT state, nonce FROM oidc_login_requests LIMIT 1")
+            .get() as { state: string; nonce: string } | undefined;
+          assert.ok(oidcState);
+          capturedNonce = oidcState.nonce;
+
+          const callbackResponse = await server.inject({
+            method: "GET",
+            url: `/api/oidc/callback?code=test-code&state=${oidcState.state}`,
+          });
+
+          assert.equal(callbackResponse.statusCode, 302);
+          assert.equal(callbackResponse.headers.location, postLoginRedirect);
+
+          const sessionCookie = getSessionCookie(callbackResponse.headers["set-cookie"]);
+          const sessionResponse = await server.inject({
+            method: "GET",
+            url: "/api/session",
+            headers: {
+              cookie: sessionCookie,
+            },
+          });
+
+          assert.equal(sessionResponse.statusCode, 200);
+          assert.deepEqual(sessionResponse.json(), {
+            user: {
+              id: 1,
+              username: "pocket-admin",
+              role: "admin",
+              authProvider: "oidc",
+            },
+          });
+
+          const passwordLoginResponse = await server.inject({
+            method: "POST",
+            url: "/api/login",
+            headers: {
+              "x-requested-with": "webapp-v2",
+            },
+            payload: {
+              username: "pocket-admin",
+              password: "irrelevant-password",
+            },
+          });
+
+          assert.equal(passwordLoginResponse.statusCode, 401);
+          assert.deepEqual(passwordLoginResponse.json(), { message: "errors.useOidcLogin" });
+        } finally {
+          await server.close();
+        }
+      });
+    }
+  );
+});
+
 test("POST /api/setup creates a session and GET /api/session returns the authenticated user", async () => {
   const server = await createServer();
 
@@ -101,6 +288,7 @@ test("POST /api/setup creates a session and GET /api/session returns the authent
         id: 1,
         username: "admin",
         role: "admin",
+        authProvider: "local",
       },
     });
   } finally {

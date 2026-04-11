@@ -2,10 +2,17 @@ import { randomBytes } from "node:crypto";
 import type { TLSSocket } from "node:tls";
 import type { FastifyReply, FastifyRequest } from "fastify";
 import type { SqliteDatabase } from "./db.js";
-import type { SessionUser } from "./types.js";
+import type { AuthProvider, SessionUser } from "./types.js";
 
 export const sessionDurationMs = 1000 * 60 * 60 * 24 * 30;
 export const sessionCookieName = "webapp_v2_session";
+const oidcLoginRequestDurationMs = 1000 * 60 * 10;
+
+type CreateUserOptions = {
+  authProvider?: AuthProvider;
+  oidcIssuer?: string | null;
+  oidcSubject?: string | null;
+};
 
 function isSecureRequest(request: FastifyRequest) {
   const forwardedProto = request.headers["x-forwarded-proto"];
@@ -18,6 +25,42 @@ function isSecureRequest(request: FastifyRequest) {
 export function createAuthRepository(database: SqliteDatabase, createSessionId: () => string = () => randomBytes(24).toString("hex")) {
   function createInvitationToken() {
     return randomBytes(24).toString("hex");
+  }
+
+  function normalizeUsernameBase(username: string) {
+    const normalized = username.trim().replace(/\s+/g, " ").slice(0, 32);
+    return normalized.length >= 3 ? normalized : "user";
+  }
+
+  function buildAvailableUsername(baseUsername: string, excludedUserId?: number) {
+    const base = normalizeUsernameBase(baseUsername);
+
+    const isAvailable = (candidate: string) => {
+      const existing = database.prepare("SELECT id FROM users WHERE username = ?").get(candidate) as { id: number } | undefined;
+      return !existing || existing.id === excludedUserId;
+    };
+
+    if (isAvailable(base)) {
+      return base;
+    }
+
+    for (let suffixIndex = 2; suffixIndex < 1_000; suffixIndex += 1) {
+      const suffix = `-${suffixIndex}`;
+      const prefixLength = Math.max(3, 32 - suffix.length);
+      const candidate = `${base.slice(0, prefixLength)}${suffix}`;
+      if (isAvailable(candidate)) {
+        return candidate;
+      }
+    }
+
+    const randomSuffix = `-${randomBytes(3).toString("hex")}`;
+    return `${base.slice(0, Math.max(3, 32 - randomSuffix.length))}${randomSuffix}`;
+  }
+
+  function getUserById(userId: number) {
+    return database
+      .prepare("SELECT id, username, role, auth_provider FROM users WHERE id = ?")
+      .get(userId) as SessionUser | undefined;
   }
 
   function listUsers() {
@@ -36,15 +79,24 @@ export function createAuthRepository(database: SqliteDatabase, createSessionId: 
     return row.count > 0;
   }
 
-  function createUser(username: string, passwordHash: string, role: SessionUser["role"] = "admin") {
+  function createUser(
+    username: string,
+    passwordHash: string,
+    role: SessionUser["role"] = "admin",
+    options: CreateUserOptions = {}
+  ) {
     const now = new Date().toISOString();
+    const authProvider = options.authProvider ?? "local";
     const result = database
-      .prepare("INSERT INTO users (username, password_hash, role, created_at) VALUES (?, ?, ?, ?)")
-      .run(username, passwordHash, role, now);
+      .prepare(
+        "INSERT INTO users (username, password_hash, role, created_at, auth_provider, oidc_issuer, oidc_subject) VALUES (?, ?, ?, ?, ?, ?, ?)"
+      )
+      .run(username, passwordHash, role, now, authProvider, options.oidcIssuer ?? null, options.oidcSubject ?? null);
     return {
       id: Number(result.lastInsertRowid),
       username,
       role,
+      auth_provider: authProvider,
     } satisfies SessionUser;
   }
 
@@ -57,13 +109,14 @@ export function createAuthRepository(database: SqliteDatabase, createSessionId: 
 
       const now = new Date().toISOString();
       const result = database
-        .prepare("INSERT INTO users (username, password_hash, created_at) VALUES (?, ?, ?)")
+        .prepare("INSERT INTO users (username, password_hash, created_at, auth_provider) VALUES (?, ?, ?, 'local')")
         .run(nextUsername, nextPasswordHash, now);
 
       return {
         id: Number(result.lastInsertRowid),
         username: nextUsername,
         role: "admin",
+        auth_provider: "local",
       } satisfies SessionUser;
     });
 
@@ -71,9 +124,15 @@ export function createAuthRepository(database: SqliteDatabase, createSessionId: 
   }
 
   function findUserByUsername(username: string) {
-    return database.prepare("SELECT id, username, password_hash, role FROM users WHERE username = ?").get(username) as
-      | { id: number; username: string; password_hash: string; role: SessionUser["role"] }
+    return database.prepare("SELECT id, username, password_hash, role, auth_provider FROM users WHERE username = ?").get(username) as
+      | { id: number; username: string; password_hash: string; role: SessionUser["role"]; auth_provider: AuthProvider }
       | undefined;
+  }
+
+  function findUserByOidcIdentity(oidcIssuer: string, oidcSubject: string) {
+    return database
+      .prepare("SELECT id, username, role, auth_provider FROM users WHERE oidc_issuer = ? AND oidc_subject = ?")
+      .get(oidcIssuer, oidcSubject) as SessionUser | undefined;
   }
 
   function createSession(request: FastifyRequest, reply: FastifyReply, userId: number) {
@@ -238,6 +297,7 @@ export function createAuthRepository(database: SqliteDatabase, createSessionId: 
       .prepare(
         `SELECT users.id, users.username
                 , users.role
+                , users.auth_provider
          FROM sessions
          INNER JOIN users ON users.id = sessions.user_id
          WHERE sessions.id = ? AND sessions.expires_at > ?`
@@ -256,6 +316,97 @@ export function createAuthRepository(database: SqliteDatabase, createSessionId: 
     const now = new Date().toISOString();
     const result = database.prepare("DELETE FROM sessions WHERE expires_at <= ?").run(now);
     return result.changes;
+  }
+
+  function createOidcLoginRequest(state: string, codeVerifier: string, nonce: string, redirectTo: string) {
+    const now = new Date();
+    const expiresAt = new Date(now.getTime() + oidcLoginRequestDurationMs);
+
+    database
+      .prepare(
+        "INSERT INTO oidc_login_requests (state, code_verifier, nonce, redirect_to, expires_at, created_at) VALUES (?, ?, ?, ?, ?, ?)"
+      )
+      .run(state, codeVerifier, nonce, redirectTo, expiresAt.toISOString(), now.toISOString());
+  }
+
+  function consumeOidcLoginRequest(state: string) {
+    const now = new Date().toISOString();
+
+    const consumeLoginRequestTransaction = database.transaction((requestState: string) => {
+      const row = database
+        .prepare(
+          `SELECT state, code_verifier, nonce, redirect_to, expires_at
+           FROM oidc_login_requests
+           WHERE state = ? AND expires_at > ?`
+        )
+        .get(requestState, now) as
+        | { state: string; code_verifier: string; nonce: string; redirect_to: string; expires_at: string }
+        | undefined;
+
+      database.prepare("DELETE FROM oidc_login_requests WHERE state = ? OR expires_at <= ?").run(requestState, now);
+
+      return row;
+    });
+
+    return consumeLoginRequestTransaction(state);
+  }
+
+  function purgeExpiredOidcLoginRequests() {
+    const now = new Date().toISOString();
+    const result = database.prepare("DELETE FROM oidc_login_requests WHERE expires_at <= ?").run(now);
+    return result.changes;
+  }
+
+  function syncOidcUser({
+    oidcIssuer,
+    oidcSubject,
+    username,
+    role,
+    syncRole,
+    passwordHash,
+  }: {
+    oidcIssuer: string;
+    oidcSubject: string;
+    username: string;
+    role: SessionUser["role"];
+    syncRole: boolean;
+    passwordHash?: string;
+  }) {
+    const now = new Date().toISOString();
+
+    const syncOidcUserTransaction = database.transaction(
+      (nextOidcIssuer: string, nextOidcSubject: string, nextUsername: string, nextRole: SessionUser["role"], nextSyncRole: boolean, nextPasswordHash?: string) => {
+        const existing = findUserByOidcIdentity(nextOidcIssuer, nextOidcSubject);
+        if (existing) {
+          if (nextSyncRole && existing.role !== nextRole) {
+            database.prepare("UPDATE users SET role = ? WHERE id = ?").run(nextRole, existing.id);
+          }
+
+          return getUserById(existing.id) as SessionUser;
+        }
+
+        if (!nextPasswordHash) {
+          throw new Error("A password hash is required when creating a new OIDC user.");
+        }
+
+        const uniqueUsername = buildAvailableUsername(nextUsername);
+        const result = database
+          .prepare(
+            `INSERT INTO users (username, password_hash, role, created_at, auth_provider, oidc_issuer, oidc_subject)
+             VALUES (?, ?, ?, ?, 'oidc', ?, ?)`
+          )
+          .run(uniqueUsername, nextPasswordHash, nextRole, now, nextOidcIssuer, nextOidcSubject);
+
+        return {
+          id: Number(result.lastInsertRowid),
+          username: uniqueUsername,
+          role: nextRole,
+          auth_provider: "oidc",
+        } satisfies SessionUser;
+      }
+    );
+
+    return syncOidcUserTransaction(oidcIssuer, oidcSubject, username, role, syncRole, passwordHash);
   }
 
   function requireSession(request: FastifyRequest, reply: FastifyReply) {
@@ -279,10 +430,13 @@ export function createAuthRepository(database: SqliteDatabase, createSessionId: 
 
   function updatePassword(userId: number, currentPasswordHash: string, newPasswordHash: string) {
     const user = database
-      .prepare("SELECT password_hash FROM users WHERE id = ?")
-      .get(userId) as { password_hash: string } | undefined;
+      .prepare("SELECT password_hash, auth_provider FROM users WHERE id = ?")
+      .get(userId) as { password_hash: string; auth_provider: AuthProvider } | undefined;
     if (!user) {
       return { error: "not_found" as const };
+    }
+    if (user.auth_provider === "oidc") {
+      return { error: "password_managed_by_oidc" as const };
     }
     return { ok: true as const, currentPasswordHash: user.password_hash, newPasswordHash };
   }
@@ -319,11 +473,16 @@ export function createAuthRepository(database: SqliteDatabase, createSessionId: 
     createUser,
     createInitialUser,
     findUserByUsername,
+    findUserByOidcIdentity,
     listUsers,
     createSession,
     clearSession,
     getSessionUser,
     purgeExpiredSessions,
+    createOidcLoginRequest,
+    consumeOidcLoginRequest,
+    purgeExpiredOidcLoginRequests,
+    syncOidcUser,
     requireSession,
     requireAdmin,
     updateUserRole,

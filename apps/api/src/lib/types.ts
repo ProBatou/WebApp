@@ -7,6 +7,7 @@ import type {
 export type AppMode = SharedAppMode;
 export type IconVariantMode = SharedIconVariantMode;
 export type UserRole = SharedUserRole;
+export type AuthProvider = "local" | "oidc";
 
 export type AppRecord = {
   id: number;
@@ -36,6 +37,14 @@ export type SessionUser = {
   id: number;
   username: string;
   role: UserRole;
+  auth_provider: AuthProvider;
+};
+
+export type PublicSessionUser = {
+  id: number;
+  username: string;
+  role: UserRole;
+  authProvider: AuthProvider;
 };
 
 export type UserPreferencesRecord = {

@@ -158,9 +158,11 @@ export function useAppContentModel() {
     credentials,
     inviteToken,
     inviteRole,
+    oidc,
     setCredentials,
     handleAuthSubmit,
     handleLogout,
+    handleOidcLogin,
   } = useAuth({
     reloadApps,
     clearAppState,
@@ -356,10 +358,12 @@ export function useAppContentModel() {
     credentials,
     inviteToken,
     inviteRole,
+    oidc,
     lang,
     setLang,
     setCredentials,
     onSubmit: handleAuthSubmit,
+    onOidcLogin: handleOidcLogin,
     onToggleTheme: toggleThemeMode,
   };
 
