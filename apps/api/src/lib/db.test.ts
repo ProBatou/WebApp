@@ -37,10 +37,11 @@ test("applyMigrations creates critical tables and schema_migrations on an empty 
     assert.ok(tableNames.includes("sessions"));
     assert.ok(tableNames.includes("invitations"));
     assert.ok(tableNames.includes("user_preferences"));
+    assert.ok(tableNames.includes("oidc_login_requests"));
     assert.ok(tableNames.includes("schema_migrations"));
 
     const migrationCount = (database.prepare("SELECT COUNT(*) AS count FROM schema_migrations").get() as { count: number }).count;
-    assert.equal(migrationCount, 13);
+    assert.equal(migrationCount, 14);
   } finally {
     database.close();
   }
@@ -90,8 +91,19 @@ test("applyMigrations applies pending incremental migrations", () => {
     assert.ok(preferencesColumns.includes("text_color"));
     assert.ok(preferencesColumns.includes("text_color_dark"));
 
+    const userColumns = getColumnNames(database, "users");
+    assert.ok(userColumns.includes("auth_provider"));
+    assert.ok(userColumns.includes("oidc_issuer"));
+    assert.ok(userColumns.includes("oidc_subject"));
+
+    const tableNames = (database
+      .prepare("SELECT name FROM sqlite_master WHERE type = 'table'")
+      .all() as Array<{ name: string }>)
+      .map((row) => row.name);
+    assert.ok(tableNames.includes("oidc_login_requests"));
+
     const migrationCount = (database.prepare("SELECT COUNT(*) AS count FROM schema_migrations").get() as { count: number }).count;
-    assert.equal(migrationCount, 13);
+    assert.equal(migrationCount, 14);
   } finally {
     database.close();
   }

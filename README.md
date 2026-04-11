@@ -80,6 +80,40 @@ A `cosmos-service.json` is included for one-click deployment. Data is stored in 
 | `PORT` | `3004` | Listening port |
 | `DATABASE_PATH` | `/app/data/webapp.db` | SQLite file location |
 | `NODE_ENV` | `production` | Node environment |
+| `OIDC_ISSUER_URL` | unset | OIDC issuer URL, e.g. `https://id.example.com` |
+| `OIDC_DISCOVERY_URL` | `<issuer>/.well-known/openid-configuration` | Discovery URL override |
+| `OIDC_CLIENT_ID` | unset | OIDC client ID |
+| `OIDC_CLIENT_SECRET` | unset | OIDC client secret for confidential clients |
+| `OIDC_PROVIDER_NAME` | `Pocket ID` | Label shown on the login button |
+| `OIDC_SCOPES` | `openid profile email groups` | Requested scopes |
+| `OIDC_ADMIN_GROUPS` | unset | Comma-separated groups mapped to the `admin` role |
+| `OIDC_REDIRECT_URI` | derived from request | Callback URL registered in the provider |
+| `OIDC_POST_LOGIN_REDIRECT_URI` | first `CORS_ORIGIN` or current origin | Where to send the browser after the OIDC callback |
+| `OIDC_DISABLE_PASSWORD_LOGIN` | `false` | Hide the password form on the main sign-in screen |
+
+## OIDC with Pocket ID
+
+WebApp can authenticate users through any standard OIDC provider. Pocket ID works with the built-in authorization code + PKCE flow.
+
+Example:
+
+```bash
+OIDC_ISSUER_URL=https://id.example.com
+OIDC_CLIENT_ID=webapp
+OIDC_CLIENT_SECRET=change-me
+OIDC_PROVIDER_NAME=Pocket ID
+OIDC_ADMIN_GROUPS=webapp-admins
+OIDC_POST_LOGIN_REDIRECT_URI=https://webapp.example.com/
+```
+
+In Pocket ID:
+
+1. Create an OIDC client for WebApp.
+2. Set the callback URL to `https://webapp.example.com/api/oidc/callback`.
+3. Allow the users or groups that should access WebApp.
+4. If you want Pocket ID groups to grant WebApp admin rights, expose a `groups` claim and set `OIDC_ADMIN_GROUPS`.
+
+If the frontend and API run on different origins in development, keep the callback on the API origin and set `OIDC_POST_LOGIN_REDIRECT_URI` to the frontend URL, for example `http://localhost:5173/`.
 
 ---
 

@@ -156,6 +156,7 @@ export function useAuthenticatedShellLayoutArgs({
   return {
     ...shellFrameArgs,
     userName: user.username,
+    userAuthProvider: user.authProvider,
     canManageApps,
     ...sidebarWorkspaceArgs,
     ...editorArgs,

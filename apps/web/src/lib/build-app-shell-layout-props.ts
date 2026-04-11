@@ -18,6 +18,7 @@ export type BuildAppShellLayoutPropsArgs = {
   sidebarMode: SidebarMode;
   setSidebarMode: Dispatch<SetStateAction<SidebarMode>>;
   userName: string;
+  userAuthProvider: AppShellLayoutProps["settingsModalProps"]["authProvider"];
   canManageApps: boolean;
   groups: AppShellLayoutProps["sidebarProps"]["groups"];
   apps: AppShellLayoutProps["sidebarProps"]["apps"];
@@ -131,6 +132,7 @@ export function buildAppShellLayoutProps({
   sidebarMode,
   setSidebarMode,
   userName,
+  userAuthProvider,
   canManageApps,
   groups,
   apps,
@@ -321,6 +323,7 @@ export function buildAppShellLayoutProps({
       canManageApps,
       currentUserId,
       userName,
+      userAuthProvider,
       groups,
       managedUsers,
       apps,
@@ -627,6 +630,7 @@ function buildSettingsModalProps({
   canManageApps,
   currentUserId,
   userName,
+  userAuthProvider,
   groups,
   managedUsers,
   apps,
@@ -672,6 +676,7 @@ function buildSettingsModalProps({
   | "canManageApps"
   | "currentUserId"
   | "userName"
+  | "userAuthProvider"
   | "groups"
   | "managedUsers"
   | "apps"
@@ -717,6 +722,7 @@ function buildSettingsModalProps({
     canManageApps,
     currentUserId,
     userName,
+    authProvider: userAuthProvider,
     groups,
     users: managedUsers,
     apps,

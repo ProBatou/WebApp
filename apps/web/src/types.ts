@@ -5,10 +5,20 @@ import type {
   UserRole as SharedUserRole,
 } from "@webapp-v2/shared";
 
+export type AuthProvider = "local" | "oidc";
+
 export type AuthUser = {
   id: number;
   username: string;
   role: SharedUserRole;
+  authProvider: AuthProvider;
+};
+
+export type OidcBootstrapConfig = {
+  enabled: boolean;
+  providerName: string;
+  loginUrl: string | null;
+  passwordAuthEnabled: boolean;
 };
 
 export type AppMode = SharedAppMode;
@@ -43,6 +53,7 @@ export type BootstrapResponse = {
   demoMode: boolean;
   user: AuthUser | null;
   preferences: UserPreferences | null;
+  oidc: OidcBootstrapConfig;
 };
 
 export type AppsResponse = {

@@ -111,6 +111,7 @@ test("getSessionUser returns the linked user for an active session", () => {
       id: user.id,
       username: "alice",
       role: "admin",
+      auth_provider: "local",
     });
   } finally {
     database.close();
@@ -167,6 +168,7 @@ test("requireAdmin rejects viewer users and allows admin users", () => {
           id: viewer.id,
           username: "viewer",
           role: "viewer",
+          auth_provider: "local",
         },
         viewerReplyState.reply
       ),
@@ -183,6 +185,7 @@ test("requireAdmin rejects viewer users and allows admin users", () => {
           id: admin.id,
           username: "admin",
           role: "admin",
+          auth_provider: "local",
         },
         adminReplyState.reply
       ),
@@ -190,6 +193,7 @@ test("requireAdmin rejects viewer users and allows admin users", () => {
         id: admin.id,
         username: "admin",
         role: "admin",
+        auth_provider: "local",
       }
     );
     assert.equal(adminReplyState.getStatusCode(), null);

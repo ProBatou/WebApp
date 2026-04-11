@@ -364,6 +364,13 @@
   margin-bottom: 8px;
 }
 
+.account-provider-note {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: 0.875rem;
+  line-height: 1.5;
+}
+
 .about-list {
   display: flex;
   flex-direction: column;

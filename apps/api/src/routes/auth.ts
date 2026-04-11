@@ -24,7 +24,9 @@ import {
   deleteSelf,
 } from "../lib/auth.js";
 import { isDemoMode } from "../lib/demo.js";
+import { completeOidcLogin, createOidcAuthorizationUrl, getOidcBootstrapConfig, getOidcErrorRedirectUri } from "../lib/oidc.js";
 import { getPreferences } from "../lib/preferences-repository.js";
+import type { PublicSessionUser, SessionUser } from "../lib/types.js";
 
 type TokenParams = {
   token: string;
@@ -32,6 +34,12 @@ type TokenParams = {
 
 type IdParams = {
   id: string;
+};
+
+type OidcCallbackQuery = {
+  code?: string;
+  state?: string;
+  error?: string;
 };
 
 const setupPayloadSchema = z.object({
@@ -57,6 +65,15 @@ const acceptInvitationPayloadSchema = z.object({
   password: z.string().min(8).max(128),
 });
 
+function toPublicUser(user: SessionUser): PublicSessionUser {
+  return {
+    id: user.id,
+    username: user.username,
+    role: user.role,
+    authProvider: user.auth_provider,
+  };
+}
+
 export async function registerAuthRoutes(server: FastifyInstance) {
   server.get("/api/bootstrap", async (request) => {
     const user = getSessionUser(request);
@@ -65,7 +82,7 @@ export async function registerAuthRoutes(server: FastifyInstance) {
     return {
       needsSetup: isDemoMode ? false : !hasUsers(),
       demoMode: isDemoMode,
-      user,
+      user: user ? toPublicUser(user) : null,
       preferences: prefs
         ? {
             theme: prefs.theme,
@@ -80,6 +97,7 @@ export async function registerAuthRoutes(server: FastifyInstance) {
             buttonColor: prefs.button_color,
           }
         : null,
+      oidc: getOidcBootstrapConfig(),
     };
   });
 
@@ -89,7 +107,7 @@ export async function registerAuthRoutes(server: FastifyInstance) {
       return reply;
     }
 
-    return { user };
+    return { user: toPublicUser(user) };
   });
 
   server.post(
@@ -115,7 +133,7 @@ export async function registerAuthRoutes(server: FastifyInstance) {
 
     createSession(request, reply, user.id);
 
-    return reply.code(201).send({ user });
+    return reply.code(201).send({ user: toPublicUser(user) });
     }
   );
 
@@ -135,6 +153,10 @@ export async function registerAuthRoutes(server: FastifyInstance) {
       return reply.code(401).send({ message: "errors.invalidUsernamePassword" });
     }
 
+    if (user.auth_provider === "oidc") {
+      return reply.code(401).send({ message: "errors.useOidcLogin" });
+    }
+
     const isValid = await verifyPassword(parsed.data.password, user.password_hash);
     if (!isValid) {
       return reply.code(401).send({ message: "errors.invalidUsernamePassword" });
@@ -148,10 +170,46 @@ export async function registerAuthRoutes(server: FastifyInstance) {
         id: user.id,
         username: user.username,
         role: user.role,
+        authProvider: user.auth_provider,
       },
     };
     }
   );
+
+  server.get("/api/oidc/login", async (request, reply) => {
+    try {
+      const authorizationUrl = await createOidcAuthorizationUrl(request);
+      return reply.redirect(authorizationUrl);
+    } catch (error) {
+      request.log.error(error, "Unable to start OIDC login");
+      return reply.code(503).send({ message: "errors.oidcUnavailable" });
+    }
+  });
+
+  server.get<{ Querystring: OidcCallbackQuery }>("/api/oidc/callback", async (request, reply) => {
+    if (request.query.error) {
+      return reply.redirect(getOidcErrorRedirectUri(request, "errors.oidcSignIn"));
+    }
+
+    if (!request.query.code || !request.query.state) {
+      return reply.redirect(getOidcErrorRedirectUri(request, "errors.oidcSignIn"));
+    }
+
+    try {
+      const result = await completeOidcLogin(request, {
+        code: request.query.code,
+        state: request.query.state,
+      });
+
+      clearSession(request, reply, request.cookies[sessionCookieName]);
+      createSession(request, reply, result.user.id);
+
+      return reply.redirect(result.redirectTo);
+    } catch (error) {
+      request.log.error(error, "Unable to complete OIDC login");
+      return reply.redirect(getOidcErrorRedirectUri(request, "errors.oidcSignIn"));
+    }
+  });
 
   server.post("/api/logout", async (request, reply) => {
     clearSession(request, reply, request.cookies[sessionCookieName]);
@@ -254,7 +312,7 @@ export async function registerAuthRoutes(server: FastifyInstance) {
       createSession(request, reply, result.user.id);
 
       return {
-        user: result.user,
+        user: toPublicUser(result.user),
       };
     }
   );
@@ -402,6 +460,10 @@ export async function registerAuthRoutes(server: FastifyInstance) {
       if ("error" in check) {
         if (check.error === "not_found") {
           return reply.code(404).send({ message: "errors.notFound" });
+        }
+
+        if (check.error === "password_managed_by_oidc") {
+          return reply.code(400).send({ message: "errors.passwordManagedByOidc" });
         }
 
         return reply.code(500).send({ message: "errors.api" });

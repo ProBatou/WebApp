@@ -423,6 +423,31 @@ button {
   gap: 14px;
 }
 
+.auth-auth-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.auth-oidc-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.auth-oidc-button {
+  width: 100%;
+  min-height: 48px;
+}
+
+.auth-divider,
+.auth-alt-note {
+  margin: 0;
+  text-align: center;
+  color: var(--text-secondary);
+  font-size: 0.92rem;
+}
+
 .auth-form label,
 .editor-form label {
   display: flex;

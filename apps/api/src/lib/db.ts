@@ -38,7 +38,7 @@ export const db = new Database(databasePath);
 db.pragma("journal_mode = WAL");
 db.pragma("foreign_keys = ON");
 
-const KNOWN_TABLES = ["apps", "users", "groups", "sessions", "invitations", "user_preferences"] as const;
+const KNOWN_TABLES = ["apps", "users", "groups", "sessions", "invitations", "user_preferences", "oidc_login_requests"] as const;
 type KnownTable = typeof KNOWN_TABLES[number];
 
 function hasColumn(database: SqliteDatabase, tableName: KnownTable, columnName: string) {
@@ -230,6 +230,37 @@ const migrations: Migration[] = [
       if (!hasColumn(database, "user_preferences", "text_color_dark")) {
         database.exec("ALTER TABLE user_preferences ADD COLUMN text_color_dark TEXT");
       }
+    },
+  },
+  {
+    id: "014_oidc_auth",
+    up: (database) => {
+      if (!hasColumn(database, "users", "auth_provider")) {
+        database.exec("ALTER TABLE users ADD COLUMN auth_provider TEXT NOT NULL DEFAULT 'local' CHECK(auth_provider IN ('local', 'oidc'))");
+      }
+
+      if (!hasColumn(database, "users", "oidc_issuer")) {
+        database.exec("ALTER TABLE users ADD COLUMN oidc_issuer TEXT");
+      }
+
+      if (!hasColumn(database, "users", "oidc_subject")) {
+        database.exec("ALTER TABLE users ADD COLUMN oidc_subject TEXT");
+      }
+
+      database.exec(`
+        CREATE TABLE IF NOT EXISTS oidc_login_requests (
+          state TEXT PRIMARY KEY,
+          code_verifier TEXT NOT NULL,
+          nonce TEXT NOT NULL,
+          redirect_to TEXT NOT NULL,
+          expires_at TEXT NOT NULL,
+          created_at TEXT NOT NULL
+        );
+
+        CREATE UNIQUE INDEX IF NOT EXISTS users_oidc_identity_idx
+        ON users (oidc_issuer, oidc_subject)
+        WHERE oidc_issuer IS NOT NULL AND oidc_subject IS NOT NULL;
+      `);
     },
   },
 ];

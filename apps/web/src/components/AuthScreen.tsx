@@ -1,7 +1,7 @@
 import type { Dispatch, FormEvent, SetStateAction } from "react";
 import { LanguageDropdown } from "./LanguageDropdown";
 import { useTranslation, type SupportedLanguage } from "../lib/i18n";
-import type { ThemeMode } from "../types";
+import type { OidcBootstrapConfig, ThemeMode } from "../types";
 
 export function AuthScreen({
   needsSetup,
@@ -12,10 +12,12 @@ export function AuthScreen({
   credentials,
   inviteToken,
   inviteRole,
+  oidc,
   lang,
   setLang,
   setCredentials,
   onSubmit,
+  onOidcLogin,
   onToggleTheme,
 }: {
   needsSetup: boolean;
@@ -26,14 +28,18 @@ export function AuthScreen({
   credentials: { username: string; password: string };
   inviteToken: string | null;
   inviteRole: "admin" | "viewer" | null;
+  oidc: OidcBootstrapConfig;
   lang: SupportedLanguage;
   setLang: (lang: SupportedLanguage) => void;
   setCredentials: Dispatch<SetStateAction<{ username: string; password: string }>>;
   onSubmit: (event: FormEvent<HTMLFormElement>) => Promise<void>;
+  onOidcLogin: () => void;
   onToggleTheme: () => void;
 }) {
   const { t } = useTranslation();
   const inviteMode = Boolean(inviteToken);
+  const showOidcButton = oidc.enabled && !inviteMode;
+  const showPasswordForm = inviteMode || needsSetup || demoMode || oidc.passwordAuthEnabled || !oidc.enabled;
   const eyebrow = inviteMode ? t("auth.invitation") : needsSetup ? t("auth.setup") : t("auth.signIn");
   const title = inviteMode
     ? t("auth.finishAccount")
@@ -83,34 +89,52 @@ export function AuthScreen({
           </div>
         ) : null}
 
-        <form className="auth-form" onSubmit={(event) => void onSubmit(event)}>
-          <label>
-            <span>{t("auth.username")}</span>
-            <input
-              type="text"
-              value={credentials.username}
-              onChange={(event) => setCredentials((current) => ({ ...current, username: event.target.value }))}
-              minLength={3}
-              maxLength={32}
-              required
-            />
-          </label>
-          <label>
-            <span>{t("auth.password")}</span>
-            <input
-              type="password"
-              value={credentials.password}
-              onChange={(event) => setCredentials((current) => ({ ...current, password: event.target.value }))}
-              minLength={demoMode ? 1 : 8}
-              maxLength={128}
-              required
-            />
-          </label>
-          {authError ? <p className="form-error">{t(authError)}</p> : null}
-          <button className="primary-button auth-submit" type="submit" disabled={busy}>
-            {inviteMode ? t("auth.activateAccount") : needsSetup ? t("auth.createAccount") : t("auth.signIn")}
-          </button>
-        </form>
+        <div className="auth-auth-stack">
+          {showOidcButton ? (
+            <div className="auth-oidc-stack">
+              <button className="secondary-button auth-oidc-button" type="button" onClick={onOidcLogin} disabled={busy}>
+                {t("auth.signInWithProvider", { provider: oidc.providerName })}
+              </button>
+              {showPasswordForm ? (
+                <p className="auth-divider">{t("auth.orUseLocalAccount")}</p>
+              ) : (
+                <p className="auth-alt-note">{t("auth.oidcOnlySubtitle", { provider: oidc.providerName })}</p>
+              )}
+            </div>
+          ) : null}
+
+          {showPasswordForm ? (
+            <form className="auth-form" onSubmit={(event) => void onSubmit(event)}>
+              <label>
+                <span>{t("auth.username")}</span>
+                <input
+                  type="text"
+                  value={credentials.username}
+                  onChange={(event) => setCredentials((current) => ({ ...current, username: event.target.value }))}
+                  minLength={3}
+                  maxLength={32}
+                  required
+                />
+              </label>
+              <label>
+                <span>{t("auth.password")}</span>
+                <input
+                  type="password"
+                  value={credentials.password}
+                  onChange={(event) => setCredentials((current) => ({ ...current, password: event.target.value }))}
+                  minLength={demoMode ? 1 : 8}
+                  maxLength={128}
+                  required
+                />
+              </label>
+              <button className="primary-button auth-submit" type="submit" disabled={busy}>
+                {inviteMode ? t("auth.activateAccount") : needsSetup ? t("auth.createAccount") : t("auth.signIn")}
+              </button>
+            </form>
+          ) : null}
+
+          {authError ? <p className="form-error">{t(authError, { provider: oidc.providerName })}</p> : null}
+        </div>
 
         <div className="auth-footer-note">
           <span className="auth-footer-dot" />

@@ -7,7 +7,7 @@ import cookie from "@fastify/cookie";
 import rateLimit from "@fastify/rate-limit";
 import staticPlugin from "@fastify/static";
 import { db } from "./lib/db.js";
-import { purgeExpiredSessions } from "./lib/auth.js";
+import { purgeExpiredOidcLoginRequests, purgeExpiredSessions } from "./lib/auth.js";
 import { ensureDemoState } from "./lib/demo.js";
 import { registerAuthRoutes } from "./routes/auth.js";
 import { registerAppRoutes } from "./routes/apps.js";
@@ -31,6 +31,7 @@ export async function createServer() {
 
   try {
     purgeExpiredSessions();
+    purgeExpiredOidcLoginRequests();
   } catch {}
 
   await server.register(cors, {
@@ -62,8 +63,9 @@ export async function createServer() {
   const sessionPurgeInterval = setInterval(() => {
     try {
       const purged = purgeExpiredSessions();
-      if (purged > 0) {
-        server.log.info({ purged }, "Expired sessions purged");
+      const purgedOidcRequests = purgeExpiredOidcLoginRequests();
+      if (purged > 0 || purgedOidcRequests > 0) {
+        server.log.info({ purged, purgedOidcRequests }, "Expired auth records purged");
       }
     } catch (error) {
       server.log.error(error, "Failed to purge expired sessions");

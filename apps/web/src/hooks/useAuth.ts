@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { apiFetch } from "../lib/api";
-import type { AuthUser, BootstrapResponse, InvitationInfoResponse, UserPreferences } from "../types";
+import type { AuthUser, BootstrapResponse, InvitationInfoResponse, OidcBootstrapConfig, UserPreferences } from "../types";
 
 function readInviteTokenFromUrl() {
   const searchParams = new URLSearchParams(window.location.search);
@@ -8,11 +8,25 @@ function readInviteTokenFromUrl() {
   return token?.trim() ? token : null;
 }
 
-function clearInviteTokenFromUrl() {
+function readAuthErrorFromUrl() {
+  const searchParams = new URLSearchParams(window.location.search);
+  const authError = searchParams.get("authError");
+  return authError?.trim() ? authError : null;
+}
+
+function clearQueryParamFromUrl(name: string) {
   const nextUrl = new URL(window.location.href);
-  nextUrl.searchParams.delete("invite");
+  nextUrl.searchParams.delete(name);
   const nextPath = `${nextUrl.pathname}${nextUrl.search}${nextUrl.hash}`;
   window.history.replaceState(null, "", nextPath);
+}
+
+function clearInviteTokenFromUrl() {
+  clearQueryParamFromUrl("invite");
+}
+
+function clearAuthErrorFromUrl() {
+  clearQueryParamFromUrl("authError");
 }
 
 export function useAuth({
@@ -37,6 +51,12 @@ export function useAuth({
   const [credentials, setCredentials] = useState({ username: "", password: "" });
   const [inviteToken, setInviteToken] = useState<string | null>(() => readInviteTokenFromUrl());
   const [inviteRole, setInviteRole] = useState<"admin" | "viewer" | null>(null);
+  const [oidc, setOidc] = useState<OidcBootstrapConfig>({
+    enabled: false,
+    providerName: "Pocket ID",
+    loginUrl: null,
+    passwordAuthEnabled: true,
+  });
 
   useEffect(() => {
     const bootstrap = async () => {
@@ -44,26 +64,37 @@ export function useAuth({
         setLoading(true);
         setError(null);
         const result = await apiFetch<BootstrapResponse>("/api/bootstrap", { method: "GET" });
+        const authErrorFromUrl = readAuthErrorFromUrl();
         setNeedsSetup(result.needsSetup);
         setDemoMode(result.demoMode);
         setUser(result.user);
         setPreferences(result.preferences);
+        setOidc(result.oidc);
         setCredentials(result.demoMode ? { username: "demo", password: "demo" } : { username: "", password: "" });
 
         if (result.user) {
           clearInviteTokenFromUrl();
+          clearAuthErrorFromUrl();
           setInviteToken(null);
           setInviteRole(null);
+          setAuthError(null);
           await reloadApps(result.preferences?.defaultAppId ?? undefined);
-        } else if (inviteToken) {
-          try {
-            const invitation = await apiFetch<InvitationInfoResponse>(`/api/invitations/${encodeURIComponent(inviteToken)}`, { method: "GET" });
-            setInviteRole(invitation.role);
-          } catch {
-            setInviteToken(null);
-            setInviteRole(null);
-            clearInviteTokenFromUrl();
-            setAuthError("errors.invalidInvite");
+        } else {
+          if (authErrorFromUrl) {
+            clearAuthErrorFromUrl();
+            setAuthError(authErrorFromUrl);
+          }
+
+          if (inviteToken) {
+            try {
+              const invitation = await apiFetch<InvitationInfoResponse>(`/api/invitations/${encodeURIComponent(inviteToken)}`, { method: "GET" });
+              setInviteRole(invitation.role);
+            } catch {
+              setInviteToken(null);
+              setInviteRole(null);
+              clearInviteTokenFromUrl();
+              setAuthError("errors.invalidInvite");
+            }
           }
         }
       } catch (bootstrapError) {
@@ -123,6 +154,15 @@ export function useAuth({
     }
   };
 
+  const handleOidcLogin = () => {
+    if (!oidc.enabled || !oidc.loginUrl) {
+      setAuthError("errors.oidcUnavailable");
+      return;
+    }
+
+    window.location.assign(oidc.loginUrl);
+  };
+
   return {
     user,
     setUser,
@@ -134,8 +174,10 @@ export function useAuth({
     credentials,
     inviteToken,
     inviteRole,
+    oidc,
     setCredentials,
     handleAuthSubmit,
     handleLogout,
+    handleOidcLogin,
   };
 }

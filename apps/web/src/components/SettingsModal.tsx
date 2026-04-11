@@ -12,7 +12,7 @@ import { CSS } from "@dnd-kit/utilities";
 import { AppIcon } from "./AppIcon";
 import { Dropdown } from "./Dropdown";
 import { jsonImportExample } from "../lib/app-utils";
-import type { DashboardIconsMetadataMap, GroupEntry, JsonImportMode, ThemeMode, UserEntry, UserPreferences, WebAppEntry } from "../types";
+import type { AuthProvider, DashboardIconsMetadataMap, GroupEntry, JsonImportMode, ThemeMode, UserEntry, UserPreferences, WebAppEntry } from "../types";
 import { supportedLanguages, useTranslation, type SupportedLanguage } from "../lib/i18n";
 
 export type SettingsTab = "groups" | "users" | "json" | "personalization" | "account" | "about";
@@ -654,6 +654,7 @@ function PersonalizationTabContent({
 
 function AccountTabContent({
   userName,
+  authProvider,
   onUpdateUsername,
   onUpdatePassword,
   onDeleteSelf,
@@ -662,6 +663,7 @@ function AccountTabContent({
   onError,
 }: {
   userName: string;
+  authProvider: AuthProvider;
   onUpdateUsername: (newUsername: string) => Promise<void>;
   onUpdatePassword: (currentPassword: string, newPassword: string) => Promise<void>;
   onDeleteSelf: () => Promise<void>;
@@ -725,26 +727,30 @@ function AccountTabContent({
 
       <div className="personalization-section">
         <h3 className="personalization-title">{t("account.changePassword")}</h3>
-        <form className="account-form" onSubmit={(e) => void handleUpdatePassword(e)}>
-          <input
-            className="account-input"
-            type="password"
-            placeholder={t("account.currentPassword")}
-            value={currentPassword}
-            onChange={(e) => setCurrentPassword(e.target.value)}
-            required
-          />
-          <input
-            className="account-input"
-            type="password"
-            placeholder={t("account.newPassword")}
-            value={newPassword}
-            onChange={(e) => setNewPassword(e.target.value)}
-            minLength={8}
-            required
-          />
-          <button className="primary-button account-form-btn" type="submit">{t("account.save")}</button>
-        </form>
+        {authProvider === "oidc" ? (
+          <p className="account-provider-note">{t("account.passwordManagedByOidc")}</p>
+        ) : (
+          <form className="account-form" onSubmit={(e) => void handleUpdatePassword(e)}>
+            <input
+              className="account-input"
+              type="password"
+              placeholder={t("account.currentPassword")}
+              value={currentPassword}
+              onChange={(e) => setCurrentPassword(e.target.value)}
+              required
+            />
+            <input
+              className="account-input"
+              type="password"
+              placeholder={t("account.newPassword")}
+              value={newPassword}
+              onChange={(e) => setNewPassword(e.target.value)}
+              minLength={8}
+              required
+            />
+            <button className="primary-button account-form-btn" type="submit">{t("account.save")}</button>
+          </form>
+        )}
       </div>
 
       <div className="personalization-section">
@@ -764,6 +770,7 @@ export const SettingsModal = memo(function SettingsModal({
   canManageApps,
   currentUserId,
   userName,
+  authProvider,
   groups,
   users,
   apps,
@@ -808,6 +815,7 @@ export const SettingsModal = memo(function SettingsModal({
   canManageApps: boolean;
   currentUserId: number;
   userName: string;
+  authProvider: AuthProvider;
   groups: GroupEntry[];
   users: UserEntry[];
   apps: WebAppEntry[];
@@ -1037,6 +1045,7 @@ export const SettingsModal = memo(function SettingsModal({
           {activeTab === "account" ? (
             <AccountTabContent
               userName={userName}
+              authProvider={authProvider}
               onUpdateUsername={onUpdateUsername}
               onUpdatePassword={onUpdatePassword}
               onDeleteSelf={onDeleteSelf}
