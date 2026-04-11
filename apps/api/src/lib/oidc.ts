@@ -16,6 +16,7 @@ type OidcDiscoveryDocument = {
   authorization_endpoint: string;
   token_endpoint: string;
   jwks_uri: string;
+  token_endpoint_auth_methods_supported?: string[];
 };
 
 type OidcTokenResponse = {
@@ -45,6 +46,19 @@ export type OidcBootstrapConfig = {
   loginUrl: string | null;
   passwordAuthEnabled: boolean;
 };
+
+class OidcHttpError extends Error {
+  status: number;
+  responseBody: string | null;
+
+  constructor(status: number, responseBody: string | null) {
+    const suffix = responseBody ? `: ${responseBody.slice(0, 300)}` : "";
+    super(`OIDC request failed with status ${status}${suffix}`);
+    this.name = "OidcHttpError";
+    this.status = status;
+    this.responseBody = responseBody;
+  }
+}
 
 function splitHeaderValue(value: string | string[] | undefined) {
   const normalized = Array.isArray(value) ? value[0] : value;
@@ -102,7 +116,8 @@ function getOidcRuntimeConfig(): OidcRuntimeConfig | null {
 async function fetchJson<T>(url: string, init?: RequestInit) {
   const response = await fetch(url, init);
   if (!response.ok) {
-    throw new Error(`OIDC request failed with status ${response.status}`);
+    const responseBody = await response.text().catch(() => null);
+    throw new OidcHttpError(response.status, responseBody);
   }
 
   return response.json() as Promise<T>;
@@ -121,28 +136,48 @@ function sha256Base64Url(value: string) {
   return createHash("sha256").update(value).digest("base64url");
 }
 
+function sanitizeBrowserRedirectUri(redirectTo: string) {
+  const redirectUrl = new URL(redirectTo);
+
+  if (redirectUrl.pathname.startsWith("/api/oidc/")) {
+    redirectUrl.pathname = "/";
+    redirectUrl.search = "";
+    redirectUrl.hash = "";
+  }
+
+  return redirectUrl.toString();
+}
+
 function getPostLoginRedirectUri(request: FastifyRequest, config: OidcRuntimeConfig) {
   if (config.postLoginRedirectUri) {
-    return config.postLoginRedirectUri;
+    return sanitizeBrowserRedirectUri(config.postLoginRedirectUri);
   }
 
   const referer = request.headers.referer;
   if (referer) {
     try {
-      return new URL("/", referer).toString();
+      return sanitizeBrowserRedirectUri(new URL("/", referer).toString());
     } catch {}
   }
 
   const [firstCorsOrigin] = parseEnvList(process.env.CORS_ORIGIN);
   if (firstCorsOrigin) {
-    return new URL("/", firstCorsOrigin).toString();
+    return sanitizeBrowserRedirectUri(new URL("/", firstCorsOrigin).toString());
   }
 
-  return new URL("/", buildRequestOrigin(request)).toString();
+  return sanitizeBrowserRedirectUri(new URL("/", buildRequestOrigin(request)).toString());
 }
 
 function getRedirectUri(request: FastifyRequest, config: OidcRuntimeConfig) {
-  return config.redirectUri ?? new URL("/api/oidc/callback", buildRequestOrigin(request)).toString();
+  if (config.redirectUri) {
+    return config.redirectUri;
+  }
+
+  if (config.postLoginRedirectUri) {
+    return new URL("/api/oidc/callback", config.postLoginRedirectUri).toString();
+  }
+
+  return new URL("/api/oidc/callback", buildRequestOrigin(request)).toString();
 }
 
 function appendAuthError(redirectTo: string, errorKey: string) {
@@ -249,6 +284,84 @@ export async function createOidcAuthorizationUrl(request: FastifyRequest) {
   return authorizationUrl.toString();
 }
 
+function buildTokenRequest(
+  config: OidcRuntimeConfig,
+  params: { code: string; codeVerifier: string; redirectUri: string },
+  authMethod: "client_secret_basic" | "client_secret_post" | "none"
+) {
+  const tokenBody = new URLSearchParams({
+    grant_type: "authorization_code",
+    code: params.code,
+    redirect_uri: params.redirectUri,
+    client_id: config.clientId,
+    code_verifier: params.codeVerifier,
+  });
+  const tokenHeaders = new Headers({
+    "content-type": "application/x-www-form-urlencoded",
+  });
+
+  if (authMethod === "client_secret_basic" && config.clientSecret) {
+    const encodedCredentials = Buffer.from(`${config.clientId}:${config.clientSecret}`).toString("base64");
+    tokenHeaders.set("authorization", `Basic ${encodedCredentials}`);
+  }
+
+  if (authMethod === "client_secret_post" && config.clientSecret) {
+    tokenBody.set("client_secret", config.clientSecret);
+  }
+
+  return {
+    body: tokenBody.toString(),
+    headers: tokenHeaders,
+  };
+}
+
+async function exchangeAuthorizationCode(
+  discovery: OidcDiscoveryDocument,
+  config: OidcRuntimeConfig,
+  params: { code: string; codeVerifier: string; redirectUri: string }
+) {
+  const supportedMethods = discovery.token_endpoint_auth_methods_supported ?? [];
+  const attempts: Array<"client_secret_basic" | "client_secret_post" | "none"> = [];
+
+  if (!config.clientSecret) {
+    attempts.push("none");
+  } else {
+    if (supportedMethods.length === 0 || supportedMethods.includes("client_secret_basic")) {
+      attempts.push("client_secret_basic");
+    }
+
+    if (supportedMethods.includes("client_secret_post")) {
+      attempts.push("client_secret_post");
+    }
+
+    if (attempts.length === 0) {
+      attempts.push("client_secret_basic");
+    }
+  }
+
+  let lastError: unknown = null;
+
+  for (const [index, authMethod] of attempts.entries()) {
+    const tokenRequest = buildTokenRequest(config, params, authMethod);
+
+    try {
+      return await fetchJson<OidcTokenResponse>(discovery.token_endpoint, {
+        method: "POST",
+        headers: tokenRequest.headers,
+        body: tokenRequest.body,
+      });
+    } catch (error) {
+      lastError = error;
+
+      if (!(error instanceof OidcHttpError) || error.status < 400 || error.status >= 500 || index === attempts.length - 1) {
+        throw error;
+      }
+    }
+  }
+
+  throw lastError ?? new Error("OIDC token exchange failed.");
+}
+
 export async function completeOidcLogin(request: FastifyRequest, params: { code: string; state: string }) {
   const config = getOidcRuntimeConfig();
   if (!config) {
@@ -261,26 +374,10 @@ export async function completeOidcLogin(request: FastifyRequest, params: { code:
   }
 
   const discovery = await getOidcDiscovery(config);
-  const tokenBody = new URLSearchParams({
-    grant_type: "authorization_code",
+  const tokenResponse = await exchangeAuthorizationCode(discovery, config, {
     code: params.code,
-    redirect_uri: getRedirectUri(request, config),
-    client_id: config.clientId,
-    code_verifier: loginRequest.code_verifier,
-  });
-  const tokenHeaders = new Headers({
-    "content-type": "application/x-www-form-urlencoded",
-  });
-
-  if (config.clientSecret) {
-    const encodedCredentials = Buffer.from(`${config.clientId}:${config.clientSecret}`).toString("base64");
-    tokenHeaders.set("authorization", `Basic ${encodedCredentials}`);
-  }
-
-  const tokenResponse = await fetchJson<OidcTokenResponse>(discovery.token_endpoint, {
-    method: "POST",
-    headers: tokenHeaders,
-    body: tokenBody.toString(),
+    codeVerifier: loginRequest.code_verifier,
+    redirectUri: getRedirectUri(request, config),
   });
 
   if (!tokenResponse.id_token) {

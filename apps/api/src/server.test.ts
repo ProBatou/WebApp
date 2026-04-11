@@ -199,6 +199,8 @@ test("OIDC login creates an authenticated Pocket ID session", async () => {
           });
 
           assert.equal(loginResponse.statusCode, 302);
+          const authorizationUrl = new URL(loginResponse.headers.location ?? "");
+          assert.equal(authorizationUrl.searchParams.get("redirect_uri"), "http://localhost:5173/api/oidc/callback");
           const oidcState = db
             .prepare("SELECT state, nonce FROM oidc_login_requests LIMIT 1")
             .get() as { state: string; nonce: string } | undefined;
@@ -250,6 +252,160 @@ test("OIDC login creates an authenticated Pocket ID session", async () => {
           await server.close();
         }
       });
+    }
+  );
+});
+
+test("OIDC login retries the token exchange with client_secret_post when basic auth fails", async () => {
+  const issuer = "https://id.example.com";
+  const clientId = "webapp-client";
+  const postLoginRedirect = "https://app.example.com/";
+  const { privateKey, publicKey } = await generateKeyPair("RS256");
+  const publicJwk = await exportJWK(publicKey);
+  publicJwk.kid = "test-key";
+  let capturedNonce: string | null = null;
+  const tokenRequests: Array<{ authorization: string | null; body: string }> = [];
+
+  await withOidcEnv(
+    {
+      OIDC_ISSUER_URL: issuer,
+      OIDC_CLIENT_ID: clientId,
+      OIDC_CLIENT_SECRET: "super-secret",
+      OIDC_POST_LOGIN_REDIRECT_URI: postLoginRedirect,
+    },
+    async () => {
+      const mockFetch: typeof fetch = async (input, init) => {
+        const url = String(input);
+
+        if (url === `${issuer}/.well-known/openid-configuration`) {
+          return new Response(
+            JSON.stringify({
+              issuer,
+              authorization_endpoint: `${issuer}/authorize`,
+              token_endpoint: `${issuer}/token`,
+              jwks_uri: `${issuer}/jwks`,
+              token_endpoint_auth_methods_supported: ["client_secret_basic", "client_secret_post"],
+            }),
+            {
+              status: 200,
+              headers: { "content-type": "application/json" },
+            }
+          );
+        }
+
+        if (url === `${issuer}/token`) {
+          const requestHeaders = new Headers(init?.headers);
+          const body = String(init?.body ?? "");
+          tokenRequests.push({
+            authorization: requestHeaders.get("authorization"),
+            body,
+          });
+
+          if (requestHeaders.has("authorization")) {
+            return new Response(JSON.stringify({ error: "invalid_client" }), {
+              status: 400,
+              headers: { "content-type": "application/json" },
+            });
+          }
+
+          assert.ok(capturedNonce);
+          assert.match(body, /client_secret=super-secret/);
+
+          const idToken = await new SignJWT({
+            sub: "pocket-id-user-2",
+            preferred_username: "pocket-viewer",
+            nonce: capturedNonce,
+          })
+            .setProtectedHeader({ alg: "RS256", kid: "test-key" })
+            .setIssuer(issuer)
+            .setAudience(clientId)
+            .setIssuedAt()
+            .setExpirationTime("5m")
+            .sign(privateKey);
+
+          return new Response(
+            JSON.stringify({
+              access_token: "access-token",
+              id_token: idToken,
+              token_type: "Bearer",
+            }),
+            {
+              status: 200,
+              headers: { "content-type": "application/json" },
+            }
+          );
+        }
+
+        if (url === `${issuer}/jwks`) {
+          return new Response(JSON.stringify({ keys: [publicJwk] }), {
+            status: 200,
+            headers: { "content-type": "application/json" },
+          });
+        }
+
+        assert.fail(`Unexpected fetch to ${url}`);
+      };
+
+      await withPatchedFetch(mockFetch, async () => {
+        const server = await createServer();
+
+        try {
+          const loginResponse = await server.inject({
+            method: "GET",
+            url: "/api/oidc/login",
+          });
+
+          assert.equal(loginResponse.statusCode, 302);
+          const oidcState = db
+            .prepare("SELECT state, nonce FROM oidc_login_requests LIMIT 1")
+            .get() as { state: string; nonce: string } | undefined;
+          assert.ok(oidcState);
+          capturedNonce = oidcState.nonce;
+
+          const callbackResponse = await server.inject({
+            method: "GET",
+            url: `/api/oidc/callback?code=test-code&state=${oidcState.state}`,
+          });
+
+          assert.equal(callbackResponse.statusCode, 302);
+          assert.equal(callbackResponse.headers.location, postLoginRedirect);
+          assert.equal(tokenRequests.length, 2);
+          assert.match(tokenRequests[0]?.authorization ?? "", /^Basic /);
+          assert.doesNotMatch(tokenRequests[0]?.body ?? "", /client_secret=/);
+          assert.equal(tokenRequests[1]?.authorization, null);
+          assert.match(tokenRequests[1]?.body ?? "", /client_secret=super-secret/);
+        } finally {
+          await server.close();
+        }
+      });
+    }
+  );
+});
+
+test("OIDC callback auth errors redirect back to the app root instead of the callback route", async () => {
+  await withOidcEnv(
+    {
+      OIDC_ISSUER_URL: "https://id.example.com",
+      OIDC_CLIENT_ID: "webapp-client",
+    },
+    async () => {
+      const server = await createServer();
+
+      try {
+        const response = await server.inject({
+          method: "GET",
+          url: "/api/oidc/callback?authError=errors.oidcSignIn",
+          headers: {
+            host: "app.example.com",
+            referer: "http://app.example.com/api/oidc/callback?authError=errors.oidcSignIn",
+          },
+        });
+
+        assert.equal(response.statusCode, 302);
+        assert.equal(response.headers.location, "http://app.example.com/?authError=errors.oidcSignIn");
+      } finally {
+        await server.close();
+      }
     }
   );
 });
