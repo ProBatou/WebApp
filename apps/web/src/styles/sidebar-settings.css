@@ -555,6 +555,36 @@
   gap: 2px;
 }
 
+.user-meta-main {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.user-auth-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  border: 1px solid transparent;
+}
+
+.user-auth-badge--local {
+  color: #8ad9ff;
+  background: rgba(38, 103, 138, 0.24);
+  border-color: rgba(138, 217, 255, 0.35);
+}
+
+.user-auth-badge--oidc {
+  color: #ffca91;
+  background: rgba(117, 73, 29, 0.3);
+  border-color: rgba(255, 202, 145, 0.34);
+}
+
 .user-meta small {
   color: var(--text-secondary);
 }

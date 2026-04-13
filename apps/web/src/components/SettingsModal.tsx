@@ -277,7 +277,12 @@ function UsersTabContent({
           <div key={user.id} className="group-item">
             <div className="user-row">
               <div className="user-meta">
-                <strong>{user.username}</strong>
+                <div className="user-meta-main">
+                  <strong>{user.username}</strong>
+                  <span className={`user-auth-badge user-auth-badge--${user.authProvider}`}>
+                    {user.authProvider === "oidc" ? t("account.authProviderOidc") : t("account.authProviderLocal")}
+                  </span>
+                </div>
                 <small>
                   {user.id === currentUserId
                     ? t("modal.you")

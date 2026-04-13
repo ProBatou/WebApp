@@ -69,6 +69,7 @@ export type UserEntry = {
   username: string;
   role: SharedUserRole;
   created_at: string;
+  authProvider: AuthProvider;
 };
 
 export type UsersResponse = {

@@ -75,6 +75,22 @@ function toPublicUser(user: SessionUser): PublicSessionUser {
   };
 }
 
+function toPublicManagedUser(user: {
+  id: number;
+  username: string;
+  role: SessionUser["role"];
+  created_at: string;
+  auth_provider: SessionUser["auth_provider"];
+}) {
+  return {
+    id: user.id,
+    username: user.username,
+    role: user.role,
+    created_at: user.created_at,
+    authProvider: user.auth_provider,
+  };
+}
+
 export async function registerAuthRoutes(server: FastifyInstance) {
   server.get("/api/bootstrap", async (request) => {
     const user = getSessionUser(request);
@@ -317,7 +333,7 @@ export async function registerAuthRoutes(server: FastifyInstance) {
       return reply;
     }
 
-    return { items: listUsers() };
+    return { items: listUsers().map(toPublicManagedUser) };
   });
 
   server.post(
@@ -454,7 +470,7 @@ export async function registerAuthRoutes(server: FastifyInstance) {
         return reply.code(500).send({ message: "errors.api" });
       }
 
-      return { items: listUsers() };
+      return { items: listUsers().map(toPublicManagedUser) };
     }
   );
 
@@ -499,7 +515,7 @@ export async function registerAuthRoutes(server: FastifyInstance) {
         return reply.code(500).send({ message: "errors.api" });
       }
 
-      return { items: listUsers() };
+      return { items: listUsers().map(toPublicManagedUser) };
     }
   );
 

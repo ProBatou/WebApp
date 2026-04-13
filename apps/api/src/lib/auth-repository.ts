@@ -65,8 +65,8 @@ export function createAuthRepository(database: SqliteDatabase, createSessionId: 
 
   function listUsers() {
     return database
-      .prepare("SELECT id, username, role, created_at FROM users ORDER BY id ASC")
-      .all() as Array<{ id: number; username: string; role: SessionUser["role"]; created_at: string }>;
+      .prepare("SELECT id, username, role, created_at, auth_provider FROM users ORDER BY id ASC")
+      .all() as Array<{ id: number; username: string; role: SessionUser["role"]; created_at: string; auth_provider: AuthProvider }>;
   }
 
   function countAdmins() {
