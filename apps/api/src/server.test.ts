@@ -452,6 +452,52 @@ test("POST /api/setup creates a session and GET /api/session returns the authent
   }
 });
 
+test("POST /api/logout clears the session when called with CSRF header and JSON payload", async () => {
+  const server = await createServer();
+
+  try {
+    const setupResponse = await server.inject({
+      method: "POST",
+      url: "/api/setup",
+      headers: {
+        "x-requested-with": "webapp-v2",
+      },
+      payload: {
+        username: "admin",
+        password: "supersecret",
+      },
+    });
+
+    assert.equal(setupResponse.statusCode, 201);
+    const sessionCookie = getSessionCookie(setupResponse.headers["set-cookie"]);
+
+    const logoutResponse = await server.inject({
+      method: "POST",
+      url: "/api/logout",
+      headers: {
+        "x-requested-with": "webapp-v2",
+        cookie: sessionCookie,
+        "content-type": "application/json",
+      },
+      payload: {},
+    });
+
+    assert.equal(logoutResponse.statusCode, 204);
+
+    const sessionResponse = await server.inject({
+      method: "GET",
+      url: "/api/session",
+      headers: {
+        cookie: sessionCookie,
+      },
+    });
+
+    assert.equal(sessionResponse.statusCode, 401);
+  } finally {
+    await server.close();
+  }
+});
+
 test("GET /api/apps requires authentication", async () => {
   const server = await createServer();
 

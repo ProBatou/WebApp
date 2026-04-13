@@ -117,7 +117,10 @@ export function useAuth({
   const handleLogout = async () => {
     try {
       setBusy(true);
-      await apiFetch<null>("/api/logout", { method: "POST" });
+      await apiFetch<null>("/api/logout", {
+        method: "POST",
+        body: "{}",
+      });
       setUser(null);
       clearAppState();
       clearUiState();
