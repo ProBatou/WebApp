@@ -10,6 +10,7 @@ import {
 } from "react";
 import type { DragCancelEvent, DragEndEvent, DragMoveEvent, DragStartEvent } from "@dnd-kit/core";
 import type { SettingsTab } from "../components/SettingsModal";
+import { apiFetch } from "../lib/api";
 import {
   SIDEBAR_DELETE_THRESHOLD_SELECTOR,
   getDraggedPointerLeft,
@@ -18,7 +19,7 @@ import {
   getSidebarDeleteZoneProgress,
   isPastSidebarDeleteThreshold,
 } from "../lib/sidebar-delete-zone";
-import type { AppEditorState, ContextMenuState, GroupEntry, SidebarMode, WebAppEntry } from "../types";
+import type { AppEditorState, AppEmbedCheckResponse, ContextMenuState, GroupEntry, SidebarMode, WebAppEntry } from "../types";
 
 type UseAppShellUiOptions = {
   userPresent: boolean;
@@ -169,11 +170,36 @@ export function useAppShellUi({
   const handleSelectApp = useCallback((app: WebAppEntry) => {
     setContextMenu(null);
     setSidebarOpen(false);
-    selectApp(app.id);
 
     if (app.open_mode === "external") {
-      window.open(app.url, "_blank", "noopener,noreferrer");
+      const popup = window.open(app.url, "_blank", "noopener,noreferrer");
+      if (!popup) {
+        window.location.assign(app.url);
+      }
+      selectApp(app.id);
+      return;
     }
+
+    void (async () => {
+      try {
+        const embedCheck = await apiFetch<AppEmbedCheckResponse>(`/api/apps/${app.id}/embed-check`, {
+          method: "GET",
+        });
+
+        if (!embedCheck.embeddable && embedCheck.openExternally) {
+          const launchUrl = embedCheck.externalUrl ?? app.url;
+          const popup = window.open(launchUrl, "_blank", "noopener,noreferrer");
+          if (!popup) {
+            window.location.assign(launchUrl);
+          }
+          return;
+        }
+      } catch {
+        // Fallback to standard iframe behavior when embed inspection fails.
+      }
+
+      selectApp(app.id);
+    })();
   }, [selectApp, setSidebarOpen]);
 
   const openEditEditorFromUi = useCallback((app: WebAppEntry) => {

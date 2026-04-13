@@ -99,6 +99,14 @@ export type AppPingResponse = {
   checkedAt: string;
 };
 
+export type AppEmbedCheckResponse = {
+  embeddable: boolean;
+  openExternally: boolean;
+  checkedAt: string;
+  reason: "ok" | "network_error" | "x_frame_options" | "csp_frame_ancestors" | "auth_redirect" | "too_many_redirects";
+  externalUrl: string | null;
+};
+
 export type AppStatusEntry = {
   status: AppStatus;
   checkedAt: string | null;
