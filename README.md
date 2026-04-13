@@ -4,7 +4,7 @@
 
 [![Demo](https://img.shields.io/badge/demo-live-brightgreen)](https://webapp-latest-mk9k.onrender.com)
 [![Docker Pulls](https://img.shields.io/badge/docker-ghcr.io-blue)](https://ghcr.io)
-[![Release](https://img.shields.io/badge/release-latest-blue)](#)
+[![Release](https://img.shields.io/badge/release-latest-blue)](https://github.com/ProBatou/WebApp/releases)
 [![License](https://img.shields.io/badge/license-Apache--2.0-blue)](./LICENSE)
 
 ---
@@ -18,21 +18,25 @@ You've got Plex, Nextcloud, Grafana, Home Assistant, Portainer... and you're eit
 
 ## What you get
 
-**Organization**
+### Organization
+
 - Group services into collapsible categories
 - Drag and drop to reorder everything
 - Compact sidebar mode to reclaim screen space
 
-**Flexibility**
+### Flexibility
+
 - Embed any service in an inline iframe, or pop it out in a new tab
 - Refresh a single app without reloading the page
 - Export your full configuration as JSON — import it anywhere
 
-**Personalization**
+### Personalization
+
 - Light and dark themes with custom accent colors
 - Interface available in English, French, German and Spanish
 
-**Multi-user**
+### Multi-user
+
 - Invite users via expiring tokens
 - Two roles: `admin` (full access) and `viewer` (read-only)
 - Session-based auth with HTTP-only cookies — no JWT floating in localStorage
@@ -76,44 +80,30 @@ A `cosmos-service.json` is included for one-click deployment. Data is stored in 
 ## Environment variables
 
 | Variable | Default | Description |
-|----------|---------|-------------|
+| --- | --- | --- |
 | `PORT` | `3004` | Listening port |
 | `DATABASE_PATH` | `/app/data/webapp.db` | SQLite file location |
 | `NODE_ENV` | `production` | Node environment |
-| `OIDC_ISSUER_URL` | unset | OIDC issuer URL, e.g. `https://id.example.com` |
-| `OIDC_DISCOVERY_URL` | `<issuer>/.well-known/openid-configuration` | Discovery URL override |
-| `OIDC_CLIENT_ID` | unset | OIDC client ID |
-| `OIDC_CLIENT_SECRET` | unset | OIDC client secret for confidential clients |
-| `OIDC_PROVIDER_NAME` | `Pocket ID` | Label shown on the login button |
-| `OIDC_SCOPES` | `openid profile email groups` | Requested scopes |
-| `OIDC_ADMIN_GROUPS` | unset | Comma-separated groups mapped to the `admin` role |
-| `OIDC_REDIRECT_URI` | derived from request | Callback URL registered in the provider |
-| `OIDC_POST_LOGIN_REDIRECT_URI` | first `CORS_ORIGIN` or current origin | Where to send the browser after the OIDC callback |
-| `OIDC_DISABLE_PASSWORD_LOGIN` | `false` | Hide the password form on the main sign-in screen |
 
 ## OIDC with Pocket ID
 
 WebApp can authenticate users through any standard OIDC provider. Pocket ID works with the built-in authorization code + PKCE flow.
 
-Example:
+OIDC is now configured from the admin UI:
 
-```bash
-OIDC_ISSUER_URL=https://id.example.com
-OIDC_CLIENT_ID=webapp
-OIDC_CLIENT_SECRET=change-me
-OIDC_PROVIDER_NAME=Pocket ID
-OIDC_ADMIN_GROUPS=webapp-admins
-OIDC_POST_LOGIN_REDIRECT_URI=https://webapp.example.com/
-```
+1. Open **Settings**.
+2. Open the **OIDC** tab.
+3. Fill in issuer URL, client ID, client secret, scopes, and optional claims/groups.
+4. Save.
 
 In Pocket ID:
 
 1. Create an OIDC client for WebApp.
 2. Set the callback URL to `https://webapp.example.com/api/oidc/callback`.
 3. Allow the users or groups that should access WebApp.
-4. If you want Pocket ID groups to grant WebApp admin rights, expose a `groups` claim and set `OIDC_ADMIN_GROUPS`.
+4. If you want Pocket ID groups to grant WebApp admin rights, expose a `groups` claim and set the admin groups field in the OIDC tab.
 
-If the frontend and API run on different origins in development, keep the callback on the API origin and set `OIDC_POST_LOGIN_REDIRECT_URI` to the frontend URL, for example `http://localhost:5173/`.
+If the frontend and API run on different origins in development, keep the callback on the API origin and set the post-login redirect URI to the frontend URL, for example `http://localhost:5173/`.
 
 ---
 
@@ -126,24 +116,24 @@ npm install
 npm run dev
 ```
 
-| | URL |
-|--|-----|
+|          | URL                     |
+|----------|-------------------------|
 | Frontend | `http://localhost:5173` |
-| API | `http://localhost:3001` |
+| API      | `http://localhost:3001` |
 
 ---
 
 ## Tech
 
-| | |
-|--|--|
-| Frontend | React 19, Vite 6, TypeScript |
-| Backend | Fastify 5, TypeScript |
-| Database | SQLite (better-sqlite3) |
-| Auth | Server sessions, HTTP-only cookies |
-| Validation | Zod |
-| Drag & drop | dnd-kit |
-| Deployment | Docker, GitHub Actions, GHCR |
+| Component   | Stack                               |
+|-------------|-------------------------------------|
+| Frontend    | React 19, Vite 6, TypeScript        |
+| Backend     | Fastify 5, TypeScript               |
+| Database    | SQLite (better-sqlite3)             |
+| Auth        | Server sessions, HTTP-only cookies  |
+| Validation  | Zod                                 |
+| Drag & drop | dnd-kit                             |
+| Deployment  | Docker, GitHub Actions, GHCR        |
 
 Multi-platform images: `linux/amd64` and `linux/arm64` (Raspberry Pi, NAS, Apple Silicon).
 

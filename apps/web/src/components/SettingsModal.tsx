@@ -12,10 +12,8 @@ import { CSS } from "@dnd-kit/utilities";
 import { AppIcon } from "./AppIcon";
 import { Dropdown } from "./Dropdown";
 import { jsonImportExample } from "../lib/app-utils";
-import type { AuthProvider, DashboardIconsMetadataMap, GroupEntry, JsonImportMode, OidcAdminConfig, OidcConfigSavePayload, ThemeMode, UserEntry, UserPreferences, WebAppEntry } from "../types";
+import type { AuthProvider, DashboardIconsMetadataMap, GroupEntry, JsonImportMode, OidcAdminConfig, OidcConfigSavePayload, SettingsTab, ThemeMode, UserEntry, UserPreferences, WebAppEntry } from "../types";
 import { supportedLanguages, useTranslation, type SupportedLanguage } from "../lib/i18n";
-
-export type SettingsTab = "groups" | "users" | "json" | "personalization" | "account" | "oidc" | "about";
 
 function formatCreatedAt(value: string) {
   const parsedDate = new Date(value);

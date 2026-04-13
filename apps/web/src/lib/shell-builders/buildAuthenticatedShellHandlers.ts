@@ -1,5 +1,5 @@
-import type { BuildAppShellLayoutPropsArgs } from "../lib/build-app-shell-layout-props";
-import type { SettingsTab } from "../components/SettingsModal";
+import type { BuildAppShellLayoutPropsArgs } from "../build-app-shell-layout-props";
+import type { SettingsTab } from "../../types";
 
 type BuildAuthenticatedShellHandlersArgs = {
   openCreateEditorFromUi: () => void;

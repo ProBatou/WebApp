@@ -1,33 +1,7 @@
 import { useEffect, useState } from "react";
 import { apiFetch } from "../lib/api";
+import { clearAuthErrorFromUrl, clearInviteTokenFromUrl, readAuthErrorFromUrl, readInviteTokenFromUrl } from "../lib/auth-url-utils";
 import type { AuthUser, BootstrapResponse, InvitationInfoResponse, OidcBootstrapConfig, UserPreferences } from "../types";
-
-function readInviteTokenFromUrl() {
-  const searchParams = new URLSearchParams(window.location.search);
-  const token = searchParams.get("invite");
-  return token?.trim() ? token : null;
-}
-
-function readAuthErrorFromUrl() {
-  const searchParams = new URLSearchParams(window.location.search);
-  const authError = searchParams.get("authError");
-  return authError?.trim() ? authError : null;
-}
-
-function clearQueryParamFromUrl(name: string) {
-  const nextUrl = new URL(window.location.href);
-  nextUrl.searchParams.delete(name);
-  const nextPath = `${nextUrl.pathname}${nextUrl.search}${nextUrl.hash}`;
-  window.history.replaceState(null, "", nextPath);
-}
-
-function clearInviteTokenFromUrl() {
-  clearQueryParamFromUrl("invite");
-}
-
-function clearAuthErrorFromUrl() {
-  clearQueryParamFromUrl("authError");
-}
 
 export function useAuth({
   reloadApps,

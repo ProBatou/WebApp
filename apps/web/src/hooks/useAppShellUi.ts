@@ -9,7 +9,6 @@ import {
   type SetStateAction,
 } from "react";
 import type { DragCancelEvent, DragEndEvent, DragMoveEvent, DragStartEvent } from "@dnd-kit/core";
-import type { SettingsTab } from "../components/SettingsModal";
 import { apiFetch } from "../lib/api";
 import {
   SIDEBAR_DELETE_THRESHOLD_SELECTOR,
@@ -19,7 +18,7 @@ import {
   getSidebarDeleteZoneProgress,
   isPastSidebarDeleteThreshold,
 } from "../lib/sidebar-delete-zone";
-import type { AppEditorState, AppEmbedCheckResponse, ContextMenuState, GroupEntry, SidebarMode, WebAppEntry } from "../types";
+import type { AppEditorState, AppEmbedCheckResponse, ContextMenuState, GroupEntry, SettingsTab, SidebarMode, WebAppEntry } from "../types";
 
 type UseAppShellUiOptions = {
   userPresent: boolean;

@@ -124,6 +124,8 @@ export type OidcAdminConfig = {
 
 export type OidcConfigSavePayload = Omit<OidcAdminConfig, "source" | "hasClientSecret"> & { clientSecret: string | null };
 
+export type SettingsTab = "groups" | "users" | "json" | "personalization" | "account" | "oidc" | "about";
+
 export type AppStatusEntry = {
   status: AppStatus;
   checkedAt: string | null;

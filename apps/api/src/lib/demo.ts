@@ -1,66 +1,10 @@
 import bcrypt from "bcryptjs";
 import { db } from "./db.js";
+import { demoApps } from "./demo-apps.js";
 
 export const isDemoMode = process.env.DEMO_MODE === "true";
 export const demoUsername = process.env.DEMO_USERNAME?.trim() || "demo";
 export const demoPassword = process.env.DEMO_PASSWORD || "demo";
-
-const demoApps = [
-  {
-    name: "Plex",
-    url: "https://app.plex.tv",
-    icon: "plex",
-    iconVariantMode: "auto",
-    iconVariantInverted: 0,
-    accent: "#e5a00d",
-    openMode: "iframe",
-  },
-  {
-    name: "Nextcloud",
-    url: "https://nextcloud.com",
-    icon: "nextcloud",
-    iconVariantMode: "auto",
-    iconVariantInverted: 0,
-    accent: "#0082c9",
-    openMode: "iframe",
-  },
-  {
-    name: "Grafana",
-    url: "https://grafana.com",
-    icon: "grafana",
-    iconVariantMode: "auto",
-    iconVariantInverted: 0,
-    accent: "#f46800",
-    openMode: "iframe",
-  },
-  {
-    name: "Home Assistant",
-    url: "https://www.home-assistant.io",
-    icon: "home-assistant",
-    iconVariantMode: "auto",
-    iconVariantInverted: 0,
-    accent: "#18bcf2",
-    openMode: "iframe",
-  },
-  {
-    name: "Portainer",
-    url: "https://www.portainer.io",
-    icon: "portainer",
-    iconVariantMode: "auto",
-    iconVariantInverted: 0,
-    accent: "#13bef9",
-    openMode: "iframe",
-  },
-  {
-    name: "Jellyfin",
-    url: "https://jellyfin.org",
-    icon: "jellyfin",
-    iconVariantMode: "auto",
-    iconVariantInverted: 0,
-    accent: "#8f59d0",
-    openMode: "iframe",
-  },
-];
 
 const demoPasswordHashes: Record<string, string> = {
   demo: "$2b$10$ZUi.YxW2tJOvyHVYqZ4jK.x/hsDTjstynk4Wus2M6TyV6mJS7aQVG",

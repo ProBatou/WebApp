@@ -1,7 +1,7 @@
 import type { Dispatch, SetStateAction } from "react";
-import { buildAuthenticatedShellControllerArgs } from "./buildAuthenticatedShellControllerArgs";
-import { buildAuthenticatedShellHandlers } from "./buildAuthenticatedShellHandlers";
-import { buildAuthenticatedShellLayoutSegments } from "./buildAuthenticatedShellLayoutSegments";
+import { buildAuthenticatedShellControllerArgs } from "../lib/shell-builders/buildAuthenticatedShellControllerArgs";
+import { buildAuthenticatedShellHandlers } from "../lib/shell-builders/buildAuthenticatedShellHandlers";
+import { buildAuthenticatedShellLayoutSegments } from "../lib/shell-builders/buildAuthenticatedShellLayoutSegments";
 import { useAuthenticatedShellController, type AuthenticatedShellControllerArgs } from "./useAuthenticatedShellController";
 import { useAuthenticatedShellLayoutArgs } from "./useAuthenticatedShellLayoutArgs";
 import { buildAppShellLayoutProps } from "../lib/build-app-shell-layout-props";

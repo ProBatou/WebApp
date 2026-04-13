@@ -1,4 +1,4 @@
-import type { BuildAppShellLayoutPropsArgs } from "../lib/build-app-shell-layout-props";
+import type { BuildAppShellLayoutPropsArgs } from "../build-app-shell-layout-props";
 
 type ShellFrameArgs = Pick<
   BuildAppShellLayoutPropsArgs,

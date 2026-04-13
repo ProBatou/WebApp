@@ -1,4 +1,4 @@
-import type { AuthenticatedShellControllerArgs } from "./useAuthenticatedShellController";
+import type { AuthenticatedShellControllerArgs } from "../../hooks/useAuthenticatedShellController";
 
 type BuildAuthenticatedShellControllerArgsInput = {
   core: Pick<

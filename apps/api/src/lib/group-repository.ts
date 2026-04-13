@@ -34,16 +34,16 @@ export function createGroupRepository(database: SqliteDatabase) {
   }
 
   function deleteGroup(groupId: number) {
-    database.prepare("DELETE FROM groups WHERE id = ?").run(groupId);
-
-    const groups = listGroups();
-    const reorder = database.transaction((items: GroupRecord[]) => {
+    const removeAndReorder = database.transaction((id: number) => {
+      database.prepare("DELETE FROM groups WHERE id = ?").run(id);
+      const groups = listGroups();
       const statement = database.prepare("UPDATE groups SET sort_order = ? WHERE id = ?");
-      items.forEach((item, index) => {
+      groups.forEach((item, index) => {
         statement.run(index + 1, item.id);
       });
     });
-    reorder(groups);
+
+    removeAndReorder(groupId);
   }
 
   function hasGroup(groupId: number) {

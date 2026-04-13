@@ -322,110 +322,137 @@ export function exportAppsToJson(apps: WebAppEntry[], groups: GroupEntry[] = [])
   );
 }
 
-export function parseImportedApps(rawValue: string) {
-  const trimmed = rawValue.trim();
-  let items: unknown[] | null = null;
-
-  if (trimmed.startsWith("{") || trimmed.startsWith("[")) {
-    let parsed: unknown;
-
-    try {
-      parsed = JSON.parse(rawValue);
-    } catch {
-      throw new Error("JSON invalide.");
-    }
-
-    items = Array.isArray(parsed)
-      ? parsed
-      : parsed && typeof parsed === "object" && Array.isArray((parsed as { items?: unknown }).items)
-        ? (parsed as { items: unknown[] }).items
-        : parsed && typeof parsed === "object" && Array.isArray((parsed as { apps?: unknown }).apps)
-          ? (parsed as { apps: unknown[] }).apps
-          : null;
-
-    // Homarr-like exports can wrap entries in sections.
-    if (!items && parsed && typeof parsed === "object" && Array.isArray((parsed as { sections?: unknown }).sections)) {
-      const sections = (parsed as { sections: unknown[] }).sections;
-      const flattened = sections.flatMap((section) => {
-        if (!section || typeof section !== "object") {
-          return [];
-        }
-
-        const nextSection = section as { apps?: unknown; items?: unknown };
-        if (Array.isArray(nextSection.apps)) {
-          return nextSection.apps;
-        }
-
-        if (Array.isArray(nextSection.items)) {
-          return nextSection.items;
-        }
-
-        return [];
-      });
-
-      items = flattened.length > 0 ? flattened : null;
-    }
-
-    if (!items) {
-      throw new Error("Format JSON non supporte.");
-    }
-  } else {
-    items = parseHomepageYaml(rawValue);
+function extractItemsFromParsedJson(parsed: unknown): unknown[] | null {
+  if (Array.isArray(parsed)) {
+    return parsed;
   }
+
+  if (!parsed || typeof parsed !== "object") {
+    return null;
+  }
+
+  if (Array.isArray((parsed as { items?: unknown }).items)) {
+    return (parsed as { items: unknown[] }).items;
+  }
+
+  if (Array.isArray((parsed as { apps?: unknown }).apps)) {
+    return (parsed as { apps: unknown[] }).apps;
+  }
+
+  return null;
+}
+
+function extractHomarrSectionItems(parsed: unknown): unknown[] | null {
+  if (!parsed || typeof parsed !== "object" || !Array.isArray((parsed as { sections?: unknown }).sections)) {
+    return null;
+  }
+
+  const sections = (parsed as { sections: unknown[] }).sections;
+  const flattened = sections.flatMap((section) => {
+    if (!section || typeof section !== "object") {
+      return [];
+    }
+
+    const nextSection = section as { apps?: unknown; items?: unknown };
+    if (Array.isArray(nextSection.apps)) {
+      return nextSection.apps;
+    }
+
+    if (Array.isArray(nextSection.items)) {
+      return nextSection.items;
+    }
+
+    return [];
+  });
+
+  return flattened.length > 0 ? flattened : null;
+}
+
+function parseImportItems(rawValue: string): unknown[] {
+  const trimmed = rawValue.trim();
+
+  if (!(trimmed.startsWith("{") || trimmed.startsWith("["))) {
+    return parseHomepageYaml(rawValue);
+  }
+
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(rawValue);
+  } catch {
+    throw new Error("JSON invalide.");
+  }
+
+  const directItems = extractItemsFromParsedJson(parsed);
+  if (directItems) {
+    return directItems;
+  }
+
+  const homarrItems = extractHomarrSectionItems(parsed);
+  if (homarrItems) {
+    return homarrItems;
+  }
+
+  throw new Error("Format JSON non supporte.");
+}
+
+function parseImportedEntry(entry: unknown, index: number) {
+  if (!entry || typeof entry !== "object") {
+    throw new Error(`Entree ${index + 1}: format invalide.`);
+  }
+
+  const item = entry as JsonTransferItem;
+  const name = typeof item.name === "string" ? item.name.trim() : "";
+  const url = typeof item.url === "string" ? item.url.trim() : "";
+  const icon = typeof item.icon === "string" ? item.icon.trim() : "";
+  const iconVariantMode = isIconVariantMode(item.iconVariantMode) ? item.iconVariantMode : "auto";
+  const iconVariantInverted = typeof item.iconVariantInverted === "boolean" ? item.iconVariantInverted : false;
+  const accent = typeof item.accent === "string" && isAccentColor(item.accent) ? item.accent : emptyEditorState.accent;
+  const openMode = isAppMode(item.openMode) ? item.openMode : emptyEditorState.openMode;
+  const isShared = typeof item.isShared === "boolean" ? item.isShared : true;
+  const groupId = typeof item.groupId === "number" && Number.isInteger(item.groupId) && item.groupId > 0 ? item.groupId : null;
+  const groupName = typeof item.groupName === "string" && item.groupName.trim().length > 0 ? item.groupName.trim() : null;
+
+  if (name.length < 2) {
+    throw new Error(`Entree ${index + 1}: nom invalide.`);
+  }
+
+  if (!url) {
+    throw new Error(`Entree ${index + 1}: URL manquante.`);
+  }
+
+  try {
+    parseHttpUrl(url);
+  } catch {
+    throw new Error(`Entree ${index + 1}: URL invalide.`);
+  }
+
+  const resolvedIcon = icon || getFallbackIconLabel(name);
+  if (!/^[A-Za-z0-9-]+$/.test(resolvedIcon)) {
+    throw new Error(`Entree ${index + 1}: icone invalide.`);
+  }
+
+  return {
+    name,
+    url,
+    icon: resolvedIcon,
+    iconVariantMode,
+    iconVariantInverted,
+    accent,
+    openMode,
+    isShared,
+    groupId,
+    groupName,
+  };
+}
+
+export function parseImportedApps(rawValue: string) {
+  const items = parseImportItems(rawValue);
 
   if (items.length === 0) {
     throw new Error("Aucune application a importer.");
   }
 
-  return items.map((entry, index) => {
-    if (!entry || typeof entry !== "object") {
-      throw new Error(`Entree ${index + 1}: format invalide.`);
-    }
-
-    const item = entry as JsonTransferItem;
-    const name = typeof item.name === "string" ? item.name.trim() : "";
-    const url = typeof item.url === "string" ? item.url.trim() : "";
-    const icon = typeof item.icon === "string" ? item.icon.trim() : "";
-    const iconVariantMode = isIconVariantMode(item.iconVariantMode) ? item.iconVariantMode : "auto";
-    const iconVariantInverted = typeof item.iconVariantInverted === "boolean" ? item.iconVariantInverted : false;
-    const accent = typeof item.accent === "string" && isAccentColor(item.accent) ? item.accent : emptyEditorState.accent;
-    const openMode = isAppMode(item.openMode) ? item.openMode : emptyEditorState.openMode;
-    const isShared = typeof item.isShared === "boolean" ? item.isShared : true;
-    const groupId = typeof item.groupId === "number" && Number.isInteger(item.groupId) && item.groupId > 0 ? item.groupId : null;
-    const groupName = typeof item.groupName === "string" && item.groupName.trim().length > 0 ? item.groupName.trim() : null;
-
-    if (name.length < 2) {
-      throw new Error(`Entree ${index + 1}: nom invalide.`);
-    }
-
-    if (!url) {
-      throw new Error(`Entree ${index + 1}: URL manquante.`);
-    }
-
-    try {
-      parseHttpUrl(url);
-    } catch {
-      throw new Error(`Entree ${index + 1}: URL invalide.`);
-    }
-
-    const resolvedIcon = icon || getFallbackIconLabel(name);
-    if (!/^[A-Za-z0-9-]+$/.test(resolvedIcon)) {
-      throw new Error(`Entree ${index + 1}: icone invalide.`);
-    }
-
-    return {
-      name,
-      url,
-      icon: resolvedIcon,
-      iconVariantMode,
-      iconVariantInverted,
-      accent,
-      openMode,
-      isShared,
-      groupId,
-      groupName,
-    };
-  });
+  return items.map((entry, index) => parseImportedEntry(entry, index));
 }
 
 function parseHomepageYaml(rawValue: string) {
