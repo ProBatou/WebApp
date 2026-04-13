@@ -48,6 +48,14 @@ export async function createServer() {
     allowList: [],
   });
 
+  // Fallback parser for requests with no Content-Type or an unrecognised one
+  // (e.g. bodyless POSTs like /api/logout). Specific parsers registered by
+  // Fastify for application/json and text/plain still take precedence.
+  server.addContentTypeParser("*", function (_request, payload, done) {
+    payload.resume();
+    payload.on("end", () => done(null, null));
+  });
+
   server.addHook("onRequest", async (request, reply) => {
     const isMutation = request.method !== "GET" && request.method !== "HEAD" && request.method !== "OPTIONS";
     const isApiRoute = request.url.startsWith("/api/");
