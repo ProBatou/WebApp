@@ -1,4 +1,4 @@
-import { useCallback, useRef } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { PointerSensor, TouchSensor, useSensor, useSensors } from "@dnd-kit/core";
 import { useAppChromeState } from "./useAppChromeState";
 import { useApps } from "./useApps";
@@ -13,8 +13,9 @@ import { usePreferences } from "./usePreferences";
 import { useStatusBarColor } from "./useStatusBarColor";
 import { useToast } from "./useToast";
 import { useAuthenticatedAppShell, type UseAuthenticatedAppShellArgs } from "./useAuthenticatedAppShell";
+import { apiFetch } from "../lib/api";
 import { useI18nContext, useTranslation } from "../lib/i18n";
-import type { WebAppEntry } from "../types";
+import type { OidcAdminConfig, OidcConfigSavePayload, WebAppEntry } from "../types";
 
 export function useAppContentModel() {
   const { t } = useTranslation();
@@ -76,6 +77,31 @@ export function useAppContentModel() {
     setBusy,
     setError,
   });
+
+  const [oidcConfig, setOidcConfig] = useState<OidcAdminConfig | null>(null);
+
+  const handleSaveOidcConfig = useCallback(async (config: OidcConfigSavePayload) => {
+    const updated = await apiFetch<OidcAdminConfig>("/api/oidc/config", {
+      method: "PUT",
+      body: JSON.stringify(config),
+    });
+    setOidcConfig(updated);
+  }, []);
+
+  const handleResetOidcConfig = useCallback(async () => {
+    await apiFetch<null>("/api/oidc/config", { method: "DELETE" });
+    const updated = await apiFetch<OidcAdminConfig>("/api/oidc/config");
+    setOidcConfig(updated);
+  }, []);
+
+  const handleLoadOidcConfig = useCallback(async () => {
+    try {
+      const config = await apiFetch<OidcAdminConfig>("/api/oidc/config");
+      setOidcConfig(config);
+    } catch {
+      // not admin or OIDC not configured, ignore
+    }
+  }, []);
 
   const selectedApp = apps.find((item) => item.id === selectedAppId) ?? null;
 
@@ -239,6 +265,12 @@ export function useAppContentModel() {
   });
   closeJsonModalRef.current = closeJsonModal;
 
+  useEffect(() => {
+    if (settingsOpen && user?.role === "admin") {
+      void handleLoadOidcConfig();
+    }
+  }, [settingsOpen, user?.role, handleLoadOidcConfig]);
+
   const authenticatedShellStateArgs = {
     user,
     sensors,
@@ -290,6 +322,7 @@ export function useAppContentModel() {
     t,
   };
   const authenticatedShellDataArgs = {
+    oidcConfig,
     managedUsers,
     jsonImportMode,
     setJsonImportMode,
@@ -312,6 +345,9 @@ export function useAppContentModel() {
     resetImport,
   };
   const authenticatedShellHandlerArgs = {
+    handleSaveOidcConfig,
+    handleResetOidcConfig,
+    handleLoadOidcConfig,
     handleToggleDefaultApp,
     handleUpdatePreferences,
     handleCreateGroup,

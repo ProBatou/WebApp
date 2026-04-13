@@ -68,6 +68,7 @@ type ModalAndSettingsStateArgs = Pick<
   | "preferences"
   | "toasts"
   | "draggedApp"
+  | "oidcConfig"
 >;
 
 export type AuthenticatedShellLayoutSegments = {

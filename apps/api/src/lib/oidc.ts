@@ -9,6 +9,7 @@ import {
   hashPassword,
   syncOidcUser,
 } from "./auth.js";
+import { oidcSettingsRepository } from "./oidc-settings-repository.js";
 import type { SessionUser } from "./types.js";
 
 type OidcDiscoveryDocument = {
@@ -89,6 +90,28 @@ function parseEnvList(value: string | undefined) {
 }
 
 function getOidcRuntimeConfig(): OidcRuntimeConfig | null {
+  // DB settings take priority over environment variables.
+  const dbSettings = oidcSettingsRepository.getOidcSettings();
+  if (dbSettings?.issuer_url?.trim() && dbSettings.client_id?.trim()) {
+    const issuer = dbSettings.issuer_url.replace(/\/$/, "");
+    const discoveryUrl = `${issuer}/.well-known/openid-configuration`;
+    return {
+      issuer,
+      discoveryUrl,
+      clientId: dbSettings.client_id.trim(),
+      clientSecret: dbSettings.client_secret?.trim() || null,
+      scopes: dbSettings.scopes?.trim() || "openid profile email groups",
+      providerName: dbSettings.provider_name?.trim() || "Pocket ID",
+      passwordAuthEnabled: dbSettings.disable_password_login !== 1,
+      redirectUri: readUrl(dbSettings.redirect_uri),
+      postLoginRedirectUri: readUrl(dbSettings.post_login_redirect_uri),
+      usernameClaim: dbSettings.username_claim?.trim() || "preferred_username",
+      groupsClaim: dbSettings.groups_claim?.trim() || "groups",
+      adminGroups: dbSettings.admin_groups ? parseEnvList(dbSettings.admin_groups) : [],
+    };
+  }
+
+  // Fall back to environment variables.
   const clientId = process.env.OIDC_CLIENT_ID?.trim();
   const issuer = process.env.OIDC_ISSUER_URL?.trim();
   const discoveryUrl = process.env.OIDC_DISCOVERY_URL?.trim() ?? (issuer ? `${issuer.replace(/\/$/, "")}/.well-known/openid-configuration` : "");
@@ -249,6 +272,75 @@ export function getOidcBootstrapConfig(): OidcBootstrapConfig {
     providerName: config?.providerName ?? process.env.OIDC_PROVIDER_NAME?.trim() ?? "Pocket ID",
     loginUrl: config ? "/api/oidc/login" : null,
     passwordAuthEnabled: config ? config.passwordAuthEnabled : true,
+  };
+}
+
+export type OidcAdminConfig = {
+  source: "db" | "env" | "none";
+  issuerUrl: string | null;
+  clientId: string | null;
+  hasClientSecret: boolean;
+  providerName: string | null;
+  scopes: string | null;
+  disablePasswordLogin: boolean;
+  redirectUri: string | null;
+  postLoginRedirectUri: string | null;
+  usernameClaim: string | null;
+  groupsClaim: string | null;
+  adminGroups: string | null;
+};
+
+export function getOidcAdminConfig(): OidcAdminConfig {
+  const dbSettings = oidcSettingsRepository.getOidcSettings();
+  if (dbSettings?.issuer_url?.trim() && dbSettings.client_id?.trim()) {
+    return {
+      source: "db",
+      issuerUrl: dbSettings.issuer_url,
+      clientId: dbSettings.client_id,
+      hasClientSecret: Boolean(dbSettings.client_secret?.trim()),
+      providerName: dbSettings.provider_name,
+      scopes: dbSettings.scopes,
+      disablePasswordLogin: dbSettings.disable_password_login === 1,
+      redirectUri: dbSettings.redirect_uri,
+      postLoginRedirectUri: dbSettings.post_login_redirect_uri,
+      usernameClaim: dbSettings.username_claim,
+      groupsClaim: dbSettings.groups_claim,
+      adminGroups: dbSettings.admin_groups,
+    };
+  }
+
+  const clientId = process.env.OIDC_CLIENT_ID?.trim() ?? null;
+  const issuerUrl = process.env.OIDC_ISSUER_URL?.trim() ?? null;
+  if (clientId && issuerUrl) {
+    return {
+      source: "env",
+      issuerUrl,
+      clientId,
+      hasClientSecret: Boolean(process.env.OIDC_CLIENT_SECRET?.trim()),
+      providerName: process.env.OIDC_PROVIDER_NAME?.trim() ?? null,
+      scopes: process.env.OIDC_SCOPES?.trim() ?? null,
+      disablePasswordLogin: process.env.OIDC_DISABLE_PASSWORD_LOGIN === "true",
+      redirectUri: process.env.OIDC_REDIRECT_URI?.trim() ?? null,
+      postLoginRedirectUri: (process.env.OIDC_POST_LOGIN_REDIRECT_URI ?? process.env.WEB_ORIGIN)?.trim() ?? null,
+      usernameClaim: process.env.OIDC_USERNAME_CLAIM?.trim() ?? null,
+      groupsClaim: process.env.OIDC_GROUPS_CLAIM?.trim() ?? null,
+      adminGroups: process.env.OIDC_ADMIN_GROUPS?.trim() ?? null,
+    };
+  }
+
+  return {
+    source: "none",
+    issuerUrl: null,
+    clientId: null,
+    hasClientSecret: false,
+    providerName: null,
+    scopes: null,
+    disablePasswordLogin: false,
+    redirectUri: null,
+    postLoginRedirectUri: null,
+    usernameClaim: null,
+    groupsClaim: null,
+    adminGroups: null,
   };
 }
 

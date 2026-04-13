@@ -24,7 +24,8 @@ import {
   deleteSelf,
 } from "../lib/auth.js";
 import { isDemoMode } from "../lib/demo.js";
-import { completeOidcLogin, createOidcAuthorizationUrl, getOidcBootstrapConfig, getOidcErrorRedirectUri } from "../lib/oidc.js";
+import { completeOidcLogin, createOidcAuthorizationUrl, getOidcAdminConfig, getOidcBootstrapConfig, getOidcErrorRedirectUri } from "../lib/oidc.js";
+import { oidcSettingsRepository } from "../lib/oidc-settings-repository.js";
 import { getPreferences } from "../lib/preferences-repository.js";
 import type { PublicSessionUser, SessionUser } from "../lib/types.js";
 
@@ -213,6 +214,96 @@ export async function registerAuthRoutes(server: FastifyInstance) {
 
   server.post("/api/logout", async (request, reply) => {
     clearSession(request, reply, request.cookies[sessionCookieName]);
+    return reply.code(204).send();
+  });
+
+  server.get("/api/oidc/config", async (request, reply) => {
+    const user = requireSession(request, reply);
+    if (!user) {
+      return reply;
+    }
+
+    if (!requireAdmin(user, reply)) {
+      return reply;
+    }
+
+    return getOidcAdminConfig();
+  });
+
+  const oidcConfigPayloadSchema = z.object({
+    issuerUrl: z.string().trim().max(512).nullable(),
+    clientId: z.string().trim().max(256).nullable(),
+    clientSecret: z.string().max(512).nullable(),
+    providerName: z.string().trim().max(64).nullable(),
+    scopes: z.string().trim().max(256).nullable(),
+    disablePasswordLogin: z.boolean(),
+    redirectUri: z.string().trim().max(512).nullable(),
+    postLoginRedirectUri: z.string().trim().max(512).nullable(),
+    usernameClaim: z.string().trim().max(64).nullable(),
+    groupsClaim: z.string().trim().max(64).nullable(),
+    adminGroups: z.string().trim().max(512).nullable(),
+  });
+
+  server.put("/api/oidc/config", async (request, reply) => {
+    const user = requireSession(request, reply);
+    if (!user) {
+      return reply;
+    }
+
+    if (!requireAdmin(user, reply)) {
+      return reply;
+    }
+
+    if (isDemoMode) {
+      return reply.code(403).send({ message: "errors.demoMode" });
+    }
+
+    const parsed = oidcConfigPayloadSchema.safeParse(request.body);
+    if (!parsed.success) {
+      return reply.code(400).send({ message: "errors.invalidPayload" });
+    }
+
+    const { issuerUrl, clientId, clientSecret, providerName, scopes, disablePasswordLogin,
+      redirectUri, postLoginRedirectUri, usernameClaim, groupsClaim, adminGroups } = parsed.data;
+
+    // If issuerUrl and clientId are both empty, clear the DB config.
+    if (!issuerUrl && !clientId) {
+      oidcSettingsRepository.deleteOidcSettings();
+      return reply.code(204).send();
+    }
+
+    oidcSettingsRepository.upsertOidcSettings({
+      issuer_url: issuerUrl || null,
+      client_id: clientId || null,
+      client_secret: clientSecret || null,
+      provider_name: providerName || null,
+      scopes: scopes || null,
+      disable_password_login: disablePasswordLogin ? 1 : 0,
+      redirect_uri: redirectUri || null,
+      post_login_redirect_uri: postLoginRedirectUri || null,
+      username_claim: usernameClaim || null,
+      groups_claim: groupsClaim || null,
+      admin_groups: adminGroups || null,
+    });
+
+    return getOidcAdminConfig();
+  });
+
+  server.delete("/api/oidc/config", async (request, reply) => {
+    const user = requireSession(request, reply);
+    if (!user) {
+      return reply;
+    }
+
+    if (!requireAdmin(user, reply)) {
+      return reply;
+    }
+
+    if (isDemoMode) {
+      return reply.code(403).send({ message: "errors.demoMode" });
+    }
+
+    oidcSettingsRepository.deleteOidcSettings();
     return reply.code(204).send();
   });
 

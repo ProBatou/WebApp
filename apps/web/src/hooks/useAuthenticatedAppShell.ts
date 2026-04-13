@@ -6,7 +6,7 @@ import { useAuthenticatedShellController, type AuthenticatedShellControllerArgs 
 import { useAuthenticatedShellLayoutArgs } from "./useAuthenticatedShellLayoutArgs";
 import { buildAppShellLayoutProps } from "../lib/build-app-shell-layout-props";
 import type { AppShellLayoutProps } from "../components/AppShellLayout";
-import type { WebAppEntry } from "../types";
+import type { OidcAdminConfig, WebAppEntry } from "../types";
 
 type UseAuthenticatedAppShellStateArgs = Pick<
   AuthenticatedShellControllerArgs,
@@ -84,6 +84,7 @@ type UseAuthenticatedAppShellDataArgs = Pick<
   clearPreviewTheme: () => void;
   appStatuses: AppShellLayoutProps["sidebarProps"]["appStatuses"];
   toasts: AppShellLayoutProps["toastContainerProps"]["toasts"];
+  oidcConfig: OidcAdminConfig | null;
 };
 
 type UseAuthenticatedAppShellHandlersArgs = Pick<
@@ -109,6 +110,9 @@ type UseAuthenticatedAppShellHandlersArgs = Pick<
   handleUpdateUsername: AppShellLayoutProps["settingsModalProps"]["onUpdateUsername"];
   handleUpdatePassword: AppShellLayoutProps["settingsModalProps"]["onUpdatePassword"];
   handleDeleteSelf: AppShellLayoutProps["settingsModalProps"]["onDeleteSelf"];
+  handleSaveOidcConfig: AppShellLayoutProps["settingsModalProps"]["onSaveOidcConfig"];
+  handleResetOidcConfig: AppShellLayoutProps["settingsModalProps"]["onResetOidcConfig"];
+  handleLoadOidcConfig: () => Promise<void>;
 };
 
 export type UseAuthenticatedAppShellArgs = {
@@ -193,6 +197,7 @@ export function useAuthenticatedAppShell({
     inheritedEditorAccent,
     prepareExport,
     resetImport,
+    oidcConfig,
   } = data;
   const {
     handleToggleDefaultApp,
@@ -213,6 +218,9 @@ export function useAuthenticatedAppShell({
     handleUpdateUsername,
     handleUpdatePassword,
     handleDeleteSelf,
+    handleSaveOidcConfig,
+    handleResetOidcConfig,
+    handleLoadOidcConfig,
     setError,
     selectApp,
     pushErrorToast,
@@ -380,6 +388,7 @@ export function useAuthenticatedAppShell({
       preferences,
       toasts,
       draggedApp,
+      oidcConfig,
     },
   });
   const { primaryHandlers, settingsHandlers } = buildAuthenticatedShellHandlers({
@@ -424,6 +433,8 @@ export function useAuthenticatedAppShell({
     handleUpdateUsername,
     handleUpdatePassword,
     handleDeleteSelf,
+    handleSaveOidcConfig,
+    handleResetOidcConfig,
     pushToast,
     pushErrorToast,
     previewTheme,

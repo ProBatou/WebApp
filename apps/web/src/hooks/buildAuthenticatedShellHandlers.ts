@@ -47,6 +47,8 @@ type BuildAuthenticatedShellHandlersArgs = {
   pushErrorToast: BuildAppShellLayoutPropsArgs["onAccountError"];
   previewTheme: BuildAppShellLayoutPropsArgs["onPreviewTheme"];
   dismissToast: BuildAppShellLayoutPropsArgs["onDismissToast"];
+  handleSaveOidcConfig: BuildAppShellLayoutPropsArgs["onSaveOidcConfig"];
+  handleResetOidcConfig: BuildAppShellLayoutPropsArgs["onResetOidcConfig"];
 };
 
 export function buildAuthenticatedShellHandlers({
@@ -95,6 +97,8 @@ export function buildAuthenticatedShellHandlers({
   pushErrorToast,
   previewTheme,
   dismissToast,
+  handleSaveOidcConfig,
+  handleResetOidcConfig,
 }: BuildAuthenticatedShellHandlersArgs) {
   const primaryHandlers: Pick<
     BuildAppShellLayoutPropsArgs,
@@ -178,6 +182,8 @@ export function buildAuthenticatedShellHandlers({
     | "onAccountError"
     | "onPreviewTheme"
     | "onDismissToast"
+    | "onSaveOidcConfig"
+    | "onResetOidcConfig"
   > = {
     onCreateGroup: handleCreateGroup,
     onRenameGroup: handleRenameGroup,
@@ -201,6 +207,8 @@ export function buildAuthenticatedShellHandlers({
     onAccountError: pushErrorToast,
     onPreviewTheme: previewTheme,
     onDismissToast: dismissToast,
+    onSaveOidcConfig: handleSaveOidcConfig,
+    onResetOidcConfig: handleResetOidcConfig,
   };
 
   return { primaryHandlers, settingsHandlers };

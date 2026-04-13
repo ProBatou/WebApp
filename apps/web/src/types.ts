@@ -107,6 +107,23 @@ export type AppEmbedCheckResponse = {
   externalUrl: string | null;
 };
 
+export type OidcAdminConfig = {
+  source: "db" | "env" | "none";
+  issuerUrl: string | null;
+  clientId: string | null;
+  hasClientSecret: boolean;
+  providerName: string | null;
+  scopes: string | null;
+  disablePasswordLogin: boolean;
+  redirectUri: string | null;
+  postLoginRedirectUri: string | null;
+  usernameClaim: string | null;
+  groupsClaim: string | null;
+  adminGroups: string | null;
+};
+
+export type OidcConfigSavePayload = Omit<OidcAdminConfig, "source" | "hasClientSecret"> & { clientSecret: string | null };
+
 export type AppStatusEntry = {
   status: AppStatus;
   checkedAt: string | null;

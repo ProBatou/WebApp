@@ -76,6 +76,7 @@ type UseAuthenticatedShellLayoutArgsParams = {
     | "preferences"
     | "toasts"
     | "draggedApp"
+    | "oidcConfig"
   > & {
     confirmState: Pick<BuildAppShellLayoutPropsArgs["confirmState"], "open" | "message">;
   };
@@ -131,6 +132,8 @@ type UseAuthenticatedShellLayoutArgsParams = {
     | "onAccountError"
     | "onPreviewTheme"
     | "onDismissToast"
+    | "onSaveOidcConfig"
+    | "onResetOidcConfig"
   >;
 };
 

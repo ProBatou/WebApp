@@ -38,7 +38,7 @@ export const db = new Database(databasePath);
 db.pragma("journal_mode = WAL");
 db.pragma("foreign_keys = ON");
 
-const KNOWN_TABLES = ["apps", "users", "groups", "sessions", "invitations", "user_preferences", "oidc_login_requests"] as const;
+const KNOWN_TABLES = ["apps", "users", "groups", "sessions", "invitations", "user_preferences", "oidc_login_requests", "oidc_settings"] as const;
 type KnownTable = typeof KNOWN_TABLES[number];
 
 function hasColumn(database: SqliteDatabase, tableName: KnownTable, columnName: string) {
@@ -260,6 +260,28 @@ const migrations: Migration[] = [
         CREATE UNIQUE INDEX IF NOT EXISTS users_oidc_identity_idx
         ON users (oidc_issuer, oidc_subject)
         WHERE oidc_issuer IS NOT NULL AND oidc_subject IS NOT NULL;
+      `);
+    },
+  },
+  {
+    id: "015_oidc_settings",
+    up: (database) => {
+      database.exec(`
+        CREATE TABLE IF NOT EXISTS oidc_settings (
+          id INTEGER PRIMARY KEY CHECK(id = 1),
+          issuer_url TEXT,
+          client_id TEXT,
+          client_secret TEXT,
+          provider_name TEXT,
+          scopes TEXT,
+          disable_password_login INTEGER NOT NULL DEFAULT 0 CHECK(disable_password_login IN (0, 1)),
+          redirect_uri TEXT,
+          post_login_redirect_uri TEXT,
+          username_claim TEXT,
+          groups_claim TEXT,
+          admin_groups TEXT,
+          updated_at TEXT NOT NULL
+        );
       `);
     },
   },

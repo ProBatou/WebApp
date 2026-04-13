@@ -12,10 +12,10 @@ import { CSS } from "@dnd-kit/utilities";
 import { AppIcon } from "./AppIcon";
 import { Dropdown } from "./Dropdown";
 import { jsonImportExample } from "../lib/app-utils";
-import type { AuthProvider, DashboardIconsMetadataMap, GroupEntry, JsonImportMode, ThemeMode, UserEntry, UserPreferences, WebAppEntry } from "../types";
+import type { AuthProvider, DashboardIconsMetadataMap, GroupEntry, JsonImportMode, OidcAdminConfig, OidcConfigSavePayload, ThemeMode, UserEntry, UserPreferences, WebAppEntry } from "../types";
 import { supportedLanguages, useTranslation, type SupportedLanguage } from "../lib/i18n";
 
-export type SettingsTab = "groups" | "users" | "json" | "personalization" | "account" | "about";
+export type SettingsTab = "groups" | "users" | "json" | "personalization" | "account" | "oidc" | "about";
 
 function formatCreatedAt(value: string) {
   const parsedDate = new Date(value);
@@ -652,6 +652,276 @@ function PersonalizationTabContent({
   );
 }
 
+function OidcTabContent({
+  oidcConfig,
+  onSave,
+  onReset,
+  onSuccess,
+  onError,
+}: {
+  oidcConfig: OidcAdminConfig | null;
+  onSave: (config: OidcConfigSavePayload) => Promise<void>;
+  onReset: () => Promise<void>;
+  onSuccess: (msg: string) => void;
+  onError: (msg: string) => void;
+}) {
+  const { t } = useTranslation();
+  const isEnvSource = oidcConfig?.source === "env";
+
+  const [issuerUrl, setIssuerUrl] = useState(oidcConfig?.issuerUrl ?? "");
+  const [clientId, setClientId] = useState(oidcConfig?.source === "db" ? (oidcConfig.clientId ?? "") : "");
+  const [clientSecret, setClientSecret] = useState("");
+  const [providerName, setProviderName] = useState(oidcConfig?.source === "db" ? (oidcConfig.providerName ?? "") : "");
+  const [scopes, setScopes] = useState(oidcConfig?.source === "db" ? (oidcConfig.scopes ?? "") : "");
+  const [disablePasswordLogin, setDisablePasswordLogin] = useState(
+    oidcConfig?.source === "db" ? oidcConfig.disablePasswordLogin : false,
+  );
+  const [redirectUri, setRedirectUri] = useState(oidcConfig?.source === "db" ? (oidcConfig.redirectUri ?? "") : "");
+  const [postLoginRedirectUri, setPostLoginRedirectUri] = useState(
+    oidcConfig?.source === "db" ? (oidcConfig.postLoginRedirectUri ?? "") : "",
+  );
+  const [usernameClaim, setUsernameClaim] = useState(
+    oidcConfig?.source === "db" ? (oidcConfig.usernameClaim ?? "") : "",
+  );
+  const [groupsClaim, setGroupsClaim] = useState(oidcConfig?.source === "db" ? (oidcConfig.groupsClaim ?? "") : "");
+  const [adminGroups, setAdminGroups] = useState(oidcConfig?.source === "db" ? (oidcConfig.adminGroups ?? "") : "");
+  const [busy, setBusy] = useState(false);
+  const [showResetConfirm, setShowResetConfirm] = useState(false);
+
+  const handleSave = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setBusy(true);
+    try {
+      await onSave({
+        issuerUrl: issuerUrl.trim() || null,
+        clientId: clientId.trim() || null,
+        clientSecret: clientSecret || null,
+        providerName: providerName.trim() || null,
+        scopes: scopes.trim() || null,
+        disablePasswordLogin,
+        redirectUri: redirectUri.trim() || null,
+        postLoginRedirectUri: postLoginRedirectUri.trim() || null,
+        usernameClaim: usernameClaim.trim() || null,
+        groupsClaim: groupsClaim.trim() || null,
+        adminGroups: adminGroups.trim() || null,
+      });
+      onSuccess(t("oidc.saved"));
+    } catch {
+      onError(t("errors.save"));
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const handleReset = async () => {
+    setBusy(true);
+    try {
+      await onReset();
+      setShowResetConfirm(false);
+      onSuccess(t("oidc.cleared"));
+    } catch {
+      onError(t("errors.delete"));
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <div className="json-panel">
+      {oidcConfig?.source === "db" ? (
+        <p className="json-summary">{t("oidc.sourceDb")}</p>
+      ) : oidcConfig?.source === "env" ? (
+        <p className="json-summary">{t("oidc.envReadOnly")}</p>
+      ) : (
+        <p className="json-summary">{t("oidc.sourceNone")}</p>
+      )}
+
+      {isEnvSource ? (
+        <div className="personalization-section">
+          <div className="personalization-row">
+            <label className="personalization-label">{t("oidc.issuerUrl")}</label>
+            <span className="json-summary">{oidcConfig?.issuerUrl ?? "—"}</span>
+          </div>
+          <div className="personalization-row">
+            <label className="personalization-label">{t("oidc.clientId")}</label>
+            <span className="json-summary">{oidcConfig?.clientId ?? "—"}</span>
+          </div>
+          <div className="personalization-row">
+            <label className="personalization-label">{t("oidc.clientSecret")}</label>
+            <span className="json-summary">{oidcConfig?.hasClientSecret ? "••••••••" : "—"}</span>
+          </div>
+          <div className="personalization-row">
+            <label className="personalization-label">{t("oidc.providerName")}</label>
+            <span className="json-summary">{oidcConfig?.providerName ?? "—"}</span>
+          </div>
+          <div className="personalization-row">
+            <label className="personalization-label">{t("oidc.disablePasswordLogin")}</label>
+            <span className="json-summary">{oidcConfig?.disablePasswordLogin ? "✓" : "✗"}</span>
+          </div>
+        </div>
+      ) : null}
+
+      <form className="personalization-section" onSubmit={(e) => void handleSave(e)}>
+        <div className="personalization-row">
+          <label className="personalization-label" htmlFor="oidc-issuer-url">{t("oidc.issuerUrl")} *</label>
+          <input
+            id="oidc-issuer-url"
+            type="url"
+            className="settings-input"
+            value={issuerUrl}
+            onChange={(e) => setIssuerUrl(e.target.value)}
+            placeholder="https://id.example.com"
+            disabled={busy}
+          />
+        </div>
+        <div className="personalization-row">
+          <label className="personalization-label" htmlFor="oidc-client-id">{t("oidc.clientId")} *</label>
+          <input
+            id="oidc-client-id"
+            type="text"
+            className="settings-input"
+            value={clientId}
+            onChange={(e) => setClientId(e.target.value)}
+            disabled={busy}
+          />
+        </div>
+        <div className="personalization-row">
+          <label className="personalization-label" htmlFor="oidc-client-secret">
+            {t("oidc.clientSecret")}
+            {oidcConfig?.source === "db" && oidcConfig.hasClientSecret ? " (•••)" : null}
+          </label>
+          <input
+            id="oidc-client-secret"
+            type="password"
+            className="settings-input"
+            value={clientSecret}
+            onChange={(e) => setClientSecret(e.target.value)}
+            placeholder={oidcConfig?.source === "db" && oidcConfig.hasClientSecret ? t("oidc.clientSecretPlaceholder") : ""}
+            autoComplete="new-password"
+            disabled={busy}
+          />
+        </div>
+        <div className="personalization-row">
+          <label className="personalization-label" htmlFor="oidc-provider-name">{t("oidc.providerName")}</label>
+          <input
+            id="oidc-provider-name"
+            type="text"
+            className="settings-input"
+            value={providerName}
+            onChange={(e) => setProviderName(e.target.value)}
+            placeholder={t("oidc.providerNamePlaceholder")}
+            disabled={busy}
+          />
+        </div>
+        <div className="personalization-row">
+          <label className="personalization-label" htmlFor="oidc-scopes">{t("oidc.scopes")}</label>
+          <input
+            id="oidc-scopes"
+            type="text"
+            className="settings-input"
+            value={scopes}
+            onChange={(e) => setScopes(e.target.value)}
+            placeholder={t("oidc.scopesPlaceholder")}
+            disabled={busy}
+          />
+        </div>
+        <div className="personalization-row">
+          <label className="personalization-label" htmlFor="oidc-username-claim">{t("oidc.usernameClaim")}</label>
+          <input
+            id="oidc-username-claim"
+            type="text"
+            className="settings-input"
+            value={usernameClaim}
+            onChange={(e) => setUsernameClaim(e.target.value)}
+            placeholder={t("oidc.usernameClaimPlaceholder")}
+            disabled={busy}
+          />
+        </div>
+        <div className="personalization-row">
+          <label className="personalization-label" htmlFor="oidc-groups-claim">{t("oidc.groupsClaim")}</label>
+          <input
+            id="oidc-groups-claim"
+            type="text"
+            className="settings-input"
+            value={groupsClaim}
+            onChange={(e) => setGroupsClaim(e.target.value)}
+            placeholder={t("oidc.groupsClaimPlaceholder")}
+            disabled={busy}
+          />
+        </div>
+        <div className="personalization-row">
+          <label className="personalization-label" htmlFor="oidc-admin-groups">{t("oidc.adminGroups")}</label>
+          <input
+            id="oidc-admin-groups"
+            type="text"
+            className="settings-input"
+            value={adminGroups}
+            onChange={(e) => setAdminGroups(e.target.value)}
+            placeholder={t("oidc.adminGroupsPlaceholder")}
+            disabled={busy}
+          />
+        </div>
+        <div className="personalization-row">
+          <label className="personalization-label" htmlFor="oidc-redirect-uri">{t("oidc.redirectUri")}</label>
+          <input
+            id="oidc-redirect-uri"
+            type="url"
+            className="settings-input"
+            value={redirectUri}
+            onChange={(e) => setRedirectUri(e.target.value)}
+            placeholder="https://webapp.example.com/api/oidc/callback"
+            disabled={busy}
+          />
+        </div>
+        <div className="personalization-row">
+          <label className="personalization-label" htmlFor="oidc-post-login-redirect-uri">{t("oidc.postLoginRedirectUri")}</label>
+          <input
+            id="oidc-post-login-redirect-uri"
+            type="url"
+            className="settings-input"
+            value={postLoginRedirectUri}
+            onChange={(e) => setPostLoginRedirectUri(e.target.value)}
+            placeholder="https://webapp.example.com"
+            disabled={busy}
+          />
+        </div>
+        <div className="personalization-row">
+          <label className="personalization-label" htmlFor="oidc-disable-password-login">{t("oidc.disablePasswordLogin")}</label>
+          <input
+            id="oidc-disable-password-login"
+            type="checkbox"
+            checked={disablePasswordLogin}
+            onChange={(e) => setDisablePasswordLogin(e.target.checked)}
+            disabled={busy}
+          />
+        </div>
+        <div className="editor-actions">
+          <button className="primary-button" type="submit" disabled={busy || !issuerUrl.trim() || !clientId.trim()}>
+            {t("oidc.save")}
+          </button>
+          {oidcConfig?.source === "db" ? (
+            showResetConfirm ? (
+              <>
+                <p className="form-error">{t("oidc.resetConfirm")}</p>
+                <button className="danger-button" type="button" disabled={busy} onClick={() => void handleReset()}>
+                  {t("common.confirm")}
+                </button>
+                <button className="secondary-button" type="button" onClick={() => setShowResetConfirm(false)}>
+                  {t("common.cancel")}
+                </button>
+              </>
+            ) : (
+              <button className="secondary-button" type="button" onClick={() => setShowResetConfirm(true)}>
+                {t("oidc.reset")}
+              </button>
+            )
+          ) : null}
+        </div>
+      </form>
+    </div>
+  );
+}
+
 function AccountTabContent({
   userName,
   authProvider,
@@ -812,6 +1082,9 @@ export const SettingsModal = memo(function SettingsModal({
   onAccountSuccess,
   onAccountError,
   onPreviewTheme,
+  oidcConfig,
+  onSaveOidcConfig,
+  onResetOidcConfig,
 }: {
   open: boolean;
   busy: boolean;
@@ -857,6 +1130,9 @@ export const SettingsModal = memo(function SettingsModal({
   onAccountSuccess: (msg: string) => void;
   onAccountError: (msg: string) => void;
   onPreviewTheme: (mode: "light" | "dark") => void;
+  oidcConfig: OidcAdminConfig | null;
+  onSaveOidcConfig: (config: OidcConfigSavePayload) => Promise<void>;
+  onResetOidcConfig: () => Promise<void>;
 }) {
   const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState<SettingsTab>(canManageApps ? "groups" : "account");
@@ -946,6 +1222,15 @@ export const SettingsModal = memo(function SettingsModal({
               onClick={() => setActiveTab("json")}
             >
               JSON
+            </button>
+          ) : null}
+          {canManageApps ? (
+            <button
+              type="button"
+              className={activeTab === "oidc" ? "settings-modal-tab active" : "settings-modal-tab"}
+              onClick={() => setActiveTab("oidc")}
+            >
+              {t("oidc.tab")}
             </button>
           ) : null}
           <button
@@ -1043,6 +1328,15 @@ export const SettingsModal = memo(function SettingsModal({
               dashboardIconsMetadata={dashboardIconsMetadata}
               onUpdatePreferences={onUpdatePreferences}
               onPreviewTheme={onPreviewTheme}
+            />
+          ) : null}
+          {activeTab === "oidc" ? (
+            <OidcTabContent
+              oidcConfig={oidcConfig}
+              onSave={onSaveOidcConfig}
+              onReset={onResetOidcConfig}
+              onSuccess={onAccountSuccess}
+              onError={onAccountError}
             />
           ) : null}
           {activeTab === "account" ? (

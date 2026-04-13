@@ -1,7 +1,7 @@
 import type { Dispatch, RefObject, SetStateAction } from "react";
 import type { DragEndEvent, DragMoveEvent, DragStartEvent } from "@dnd-kit/core";
 import type { AppShellLayoutProps } from "../components/AppShellLayout";
-import type { ContextMenuState, SidebarMode, ThemeMode, UserPreferences, WebAppEntry } from "../types";
+import type { ContextMenuState, OidcAdminConfig, OidcConfigSavePayload, SidebarMode, ThemeMode, UserPreferences, WebAppEntry } from "../types";
 
 export type BuildAppShellLayoutPropsArgs = {
   sensors: AppShellLayoutProps["sensors"];
@@ -114,6 +114,9 @@ export type BuildAppShellLayoutPropsArgs = {
   onAccountSuccess: AppShellLayoutProps["settingsModalProps"]["onAccountSuccess"];
   onAccountError: AppShellLayoutProps["settingsModalProps"]["onAccountError"];
   onPreviewTheme: AppShellLayoutProps["settingsModalProps"]["onPreviewTheme"];
+  oidcConfig: OidcAdminConfig | null;
+  onSaveOidcConfig: (config: OidcConfigSavePayload) => Promise<void>;
+  onResetOidcConfig: AppShellLayoutProps["settingsModalProps"]["onResetOidcConfig"];
   onDismissToast: AppShellLayoutProps["toastContainerProps"]["onDismiss"];
 };
 
@@ -224,6 +227,9 @@ export function buildAppShellLayoutProps({
   onAccountSuccess,
   onAccountError,
   onPreviewTheme,
+  oidcConfig,
+  onSaveOidcConfig,
+  onResetOidcConfig,
   onDismissToast,
 }: BuildAppShellLayoutPropsArgs): AppShellLayoutProps {
   return {
@@ -362,6 +368,9 @@ export function buildAppShellLayoutProps({
       onAccountSuccess,
       onAccountError,
       onPreviewTheme,
+      oidcConfig,
+      onSaveOidcConfig,
+      onResetOidcConfig,
     }),
     toastContainerProps: buildToastContainerProps({
       toasts,
@@ -669,6 +678,9 @@ function buildSettingsModalProps({
   onAccountSuccess,
   onAccountError,
   onPreviewTheme,
+  oidcConfig,
+  onSaveOidcConfig,
+  onResetOidcConfig,
 }: Pick<
   BuildAppShellLayoutPropsArgs,
   | "settingsOpen"
@@ -715,6 +727,9 @@ function buildSettingsModalProps({
   | "onAccountSuccess"
   | "onAccountError"
   | "onPreviewTheme"
+  | "oidcConfig"
+  | "onSaveOidcConfig"
+  | "onResetOidcConfig"
 >): AppShellLayoutProps["settingsModalProps"] {
   return {
     open: settingsOpen,
@@ -761,6 +776,9 @@ function buildSettingsModalProps({
     onAccountSuccess,
     onAccountError,
     onPreviewTheme,
+    oidcConfig,
+    onSaveOidcConfig,
+    onResetOidcConfig,
   };
 }
 
