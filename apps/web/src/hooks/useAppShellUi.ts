@@ -172,8 +172,8 @@ export function useAppShellUi({
     setSidebarOpen(false);
 
     if (app.open_mode === "external") {
-      const popup = window.open(app.url, "_blank", "noopener,noreferrer");
-      if (!popup) {
+      const tab = window.open(app.url, "_blank", "noopener,noreferrer");
+      if (!tab) {
         window.location.assign(app.url);
       }
       selectApp(app.id);
@@ -187,10 +187,44 @@ export function useAppShellUi({
         });
 
         if (!embedCheck.embeddable && embedCheck.openExternally) {
-          const launchUrl = embedCheck.externalUrl ?? app.url;
-          const popup = window.open(launchUrl, "_blank", "noopener,noreferrer");
-          if (!popup) {
-            window.location.assign(launchUrl);
+          if (embedCheck.reason === "auth_redirect") {
+            // Open the app in a new tab so the user can authenticate.
+            // We keep a reference (no noopener) to poll for tab close, then
+            // retry embed-check and load in iframe if auth resolved it.
+            const tab = window.open(app.url, "_blank");
+            if (!tab) {
+              window.location.assign(app.url);
+              return;
+            }
+            const startTime = Date.now();
+            const MAX_POLL_MS = 10 * 60 * 1000; // stop polling after 10 min
+            const timer = window.setInterval(() => {
+              const timedOut = Date.now() - startTime > MAX_POLL_MS;
+              if (tab.closed || timedOut) {
+                window.clearInterval(timer);
+                if (!tab.closed) return; // timed out, user still has tab open
+                void (async () => {
+                  try {
+                    const recheck = await apiFetch<AppEmbedCheckResponse>(
+                      `/api/apps/${app.id}/embed-check`,
+                      { method: "GET" },
+                    );
+                    if (recheck.embeddable) {
+                      selectApp(app.id);
+                    }
+                  } catch {
+                    // ignore — user can click the app again manually
+                  }
+                })();
+              }
+            }, 500);
+          } else {
+            // Permanently blocked (X-Frame-Options / CSP) — open externally.
+            const launchUrl = embedCheck.externalUrl ?? app.url;
+            const tab = window.open(launchUrl, "_blank", "noopener,noreferrer");
+            if (!tab) {
+              window.location.assign(launchUrl);
+            }
           }
           return;
         }
