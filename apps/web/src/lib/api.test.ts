@@ -37,6 +37,27 @@ test("apiFetch sends credentials, CSRF header and JSON content type for body req
   }
 });
 
+test("apiFetch does not set JSON content type for body-less mutation requests", async () => {
+  const originalFetch = globalThis.fetch;
+
+  try {
+    globalThis.fetch = (async (_, init) => {
+      assert.equal((init?.headers as Headers).get("X-Requested-With"), "webapp-v2");
+      assert.equal((init?.headers as Headers).get("Content-Type"), null);
+
+      return createJsonResponse({ ok: true });
+    }) as typeof fetch;
+
+    const result = await apiFetch<{ ok: boolean }>("/api/logout", {
+      method: "POST",
+    });
+
+    assert.deepEqual(result, { ok: true });
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
+
 test("apiFetch preserves caller abort signals while adding its timeout", async () => {
   const originalFetch = globalThis.fetch;
   const controller = new AbortController();

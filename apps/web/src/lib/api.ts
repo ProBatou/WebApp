@@ -19,9 +19,10 @@ const MUTATION_METHODS = new Set(["POST", "PUT", "PATCH", "DELETE"]);
 export async function apiFetch<T>(input: string, init?: RequestInit) {
   const headers = new Headers(init?.headers);
   const method = (init?.method ?? "GET").toUpperCase();
+  const hasBody = init?.body !== undefined && init?.body !== null;
 
   headers.set("X-Requested-With", "webapp-v2");
-  if (MUTATION_METHODS.has(method) && !headers.has("Content-Type")) {
+  if (MUTATION_METHODS.has(method) && hasBody && !headers.has("Content-Type")) {
     headers.set("Content-Type", "application/json");
   }
 
