@@ -14,12 +14,14 @@ function getTextErrorMessage(rawText: string) {
   return trimmed.slice(0, 200);
 }
 
+const MUTATION_METHODS = new Set(["POST", "PUT", "PATCH", "DELETE"]);
+
 export async function apiFetch<T>(input: string, init?: RequestInit) {
-  const hasBody = init?.body !== undefined;
   const headers = new Headers(init?.headers);
+  const method = (init?.method ?? "GET").toUpperCase();
 
   headers.set("X-Requested-With", "webapp-v2");
-  if (hasBody && !headers.has("Content-Type")) {
+  if (MUTATION_METHODS.has(method) && !headers.has("Content-Type")) {
     headers.set("Content-Type", "application/json");
   }
 
