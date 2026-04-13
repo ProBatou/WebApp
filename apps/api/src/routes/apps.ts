@@ -9,6 +9,185 @@ type IdParams = {
   id: string;
 };
 
+type EmbedCheckResult = {
+  embeddable: boolean;
+  openExternally: boolean;
+  checkedAt: string;
+  reason:
+    | "ok"
+    | "network_error"
+    | "x_frame_options"
+    | "csp_frame_ancestors"
+    | "auth_redirect"
+    | "too_many_redirects";
+  externalUrl: string | null;
+};
+
+const authPathHints = ["/authorize", "/oauth", "/oidc", "/login", "/signin", "/auth"];
+
+function extractFrameAncestorsDirective(contentSecurityPolicy: string | null) {
+  if (!contentSecurityPolicy) {
+    return null;
+  }
+
+  const directive = contentSecurityPolicy
+    .split(";")
+    .map((part) => part.trim())
+    .find((part) => part.toLowerCase().startsWith("frame-ancestors"));
+
+  if (!directive) {
+    return null;
+  }
+
+  return directive.slice("frame-ancestors".length).trim().toLowerCase();
+}
+
+function isFrameAncestorsBlocking(directiveValue: string | null, requesterOrigin: string | null, targetOrigin: string) {
+  if (!directiveValue) {
+    return false;
+  }
+
+  if (directiveValue.includes("'none'")) {
+    return true;
+  }
+
+  if (directiveValue.includes("'self'")) {
+    return requesterOrigin !== targetOrigin;
+  }
+
+  return false;
+}
+
+function isXFrameOptionsBlocking(xFrameOptions: string | null, requesterOrigin: string | null, targetOrigin: string) {
+  if (!xFrameOptions) {
+    return false;
+  }
+
+  const normalized = xFrameOptions.toLowerCase();
+  if (normalized.includes("deny")) {
+    return true;
+  }
+
+  if (normalized.includes("sameorigin")) {
+    return requesterOrigin !== targetOrigin;
+  }
+
+  return false;
+}
+
+function isLikelyAuthRedirect(targetUrl: URL) {
+  const lowerPathname = targetUrl.pathname.toLowerCase();
+  if (authPathHints.some((pathHint) => lowerPathname.includes(pathHint))) {
+    return true;
+  }
+
+  const query = targetUrl.searchParams;
+  return query.has("client_id") && query.has("redirect_uri");
+}
+
+async function checkEmbeddingBehavior(appUrl: string, requesterOrigin: string | null): Promise<EmbedCheckResult> {
+  const checkedAt = new Date().toISOString();
+
+  let currentUrl: URL;
+  try {
+    currentUrl = new URL(appUrl);
+  } catch {
+    return {
+      embeddable: false,
+      openExternally: true,
+      checkedAt,
+      reason: "network_error",
+      externalUrl: appUrl,
+    };
+  }
+
+  for (let redirectIndex = 0; redirectIndex < 5; redirectIndex += 1) {
+    let response: Response;
+
+    try {
+      response = await fetch(currentUrl.toString(), {
+        method: "GET",
+        redirect: "manual",
+        signal: AbortSignal.timeout(4000),
+      });
+    } catch {
+      return {
+        embeddable: false,
+        openExternally: true,
+        checkedAt,
+        reason: "network_error",
+        externalUrl: currentUrl.toString(),
+      };
+    }
+
+    const targetOrigin = currentUrl.origin;
+    const xFrameOptions = response.headers.get("x-frame-options");
+    if (isXFrameOptionsBlocking(xFrameOptions, requesterOrigin, targetOrigin)) {
+      return {
+        embeddable: false,
+        openExternally: true,
+        checkedAt,
+        reason: "x_frame_options",
+        externalUrl: currentUrl.toString(),
+      };
+    }
+
+    const frameAncestors = extractFrameAncestorsDirective(response.headers.get("content-security-policy"));
+    if (isFrameAncestorsBlocking(frameAncestors, requesterOrigin, targetOrigin)) {
+      return {
+        embeddable: false,
+        openExternally: true,
+        checkedAt,
+        reason: "csp_frame_ancestors",
+        externalUrl: currentUrl.toString(),
+      };
+    }
+
+    if (response.status >= 300 && response.status < 400) {
+      const location = response.headers.get("location");
+      if (!location) {
+        return {
+          embeddable: true,
+          openExternally: false,
+          checkedAt,
+          reason: "ok",
+          externalUrl: null,
+        };
+      }
+
+      const redirectUrl = new URL(location, currentUrl);
+      if (isLikelyAuthRedirect(redirectUrl)) {
+        return {
+          embeddable: false,
+          openExternally: true,
+          checkedAt,
+          reason: "auth_redirect",
+          externalUrl: redirectUrl.toString(),
+        };
+      }
+
+      currentUrl = redirectUrl;
+      continue;
+    }
+
+    return {
+      embeddable: true,
+      openExternally: false,
+      checkedAt,
+      reason: "ok",
+      externalUrl: null,
+    };
+  }
+
+  return {
+    embeddable: false,
+    openExternally: true,
+    checkedAt,
+    reason: "too_many_redirects",
+    externalUrl: currentUrl.toString(),
+  };
+}
+
 const appSchema = z.object({
   name: z.string().trim().min(2).max(64),
   url: z.string().url(),
@@ -126,6 +305,41 @@ export async function registerAppRoutes(server: FastifyInstance) {
         checkedAt: new Date().toISOString(),
       };
     }
+  });
+
+  server.get<{ Params: IdParams }>("/api/apps/:id/embed-check", { config: { rateLimit: false } }, async (request, reply) => {
+    const user = requireSession(request, reply);
+    if (!user) {
+      return reply;
+    }
+
+    const id = Number(request.params.id);
+    if (!Number.isInteger(id)) {
+      return reply.code(400).send({ message: "errors.invalidId" });
+    }
+
+    const app = appRepository.getAppById(id);
+    if (!app) {
+      return reply.code(404).send({ message: "errors.invalidApp" });
+    }
+
+    if (user.role !== "admin" && !app.is_shared) {
+      return reply.code(404).send({ message: "errors.invalidApp" });
+    }
+
+    if (app.open_mode !== "iframe") {
+      const result: EmbedCheckResult = {
+        embeddable: false,
+        openExternally: true,
+        checkedAt: new Date().toISOString(),
+        reason: "ok",
+        externalUrl: app.url,
+      };
+      return result;
+    }
+
+    const requesterOrigin = request.headers.origin ?? null;
+    return checkEmbeddingBehavior(app.url, requesterOrigin);
   });
 
   server.post<{ Params: IdParams }>("/api/apps/:id/default", writeRouteConfig, async (request, reply) => {

@@ -704,6 +704,9 @@ function AccountTabContent({
       <p className="json-summary">
         {t("auth.signedInAs")} <strong>{userName}</strong>
       </p>
+      <p className="json-summary">
+        {t("account.authProvider")}: <strong>{authProvider === "oidc" ? t("account.authProviderOidc") : t("account.authProviderLocal")}</strong>
+      </p>
       <button className="danger-button settings-logout-button" type="button" onClick={() => void onLogout()}>
         {t("auth.signOut")}
       </button>
