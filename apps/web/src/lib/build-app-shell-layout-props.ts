@@ -24,6 +24,7 @@ export type BuildAppShellLayoutPropsArgs = {
   apps: AppShellLayoutProps["sidebarProps"]["apps"];
   selectedAppId: number | null;
   selectedApp: WebAppEntry | null;
+  authPending: AppShellLayoutProps["workspaceProps"]["authPending"];
   mountedIframeApps: WebAppEntry[];
   iframeReloadTokens: Record<number, number>;
   draggingAppId: number | null;
@@ -74,6 +75,8 @@ export type BuildAppShellLayoutPropsArgs = {
   onToggleReorderApps: AppShellLayoutProps["sidebarProps"]["onToggleReorderApps"];
   onToggleTheme: () => void;
   onSelectApp: AppShellLayoutProps["sidebarProps"]["onSelectApp"];
+  onOpenAuthPending: AppShellLayoutProps["workspaceProps"]["onOpenAuthPending"];
+  onDismissAuthPending: AppShellLayoutProps["workspaceProps"]["onDismissAuthPending"];
   onEditApp: (app: WebAppEntry) => void;
   onOpenContextMenu: AppShellLayoutProps["sidebarProps"]["onOpenContextMenu"];
   onReorderGroups: AppShellLayoutProps["sidebarProps"]["onReorderGroups"];
@@ -141,6 +144,7 @@ export function buildAppShellLayoutProps({
   apps,
   selectedAppId,
   selectedApp,
+  authPending,
   mountedIframeApps,
   iframeReloadTokens,
   draggingAppId,
@@ -188,6 +192,8 @@ export function buildAppShellLayoutProps({
   onToggleReorderApps,
   onToggleTheme,
   onSelectApp,
+  onOpenAuthPending,
+  onDismissAuthPending,
   onOpenContextMenu,
   onReorderGroups,
   onCloseContextMenu,
@@ -273,8 +279,11 @@ export function buildAppShellLayoutProps({
     }),
     workspaceProps: buildWorkspaceProps({
       selectedApp,
+      authPending,
       mountedIframeApps,
       iframeReloadTokens,
+      onOpenAuthPending,
+      onDismissAuthPending,
     }),
     contextMenuProps: buildContextMenuProps({
       contextMenu,
@@ -483,13 +492,22 @@ function buildSidebarProps({
 
 function buildWorkspaceProps({
   selectedApp,
+  authPending,
   mountedIframeApps,
   iframeReloadTokens,
-}: Pick<BuildAppShellLayoutPropsArgs, "selectedApp" | "mountedIframeApps" | "iframeReloadTokens">): AppShellLayoutProps["workspaceProps"] {
+  onOpenAuthPending,
+  onDismissAuthPending,
+}: Pick<
+  BuildAppShellLayoutPropsArgs,
+  "selectedApp" | "authPending" | "mountedIframeApps" | "iframeReloadTokens" | "onOpenAuthPending" | "onDismissAuthPending"
+>): AppShellLayoutProps["workspaceProps"] {
   return {
     selectedApp,
+    authPending,
     mountedIframeApps,
     iframeReloadTokens,
+    onOpenAuthPending,
+    onDismissAuthPending,
   };
 }
 

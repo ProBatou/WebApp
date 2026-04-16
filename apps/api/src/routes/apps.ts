@@ -1,4 +1,4 @@
-import type { FastifyInstance } from "fastify";
+import type { FastifyInstance, FastifyRequest } from "fastify";
 import { z } from "zod";
 import { appRepository } from "../lib/app-repository.js";
 import { blockDemoWrites } from "../lib/demo-guard.js";
@@ -24,6 +24,42 @@ type EmbedCheckResult = {
 };
 
 const authPathHints = ["/authorize", "/oauth", "/oidc", "/login", "/signin", "/auth"];
+const authHostHints = new Set(["auth", "login", "signin", "sso", "id", "account"]);
+const MAX_EMBED_REDIRECTS = 20;
+
+function splitHeaderValue(value: string | string[] | undefined) {
+  const normalized = Array.isArray(value) ? value[0] : value;
+  return normalized?.split(",")[0]?.trim() ?? null;
+}
+
+function normalizeOrigin(value: string | null | undefined) {
+  if (!value?.trim()) {
+    return null;
+  }
+
+  try {
+    return new URL(value).origin.toLowerCase();
+  } catch {
+    return null;
+  }
+}
+
+function resolveRequesterOrigin(request: FastifyRequest) {
+  const headerOrigin = normalizeOrigin(splitHeaderValue(request.headers.origin));
+  if (headerOrigin) {
+    return headerOrigin;
+  }
+
+  const forwardedHost = splitHeaderValue(request.headers["x-forwarded-host"]);
+  const forwardedProto = splitHeaderValue(request.headers["x-forwarded-proto"]);
+  const host = forwardedHost ?? splitHeaderValue(request.headers.host);
+  if (!host) {
+    return null;
+  }
+
+  const protocol = forwardedProto ?? request.protocol ?? "http";
+  return normalizeOrigin(`${protocol}://${host}`);
+}
 
 function extractFrameAncestorsDirective(contentSecurityPolicy: string | null) {
   if (!contentSecurityPolicy) {
@@ -42,20 +78,91 @@ function extractFrameAncestorsDirective(contentSecurityPolicy: string | null) {
   return directive.slice("frame-ancestors".length).trim().toLowerCase();
 }
 
+function matchesFrameAncestorHost(hostPattern: string, requesterHost: string) {
+  if (hostPattern.startsWith("*.")) {
+    const bareHost = hostPattern.slice(2);
+    return requesterHost === bareHost || requesterHost.endsWith(`.${bareHost}`);
+  }
+
+  return requesterHost === hostPattern;
+}
+
+function isFrameAncestorsSourceMatch(source: string, requesterOrigin: string, targetOrigin: string) {
+  const normalizedSource = source.trim().toLowerCase();
+  if (!normalizedSource) {
+    return false;
+  }
+
+  if (normalizedSource === "'self'") {
+    return requesterOrigin === targetOrigin;
+  }
+
+  if (normalizedSource === "*") {
+    return true;
+  }
+
+  const requesterUrl = new URL(requesterOrigin);
+  const targetUrl = new URL(targetOrigin);
+
+  if (/^[a-z][a-z0-9+.-]*:$/.test(normalizedSource)) {
+    return requesterUrl.protocol === normalizedSource;
+  }
+
+  const exactOrigin = normalizeOrigin(normalizedSource);
+  if (exactOrigin) {
+    return requesterOrigin === exactOrigin;
+  }
+
+  const wildcardOriginMatch = normalizedSource.match(/^([a-z][a-z0-9+.-]*):\/\/(\*\.[^/:]+)(?::(\d+|\*))?$/);
+  if (wildcardOriginMatch) {
+    const [, scheme, hostPattern, port] = wildcardOriginMatch;
+    if (requesterUrl.protocol !== `${scheme}:`) {
+      return false;
+    }
+
+    if (port && port !== "*" && requesterUrl.port !== port) {
+      return false;
+    }
+
+    return matchesFrameAncestorHost(hostPattern, requesterUrl.hostname.toLowerCase());
+  }
+
+  const hostSourceMatch = normalizedSource.match(/^(\*\.[^/:]+|[^/:]+)(?::(\d+|\*))?$/);
+  if (hostSourceMatch) {
+    const [, hostPattern, port] = hostSourceMatch;
+    if (requesterUrl.protocol !== targetUrl.protocol) {
+      return false;
+    }
+
+    if (port && port !== "*" && requesterUrl.port !== port) {
+      return false;
+    }
+
+    return matchesFrameAncestorHost(hostPattern, requesterUrl.hostname.toLowerCase());
+  }
+
+  return false;
+}
+
 function isFrameAncestorsBlocking(directiveValue: string | null, requesterOrigin: string | null, targetOrigin: string) {
   if (!directiveValue) {
     return false;
   }
 
-  if (directiveValue.includes("'none'")) {
+  const sources = directiveValue.split(/\s+/).map((source) => source.trim()).filter(Boolean);
+  if (sources.includes("'none'")) {
     return true;
   }
 
-  if (directiveValue.includes("'self'")) {
-    return requesterOrigin !== targetOrigin;
+  if (sources.includes("*")) {
+    return false;
   }
 
-  return false;
+  if (!requesterOrigin) {
+    return true;
+  }
+
+  return !sources.some((source) => isFrameAncestorsSourceMatch(source, requesterOrigin, targetOrigin));
 }
 
 function isXFrameOptionsBlocking(xFrameOptions: string | null, requesterOrigin: string | null, targetOrigin: string) {
@@ -81,8 +188,17 @@ function isLikelyAuthRedirect(targetUrl: URL) {
     return true;
   }
 
+  const hostnameLabels = targetUrl.hostname.toLowerCase().split(".");
+  if (hostnameLabels.some((label) => authHostHints.has(label))) {
+    return true;
+  }
+
   const query = targetUrl.searchParams;
-  return query.has("client_id") && query.has("redirect_uri");
+  if (query.has("client_id") && query.has("redirect_uri")) {
+    return true;
+  }
+
+  return query.has("code_challenge") || query.has("response_type");
 }
 
 async function checkEmbeddingBehavior(appUrl: string, requesterOrigin: string | null): Promise<EmbedCheckResult> {
@@ -101,7 +217,10 @@ async function checkEmbeddingBehavior(appUrl: string, requesterOrigin: string | 
     };
   }
 
-  for (let redirectIndex = 0; redirectIndex < 5; redirectIndex += 1) {
+  let sawAuthRedirect = false;
+  let lastAuthUrl: URL | null = null;
+
+  for (let redirectIndex = 0; redirectIndex < MAX_EMBED_REDIRECTS; redirectIndex += 1) {
     let response: Response;
 
     try {
@@ -120,9 +239,20 @@ async function checkEmbeddingBehavior(appUrl: string, requesterOrigin: string | 
       };
     }
 
-    const targetOrigin = currentUrl.origin;
+    const targetOrigin = currentUrl.origin.toLowerCase();
+    const currentUrlLooksAuth = isLikelyAuthRedirect(currentUrl);
     const xFrameOptions = response.headers.get("x-frame-options");
     if (isXFrameOptionsBlocking(xFrameOptions, requesterOrigin, targetOrigin)) {
+      if (currentUrlLooksAuth) {
+        return {
+          embeddable: false,
+          openExternally: true,
+          checkedAt,
+          reason: "auth_redirect",
+          externalUrl: currentUrl.toString(),
+        };
+      }
+
       return {
         embeddable: false,
         openExternally: true,
@@ -134,6 +264,16 @@ async function checkEmbeddingBehavior(appUrl: string, requesterOrigin: string | 
 
     const frameAncestors = extractFrameAncestorsDirective(response.headers.get("content-security-policy"));
     if (isFrameAncestorsBlocking(frameAncestors, requesterOrigin, targetOrigin)) {
+      if (currentUrlLooksAuth) {
+        return {
+          embeddable: false,
+          openExternally: true,
+          checkedAt,
+          reason: "auth_redirect",
+          externalUrl: currentUrl.toString(),
+        };
+      }
+
       return {
         embeddable: false,
         openExternally: true,
@@ -146,6 +286,16 @@ async function checkEmbeddingBehavior(appUrl: string, requesterOrigin: string | 
     if (response.status >= 300 && response.status < 400) {
       const location = response.headers.get("location");
       if (!location) {
+        if (currentUrlLooksAuth) {
+          return {
+            embeddable: false,
+            openExternally: true,
+            checkedAt,
+            reason: "auth_redirect",
+            externalUrl: currentUrl.toString(),
+          };
+        }
+
         return {
           embeddable: true,
           openExternally: false,
@@ -157,17 +307,22 @@ async function checkEmbeddingBehavior(appUrl: string, requesterOrigin: string | 
 
       const redirectUrl = new URL(location, currentUrl);
       if (isLikelyAuthRedirect(redirectUrl)) {
-        return {
-          embeddable: false,
-          openExternally: true,
-          checkedAt,
-          reason: "auth_redirect",
-          externalUrl: redirectUrl.toString(),
-        };
+        sawAuthRedirect = true;
+        lastAuthUrl = redirectUrl;
       }
 
       currentUrl = redirectUrl;
       continue;
+    }
+
+    if (currentUrlLooksAuth) {
+      return {
+        embeddable: false,
+        openExternally: true,
+        checkedAt,
+        reason: "auth_redirect",
+        externalUrl: currentUrl.toString(),
+      };
     }
 
     return {
@@ -183,8 +338,8 @@ async function checkEmbeddingBehavior(appUrl: string, requesterOrigin: string | 
     embeddable: false,
     openExternally: true,
     checkedAt,
-    reason: "too_many_redirects",
-    externalUrl: currentUrl.toString(),
+    reason: sawAuthRedirect ? "auth_redirect" : "too_many_redirects",
+    externalUrl: (lastAuthUrl ?? currentUrl).toString(),
   };
 }
 
@@ -338,7 +493,7 @@ export async function registerAppRoutes(server: FastifyInstance) {
       return result;
     }
 
-    const requesterOrigin = request.headers.origin ?? null;
+    const requesterOrigin = resolveRequesterOrigin(request);
     return checkEmbeddingBehavior(app.url, requesterOrigin);
   });
 
@@ -511,6 +666,10 @@ export async function registerAppRoutes(server: FastifyInstance) {
 
     if (!appRepository.hasExactOrderedIds(parsed.data.items.map((item) => item.id))) {
       return reply.code(400).send({ message: "errors.invalidOrderDuplicate" });
+    }
+
+    if (parsed.data.items.some((item) => item.groupId !== null && !groupRepository.hasGroup(item.groupId))) {
+      return reply.code(400).send({ message: "errors.invalidGroup" });
     }
 
     return {

@@ -22,6 +22,7 @@ type SidebarWorkspaceArgs = Pick<
   | "apps"
   | "selectedAppId"
   | "selectedApp"
+  | "authPending"
   | "mountedIframeApps"
   | "iframeReloadTokens"
   | "draggingAppId"

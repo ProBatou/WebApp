@@ -1,8 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import type { WebAppEntry } from "../types";
 
-const maxMountedIframes = 5;
-
 export function useIframes({
   apps,
   selectedApp,
@@ -19,8 +17,11 @@ export function useIframes({
     }
 
     setMountedIframeIds((current) => {
-      const nextIds = current.filter((iframeId) => iframeId !== selectedApp.id);
-      return [...nextIds, selectedApp.id].slice(-maxMountedIframes);
+      if (current.includes(selectedApp.id)) {
+        return current;
+      }
+
+      return [...current, selectedApp.id];
     });
   }, [selectedApp]);
 
@@ -41,13 +42,29 @@ export function useIframes({
     }
 
     setMountedIframeIds((current) => {
-      const nextIds = current.filter((iframeId) => iframeId !== app.id);
-      return [...nextIds, app.id].slice(-maxMountedIframes);
+      if (current.includes(app.id)) {
+        return current;
+      }
+
+      return [...current, app.id];
     });
     setIframeReloadTokens((current) => ({
       ...current,
       [app.id]: (current[app.id] ?? 0) + 1,
     }));
+  }, []);
+
+  const unmountIframeApp = useCallback((appId: number) => {
+    setMountedIframeIds((current) => current.filter((iframeId) => iframeId !== appId));
+    setIframeReloadTokens((current) => {
+      if (!(appId in current)) {
+        return current;
+      }
+
+      const next = { ...current };
+      delete next[appId];
+      return next;
+    });
   }, []);
 
   const resetIframes = useCallback(() => {
@@ -59,6 +76,7 @@ export function useIframes({
     mountedIframeIds,
     iframeReloadTokens,
     refreshIframeApp,
+    unmountIframeApp,
     resetIframes,
   };
 }

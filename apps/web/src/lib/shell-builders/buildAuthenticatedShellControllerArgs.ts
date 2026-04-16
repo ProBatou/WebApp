@@ -12,10 +12,12 @@ type BuildAuthenticatedShellControllerArgsInput = {
     | "setSidebarMode"
     | "apps"
     | "groups"
+    | "mountedIframeApps"
   >;
   data: Pick<
     AuthenticatedShellControllerArgs,
     | "refreshIframeApp"
+    | "unmountIframeApp"
     | "reloadUsers"
     | "reloadGroups"
     | "deleteApp"

@@ -431,8 +431,8 @@
 
 .sidebar-actions-popover-list {
   max-height: min(320px, 34vh);
-  margin-right: -8px;
-  padding-right: 2px;
+  margin-right: -5px;
+  padding-right: 5px;
 }
 
 .sidebar-actions-popover-content {

@@ -19,6 +19,7 @@
   scrollbar-gutter: stable;
   scrollbar-width: thin;
   scrollbar-color: color-mix(in srgb, var(--accent) 56%, var(--border)) transparent;
+  margin-right: -6px;
 }
 
 .picker-scroll-shell::-webkit-scrollbar {
@@ -44,6 +45,8 @@
   display: flex;
   flex-direction: column;
   gap: 8px;
+  padding-right: 6px;
+  box-sizing: border-box;
 }
 
 .picker-card-option {

@@ -160,6 +160,12 @@
     overscroll-behavior: contain;
     scrollbar-width: none;
     -ms-overflow-style: none;
+    padding-right: 0;
+    margin-right: 0;
+  }
+
+  .settings-tab-content > .json-panel {
+    padding-right: 0;
   }
 
   .settings-tab-content::-webkit-scrollbar {
@@ -539,9 +545,94 @@
     min-height: 228px;
   }
 
+  .settings-modal .personalization-row,
+  .settings-modal .personalization-colors-header,
+  .settings-modal .personalization-color-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    align-items: start;
+    gap: 10px;
+  }
+
+  .settings-modal .personalization-label {
+    flex: none;
+    width: auto;
+    padding-top: 0;
+    white-space: normal;
+  }
+
+  .settings-modal .personalization-row > :is(input:not([type="checkbox"]), textarea, select, .json-summary),
+  .settings-modal .personalization-select,
+  .settings-modal .personalization-row .sidebar-actions-menu,
+  .settings-modal .json-segmented {
+    width: 100%;
+    min-width: 0;
+    flex: none;
+  }
+
+  .settings-modal .personalization-row > .json-summary {
+    text-align: left;
+  }
+
+  .settings-modal .personalization-color-field {
+    width: 100%;
+    flex-direction: column;
+    align-items: stretch;
+    justify-content: flex-start;
+  }
+
+  .settings-modal .personalization-color-picker-root {
+    width: 100%;
+    max-width: none;
+    flex: none;
+  }
+
+  .settings-modal .personalization-color-popover {
+    left: 0;
+    right: 0;
+    width: auto;
+    min-width: 0;
+  }
+
+  .settings-modal .personalization-color-presets {
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+  }
+
+  .settings-modal .personalization-reset-color {
+    align-self: flex-start;
+  }
+
+  .settings-modal .personalization-row--checkbox {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+  }
+
+  .settings-modal .personalization-row--checkbox .personalization-label {
+    flex: 1 1 auto;
+  }
+
+  .settings-modal .settings-checkbox {
+    margin-left: auto;
+  }
+
+  .settings-modal .settings-input {
+    min-height: 48px;
+  }
+
   .settings-modal .settings-json-panel .editor-actions {
     margin-top: auto;
     padding-bottom: 2px;
+  }
+
+  .settings-modal .personalization-section .editor-actions {
+    justify-content: center;
+  }
+
+  .settings-modal .personalization-section .editor-actions > .primary-button:first-child:last-child {
+    margin-inline: auto;
   }
 
   .user-create-grid,
@@ -617,6 +708,38 @@
 
   .workspace-grid {
     margin-top: 0;
+  }
+
+  .auth-prompt-banner {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 14px;
+    padding: 14px 16px;
+  }
+
+  .auth-prompt-title {
+    font-size: 0.96rem;
+    line-height: 1.25;
+  }
+
+  .auth-prompt-message {
+    margin-top: 6px;
+    font-size: 0.92rem;
+    line-height: 1.45;
+  }
+
+  .auth-prompt-actions {
+    width: 100%;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .auth-prompt-actions .primary-button,
+  .auth-prompt-actions .secondary-button {
+    width: 100%;
+    min-height: 46px;
+    padding-inline: 16px;
+    justify-content: center;
   }
 
   .viewer-panel,

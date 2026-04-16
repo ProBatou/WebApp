@@ -108,6 +108,12 @@ export type AppEmbedCheckResponse = {
   externalUrl: string | null;
 };
 
+export type AuthPendingState = {
+  appId: number;
+  phase: "checking" | "prompt" | "login" | "settling";
+  keepMountedFrame: boolean;
+};
+
 export type OidcAdminConfig = {
   source: "db" | "env" | "none";
   issuerUrl: string | null;

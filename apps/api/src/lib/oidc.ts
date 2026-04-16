@@ -66,6 +66,18 @@ function splitHeaderValue(value: string | string[] | undefined) {
   return normalized?.split(",")[0]?.trim() ?? null;
 }
 
+function normalizeOrigin(value: string | null | undefined) {
+  if (!value?.trim()) {
+    return null;
+  }
+
+  try {
+    return new URL(value).origin.toLowerCase();
+  } catch {
+    return null;
+  }
+}
+
 function buildRequestOrigin(request: FastifyRequest) {
   const forwardedHost = splitHeaderValue(request.headers["x-forwarded-host"]);
   const forwardedProto = splitHeaderValue(request.headers["x-forwarded-proto"]);
@@ -159,8 +171,30 @@ function sha256Base64Url(value: string) {
   return createHash("sha256").update(value).digest("base64url");
 }
 
-function sanitizeBrowserRedirectUri(redirectTo: string) {
+function getAllowedBrowserRedirectOrigins(request: FastifyRequest, config: OidcRuntimeConfig) {
+  const origins = new Set<string>();
+
+  const addOrigin = (value: string | null | undefined) => {
+    const origin = normalizeOrigin(value);
+    if (origin) {
+      origins.add(origin);
+    }
+  };
+
+  addOrigin(config.postLoginRedirectUri);
+  parseEnvList(process.env.CORS_ORIGIN).forEach((origin) => addOrigin(origin));
+  addOrigin(buildRequestOrigin(request));
+
+  return origins;
+}
+
+function sanitizeBrowserRedirectUri(redirectTo: string, allowedOrigins: ReadonlySet<string> | null = null) {
   const redirectUrl = new URL(redirectTo);
+  const redirectOrigin = redirectUrl.origin.toLowerCase();
+
+  if (allowedOrigins && !allowedOrigins.has(redirectOrigin)) {
+    throw new Error("OIDC browser redirect origin is not allowed.");
+  }
 
   if (redirectUrl.pathname.startsWith("/api/oidc/")) {
     redirectUrl.pathname = "/";
@@ -172,23 +206,25 @@ function sanitizeBrowserRedirectUri(redirectTo: string) {
 }
 
 function getPostLoginRedirectUri(request: FastifyRequest, config: OidcRuntimeConfig) {
+  const allowedOrigins = getAllowedBrowserRedirectOrigins(request, config);
+
   if (config.postLoginRedirectUri) {
-    return sanitizeBrowserRedirectUri(config.postLoginRedirectUri);
+    return sanitizeBrowserRedirectUri(config.postLoginRedirectUri, allowedOrigins);
   }
 
   const referer = request.headers.referer;
   if (referer) {
     try {
-      return sanitizeBrowserRedirectUri(new URL("/", referer).toString());
+      return sanitizeBrowserRedirectUri(new URL("/", referer).toString(), allowedOrigins);
     } catch {}
   }
 
   const [firstCorsOrigin] = parseEnvList(process.env.CORS_ORIGIN);
   if (firstCorsOrigin) {
-    return sanitizeBrowserRedirectUri(new URL("/", firstCorsOrigin).toString());
+    return sanitizeBrowserRedirectUri(new URL("/", firstCorsOrigin).toString(), allowedOrigins);
   }
 
-  return sanitizeBrowserRedirectUri(new URL("/", buildRequestOrigin(request)).toString());
+  return sanitizeBrowserRedirectUri(new URL("/", buildRequestOrigin(request)).toString(), allowedOrigins);
 }
 
 function getRedirectUri(request: FastifyRequest, config: OidcRuntimeConfig) {

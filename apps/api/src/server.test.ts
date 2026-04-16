@@ -65,6 +65,48 @@ function getSessionCookie(setCookieHeader: string | string[] | undefined) {
   return headerValue.split(";")[0];
 }
 
+async function createAuthenticatedAdminSession(server: Awaited<ReturnType<typeof createServer>>) {
+  const setupResponse = await server.inject({
+    method: "POST",
+    url: "/api/setup",
+    headers: {
+      "x-requested-with": "webapp-v2",
+    },
+    payload: {
+      username: "admin",
+      password: "supersecret",
+    },
+  });
+
+  assert.equal(setupResponse.statusCode, 201);
+  return getSessionCookie(setupResponse.headers["set-cookie"]);
+}
+
+async function createIframeApp(server: Awaited<ReturnType<typeof createServer>>, sessionCookie: string, url: string) {
+  const createResponse = await server.inject({
+    method: "POST",
+    url: "/api/apps",
+    headers: {
+      cookie: sessionCookie,
+      "x-requested-with": "webapp-v2",
+    },
+    payload: {
+      name: "Service",
+      url,
+      icon: "plex",
+      iconVariantMode: "auto",
+      iconVariantInverted: false,
+      accent: "#123456",
+      openMode: "iframe",
+      isShared: true,
+      groupId: null,
+    },
+  });
+
+  assert.equal(createResponse.statusCode, 201);
+  return createResponse.json().item as { id: number };
+}
+
 test("POST /api/setup rejects mutation requests without the CSRF header", async () => {
   const server = await createServer();
 
@@ -387,6 +429,8 @@ test("OIDC callback auth errors redirect back to the app root instead of the cal
     {
       OIDC_ISSUER_URL: "https://id.example.com",
       OIDC_CLIENT_ID: "webapp-client",
+      CORS_ORIGIN: "",
+      OIDC_POST_LOGIN_REDIRECT_URI: "",
     },
     async () => {
       const server = await createServer();
@@ -509,6 +553,233 @@ test("GET /api/apps requires authentication", async () => {
 
     assert.equal(response.statusCode, 401);
     assert.deepEqual(response.json(), { message: "errors.authRequired" });
+  } finally {
+    await server.close();
+  }
+});
+
+test("GET /api/apps/:id/embed-check follows auth redirects through to the final app URL", async () => {
+  const server = await createServer();
+
+  try {
+    const sessionCookie = await createAuthenticatedAdminSession(server);
+    const appUrl = "https://service.example.com/app";
+    const loginUrl = "https://sso.example.com/login?client_id=webapp&redirect_uri=https%3A%2F%2Fservice.example.com%2Fapp%2Fcallback";
+    const finalUrl = "https://service.example.com/app/home";
+    const app = await createIframeApp(server, sessionCookie, appUrl);
+
+    const mockFetch: typeof fetch = async (input) => {
+      const url = String(input);
+
+      if (url === appUrl) {
+        return new Response(null, {
+          status: 302,
+          headers: { location: loginUrl },
+        });
+      }
+
+      if (url === loginUrl) {
+        return new Response(null, {
+          status: 302,
+          headers: { location: finalUrl },
+        });
+      }
+
+      if (url === finalUrl) {
+        return new Response("<html>ok</html>", {
+          status: 200,
+          headers: { "content-type": "text/html" },
+        });
+      }
+
+      assert.fail(`Unexpected fetch to ${url}`);
+    };
+
+    await withPatchedFetch(mockFetch, async () => {
+      const response = await server.inject({
+        method: "GET",
+        url: `/api/apps/${app.id}/embed-check`,
+        headers: {
+          cookie: sessionCookie,
+          origin: "http://localhost:5173",
+        },
+      });
+
+      assert.equal(response.statusCode, 200);
+      assert.deepEqual(response.json(), {
+        embeddable: true,
+        openExternally: false,
+        checkedAt: response.json().checkedAt,
+        reason: "ok",
+        externalUrl: null,
+      });
+      assert.match(response.json().checkedAt, /^\d{4}-\d{2}-\d{2}T/);
+    });
+  } finally {
+    await server.close();
+  }
+});
+
+test("GET /api/apps/:id/embed-check returns auth_redirect when the final response is still the login page", async () => {
+  const server = await createServer();
+
+  try {
+    const sessionCookie = await createAuthenticatedAdminSession(server);
+    const appUrl = "https://service.example.com/app";
+    const loginUrl = "https://sso.example.com/login?client_id=webapp&redirect_uri=https%3A%2F%2Fservice.example.com%2Fapp%2Fcallback";
+    const app = await createIframeApp(server, sessionCookie, appUrl);
+
+    const mockFetch: typeof fetch = async (input) => {
+      const url = String(input);
+
+      if (url === appUrl) {
+        return new Response(null, {
+          status: 302,
+          headers: { location: loginUrl },
+        });
+      }
+
+      if (url === loginUrl) {
+        return new Response("<html>login</html>", {
+          status: 200,
+          headers: { "content-type": "text/html" },
+        });
+      }
+
+      assert.fail(`Unexpected fetch to ${url}`);
+    };
+
+    await withPatchedFetch(mockFetch, async () => {
+      const response = await server.inject({
+        method: "GET",
+        url: `/api/apps/${app.id}/embed-check`,
+        headers: {
+          cookie: sessionCookie,
+          origin: "http://localhost:5173",
+        },
+      });
+
+      assert.equal(response.statusCode, 200);
+      assert.deepEqual(response.json(), {
+        embeddable: false,
+        openExternally: true,
+        checkedAt: response.json().checkedAt,
+        reason: "auth_redirect",
+        externalUrl: loginUrl,
+      });
+      assert.match(response.json().checkedAt, /^\d{4}-\d{2}-\d{2}T/);
+    });
+  } finally {
+    await server.close();
+  }
+});
+
+test("GET /api/apps/:id/embed-check keeps auth_redirect when the auth page blocks framing", async () => {
+  const server = await createServer();
+
+  try {
+    const sessionCookie = await createAuthenticatedAdminSession(server);
+    const appUrl = "https://service.example.com/app";
+    const loginUrl = "https://auth.example.com/login?client_id=webapp&redirect_uri=https%3A%2F%2Fservice.example.com%2Fapp";
+    const app = await createIframeApp(server, sessionCookie, appUrl);
+
+    const mockFetch: typeof fetch = async (input) => {
+      const url = String(input);
+
+      if (url === appUrl) {
+        return new Response(null, {
+          status: 302,
+          headers: { location: loginUrl },
+        });
+      }
+
+      if (url === loginUrl) {
+        return new Response("<html>login</html>", {
+          status: 200,
+          headers: {
+            "content-type": "text/html",
+            "x-frame-options": "DENY",
+          },
+        });
+      }
+
+      assert.fail(`Unexpected fetch to ${url}`);
+    };
+
+    await withPatchedFetch(mockFetch, async () => {
+      const response = await server.inject({
+        method: "GET",
+        url: `/api/apps/${app.id}/embed-check`,
+        headers: {
+          cookie: sessionCookie,
+          origin: "http://localhost:5173",
+        },
+      });
+
+      assert.equal(response.statusCode, 200);
+      assert.deepEqual(response.json(), {
+        embeddable: false,
+        openExternally: true,
+        checkedAt: response.json().checkedAt,
+        reason: "auth_redirect",
+        externalUrl: loginUrl,
+      });
+      assert.match(response.json().checkedAt, /^\d{4}-\d{2}-\d{2}T/);
+    });
+  } finally {
+    await server.close();
+  }
+});
+
+test("GET /api/apps/:id/embed-check detects auth redirects from auth subdomains without login-like paths", async () => {
+  const server = await createServer();
+
+  try {
+    const sessionCookie = await createAuthenticatedAdminSession(server);
+    const appUrl = "https://service.example.com/app";
+    const loginUrl = "https://auth.example.com/";
+    const app = await createIframeApp(server, sessionCookie, appUrl);
+
+    const mockFetch: typeof fetch = async (input) => {
+      const url = String(input);
+
+      if (url === appUrl) {
+        return new Response(null, {
+          status: 302,
+          headers: { location: loginUrl },
+        });
+      }
+
+      if (url === loginUrl) {
+        return new Response("<html>login</html>", {
+          status: 200,
+          headers: { "content-type": "text/html" },
+        });
+      }
+
+      assert.fail(`Unexpected fetch to ${url}`);
+    };
+
+    await withPatchedFetch(mockFetch, async () => {
+      const response = await server.inject({
+        method: "GET",
+        url: `/api/apps/${app.id}/embed-check`,
+        headers: {
+          cookie: sessionCookie,
+          origin: "http://localhost:5173",
+        },
+      });
+
+      assert.equal(response.statusCode, 200);
+      assert.deepEqual(response.json(), {
+        embeddable: false,
+        openExternally: true,
+        checkedAt: response.json().checkedAt,
+        reason: "auth_redirect",
+        externalUrl: loginUrl,
+      });
+      assert.match(response.json().checkedAt, /^\d{4}-\d{2}-\d{2}T/);
+    });
   } finally {
     await server.close();
   }
@@ -697,6 +968,168 @@ test("PUT /api/user/preferences persists and returns the updated preferences", a
 
     assert.equal(fetchResponse.statusCode, 200);
     assert.deepEqual(fetchResponse.json(), updateResponse.json());
+  } finally {
+    await server.close();
+  }
+});
+
+test("OIDC login ignores off-origin referers when storing the post-login redirect", async () => {
+  const issuer = "https://id.example.com";
+  const clientId = "webapp-client";
+
+  await withOidcEnv(
+    {
+      OIDC_ISSUER_URL: issuer,
+      OIDC_CLIENT_ID: clientId,
+      CORS_ORIGIN: "",
+      OIDC_POST_LOGIN_REDIRECT_URI: "",
+    },
+    async () => {
+      const mockFetch: typeof fetch = async (input) => {
+        const url = String(input);
+
+        if (url === `${issuer}/.well-known/openid-configuration`) {
+          return new Response(
+            JSON.stringify({
+              issuer,
+              authorization_endpoint: `${issuer}/authorize`,
+              token_endpoint: `${issuer}/token`,
+              jwks_uri: `${issuer}/jwks`,
+            }),
+            {
+              status: 200,
+              headers: { "content-type": "application/json" },
+            }
+          );
+        }
+
+        assert.fail(`Unexpected fetch to ${url}`);
+      };
+
+      await withPatchedFetch(mockFetch, async () => {
+        const server = await createServer();
+
+        try {
+          const response = await server.inject({
+            method: "GET",
+            url: "/api/oidc/login",
+            headers: {
+              host: "app.example.com",
+              referer: "https://evil.example/phish?step=1",
+            },
+          });
+
+          assert.equal(response.statusCode, 302);
+          const loginRequest = db.prepare("SELECT redirect_to FROM oidc_login_requests LIMIT 1").get() as { redirect_to: string } | undefined;
+          assert.ok(loginRequest);
+          assert.equal(loginRequest.redirect_to, "http://app.example.com/");
+        } finally {
+          await server.close();
+        }
+      });
+    }
+  );
+});
+
+test("GET /api/apps/:id/embed-check returns csp_frame_ancestors when explicit allowed origins exclude the requester", async () => {
+  const server = await createServer();
+
+  try {
+    const sessionCookie = await createAuthenticatedAdminSession(server);
+    const appUrl = "https://service.example.com/app";
+    const app = await createIframeApp(server, sessionCookie, appUrl);
+
+    const mockFetch: typeof fetch = async (input) => {
+      const url = String(input);
+
+      if (url === appUrl) {
+        return new Response("<html>blocked</html>", {
+          status: 200,
+          headers: {
+            "content-type": "text/html",
+            "content-security-policy": "default-src 'self'; frame-ancestors https://allowed.example",
+          },
+        });
+      }
+
+      assert.fail(`Unexpected fetch to ${url}`);
+    };
+
+    await withPatchedFetch(mockFetch, async () => {
+      const response = await server.inject({
+        method: "GET",
+        url: `/api/apps/${app.id}/embed-check`,
+        headers: {
+          cookie: sessionCookie,
+          origin: "https://webapp.example",
+        },
+      });
+
+      assert.equal(response.statusCode, 200);
+      assert.deepEqual(response.json(), {
+        embeddable: false,
+        openExternally: true,
+        checkedAt: response.json().checkedAt,
+        reason: "csp_frame_ancestors",
+        externalUrl: appUrl,
+      });
+    });
+  } finally {
+    await server.close();
+  }
+});
+
+test("POST /api/apps/reorder rejects unknown group ids instead of surfacing a database error", async () => {
+  const server = await createServer();
+
+  try {
+    const sessionCookie = await createAuthenticatedAdminSession(server);
+    const app = await createIframeApp(server, sessionCookie, "https://service.example.com/app");
+
+    const response = await server.inject({
+      method: "POST",
+      url: "/api/apps/reorder",
+      headers: {
+        cookie: sessionCookie,
+        "x-requested-with": "webapp-v2",
+      },
+      payload: {
+        items: [
+          {
+            id: app.id,
+            groupId: 9999,
+          },
+        ],
+      },
+    });
+
+    assert.equal(response.statusCode, 400);
+    assert.deepEqual(response.json(), { message: "errors.invalidGroup" });
+  } finally {
+    await server.close();
+  }
+});
+
+test("PUT /api/user/preferences rejects unknown default app ids instead of surfacing a database error", async () => {
+  const server = await createServer();
+
+  try {
+    const sessionCookie = await createAuthenticatedAdminSession(server);
+
+    const response = await server.inject({
+      method: "PUT",
+      url: "/api/user/preferences",
+      headers: {
+        cookie: sessionCookie,
+        "x-requested-with": "webapp-v2",
+      },
+      payload: {
+        defaultAppId: 9999,
+      },
+    });
+
+    assert.equal(response.statusCode, 400);
+    assert.deepEqual(response.json(), { message: "errors.invalidApp" });
   } finally {
     await server.close();
   }

@@ -1,6 +1,7 @@
 import type { FastifyInstance } from "fastify";
 import { z } from "zod";
 import { requireSession } from "../lib/auth.js";
+import { appRepository } from "../lib/app-repository.js";
 import { getPreferences, upsertPreferences } from "../lib/preferences-repository.js";
 
 const hexColor = z.string().regex(/^#[0-9a-fA-F]{6}$/).nullable().optional();
@@ -57,6 +58,14 @@ export async function registerPreferencesRoutes(server: FastifyInstance) {
       textColorDark,
       ...rest
     } = parsed.data;
+
+    if (defaultAppId !== undefined && defaultAppId !== null) {
+      const defaultApp = appRepository.getAppById(defaultAppId);
+      if (!defaultApp || (user.role !== "admin" && !defaultApp.is_shared)) {
+        return reply.code(400).send({ message: "errors.invalidApp" });
+      }
+    }
+
     const updated = upsertPreferences(user.id, {
       ...rest,
       default_app_id: defaultAppId,

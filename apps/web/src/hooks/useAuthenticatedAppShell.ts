@@ -53,6 +53,7 @@ type UseAuthenticatedAppShellStateArgs = Pick<
   selectedApp: WebAppEntry | null;
   mountedIframeApps: WebAppEntry[];
   iframeReloadTokens: Record<number, number>;
+  unmountIframeApp: (appId: number) => void;
   editorMode: AppShellLayoutProps["appEditorProps"]["editorMode"];
   setDebouncedIconQuery: (value: string) => void;
   setIconSelectionLocked: Dispatch<SetStateAction<boolean>>;
@@ -146,6 +147,7 @@ export function useAuthenticatedAppShell({
     mountedIframeApps,
     iframeReloadTokens,
     refreshIframeApp,
+    unmountIframeApp,
     reloadUsers,
     reloadGroups,
     deleteApp,
@@ -239,9 +241,11 @@ export function useAuthenticatedAppShell({
       setSidebarMode,
       apps,
       groups,
+      mountedIframeApps,
     },
     data: {
       refreshIframeApp,
+      unmountIframeApp,
       reloadUsers,
       reloadGroups,
       deleteApp,
@@ -290,6 +294,7 @@ export function useAuthenticatedAppShell({
     draggingAppId,
     dragOutProgress,
     reorderAppsEnabled,
+    authPending,
     settingsInitialTab,
     settingsInitialJsonMode,
     draggedApp,
@@ -297,6 +302,8 @@ export function useAuthenticatedAppShell({
     openEditEditorFromUi,
     openContextMenu,
     openSidebarContextMenu,
+    handleOpenAuthPending,
+    handleDismissAuthPending,
     handleSelectApp,
     handleDragStart,
     handleDragMove,
@@ -341,6 +348,7 @@ export function useAuthenticatedAppShell({
       apps,
       selectedAppId,
       selectedApp,
+      authPending,
       mountedIframeApps,
       iframeReloadTokens,
       draggingAppId,
@@ -398,6 +406,8 @@ export function useAuthenticatedAppShell({
     handleToggleReorderApps,
     toggleThemeMode,
     handleSelectApp,
+    handleOpenAuthPending,
+    handleDismissAuthPending,
     openEditEditorFromUi,
     openContextMenu,
     handleReorderGroups,

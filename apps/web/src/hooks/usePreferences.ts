@@ -15,6 +15,8 @@ export function resolveTheme(userTheme: UserTheme): ThemeMode {
 function applyColors(prefs: UserPreferences, themeMode: ThemeMode) {
   const root = document.documentElement;
   const isDarkTheme = themeMode === "dark";
+  const defaultLightSidebar = "#fff8ee";
+  const defaultDarkSidebar = "#211b17";
   const defaultText = isDarkTheme ? "#f4ede4" : "#21160e";
   const defaultMuted = isDarkTheme ? "#b7a898" : "#6d5b4b";
   const defaultBorder = isDarkTheme ? "rgba(255, 234, 214, 0.12)" : "rgba(96, 64, 40, 0.14)";
@@ -32,8 +34,8 @@ function applyColors(prefs: UserPreferences, themeMode: ThemeMode) {
   const previewDarkText = prefs.textColorDark ?? defaultDarkText;
   const previewLightSource = prefs.sidebarColor;
   const previewDarkSource = prefs.sidebarColorDark;
-  const previewLightBackground = previewLightSource ? hexToRgba(previewLightSource, 0.52) : "rgba(255, 255, 255, 0.52)";
-  const previewDarkBackground = previewDarkSource ? hexToRgba(previewDarkSource, 0.9) : "rgba(40, 33, 28, 0.9)";
+  const previewLightBackground = previewLightSource ? hexToRgba(previewLightSource, 0.52) : hexToRgba(defaultLightSidebar, 0.52);
+  const previewDarkBackground = previewDarkSource ? hexToRgba(previewDarkSource, 0.9) : hexToRgba(defaultDarkSidebar, 0.9);
   const previewBorderSource = sidebarColor;
 
   root.style.setProperty("--preview-light-bg", previewLightBackground);

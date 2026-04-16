@@ -18,7 +18,21 @@ import {
   getSidebarDeleteZoneProgress,
   isPastSidebarDeleteThreshold,
 } from "../lib/sidebar-delete-zone";
-import type { AppEditorState, AppEmbedCheckResponse, ContextMenuState, GroupEntry, SettingsTab, SidebarMode, WebAppEntry } from "../types";
+import type { AppEditorState, AppEmbedCheckResponse, AuthPendingState, ContextMenuState, GroupEntry, SettingsTab, SidebarMode, WebAppEntry } from "../types";
+
+const AUTH_TAB_CLOSE_POLL_MS = 250;
+const AUTH_RECHECK_TIMEOUT_MS = 10 * 60 * 1000;
+const AUTH_SILENT_PROMPT_DELAY_MS = 1400;
+const AUTH_REDIRECT_SETTLE_DELAY_MS = 250;
+const AUTH_OVERLAY_CLEAR_DELAY_MS = 150;
+
+function openNewTab(url: string) {
+  const link = document.createElement("a");
+  link.href = url;
+  link.target = "_blank";
+  link.rel = "noopener noreferrer";
+  link.click();
+}
 
 type UseAppShellUiOptions = {
   userPresent: boolean;
@@ -29,6 +43,7 @@ type UseAppShellUiOptions = {
   settingsOpen: boolean;
   apps: WebAppEntry[];
   groups: GroupEntry[];
+  mountedIframeApps: WebAppEntry[];
   sidebarRef: RefObject<HTMLElement | null>;
   closeEditor: () => void;
   closeSettings: () => void;
@@ -43,6 +58,7 @@ type UseAppShellUiOptions = {
   resetImport: () => void;
   reloadUsers: () => Promise<void>;
   refreshIframeApp: (app: WebAppEntry) => void;
+  unmountIframeApp: (appId: number) => void;
   selectApp: (appId: number | null) => void;
   setSidebarOpen: Dispatch<SetStateAction<boolean>>;
   setSidebarMode: Dispatch<SetStateAction<SidebarMode>>;
@@ -62,6 +78,7 @@ export function useAppShellUi({
   settingsOpen,
   apps,
   groups,
+  mountedIframeApps,
   sidebarRef,
   closeEditor,
   closeSettings,
@@ -76,6 +93,7 @@ export function useAppShellUi({
   resetImport,
   reloadUsers,
   refreshIframeApp,
+  unmountIframeApp,
   selectApp,
   setSidebarOpen,
   setSidebarMode,
@@ -92,6 +110,169 @@ export function useAppShellUi({
   const [settingsInitialTab, setSettingsInitialTab] = useState<SettingsTab | undefined>(undefined);
   const [settingsInitialJsonMode, setSettingsInitialJsonMode] = useState<"import" | "export" | undefined>(undefined);
   const dragPointerStartXRef = useRef<number | null>(null);
+  const [authPending, setAuthPending] = useState<AuthPendingState | null>(null);
+  const authRedirectCleanupRef = useRef<(() => void) | null>(null);
+
+  const cancelAuthRedirectFlow = useCallback(() => {
+    authRedirectCleanupRef.current?.();
+    authRedirectCleanupRef.current = null;
+    setAuthPending((current) => {
+      if (current && !current.keepMountedFrame) {
+        unmountIframeApp(current.appId);
+      }
+
+      return null;
+    });
+  }, [unmountIframeApp]);
+
+  const startAuthPromptFlow = useCallback((app: WebAppEntry, keepMountedFrame: boolean) => {
+    cancelAuthRedirectFlow();
+    setAuthPending({ appId: app.id, phase: "checking", keepMountedFrame });
+
+    let promptDelayId: number | null = window.setTimeout(() => {
+      promptDelayId = null;
+      setAuthPending((current) => {
+        if (current?.appId !== app.id) {
+          return current;
+        }
+
+        return { ...current, phase: "prompt" };
+      });
+    }, AUTH_SILENT_PROMPT_DELAY_MS);
+
+    const cancel = () => {
+      if (promptDelayId !== null) {
+        window.clearTimeout(promptDelayId);
+        promptDelayId = null;
+      }
+      if (authRedirectCleanupRef.current === cancel) {
+        authRedirectCleanupRef.current = null;
+      }
+    };
+
+    authRedirectCleanupRef.current = cancel;
+  }, [cancelAuthRedirectFlow]);
+
+  useEffect(() => () => {
+    authRedirectCleanupRef.current?.();
+    authRedirectCleanupRef.current = null;
+  }, []);
+
+  const armAuthRedirectWatcher = useCallback((app: WebAppEntry, authTab: Window | null, keepMountedFrame: boolean) => {
+    cancelAuthRedirectFlow();
+    setAuthPending({ appId: app.id, phase: "login", keepMountedFrame });
+
+    let sawPageHidden = document.visibilityState === "hidden";
+    let completed = false;
+    let intervalId: number | null = null;
+    let timeoutId: number | null = null;
+    let settleDelayId: number | null = null;
+    let overlayClearId: number | null = null;
+
+    const stopWatching = () => {
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+      if (intervalId !== null) {
+        window.clearInterval(intervalId);
+        intervalId = null;
+      }
+      if (timeoutId !== null) {
+        window.clearTimeout(timeoutId);
+        timeoutId = null;
+      }
+    };
+
+    const cancel = () => {
+      stopWatching();
+      if (settleDelayId !== null) {
+        window.clearTimeout(settleDelayId);
+        settleDelayId = null;
+      }
+      if (overlayClearId !== null) {
+        window.clearTimeout(overlayClearId);
+        overlayClearId = null;
+      }
+      if (authRedirectCleanupRef.current === cancel) {
+        authRedirectCleanupRef.current = null;
+      }
+    };
+
+    const complete = () => {
+      if (completed) {
+        return;
+      }
+
+      completed = true;
+      stopWatching();
+      setAuthPending({ appId: app.id, phase: "settling", keepMountedFrame });
+
+      settleDelayId = window.setTimeout(() => {
+        refreshIframeApp(app);
+        selectApp(app.id);
+
+        overlayClearId = window.setTimeout(() => {
+          if (authRedirectCleanupRef.current === cancel) {
+            authRedirectCleanupRef.current = null;
+          }
+          setAuthPending((current) => (current?.appId === app.id ? null : current));
+        }, AUTH_OVERLAY_CLEAR_DELAY_MS);
+      }, AUTH_REDIRECT_SETTLE_DELAY_MS);
+    };
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "hidden") {
+        sawPageHidden = true;
+      }
+
+      if (document.visibilityState === "visible" && sawPageHidden) {
+        complete();
+      }
+    };
+
+    intervalId = authTab
+      ? window.setInterval(() => {
+          if (authTab.closed) {
+            complete();
+          }
+        }, AUTH_TAB_CLOSE_POLL_MS)
+      : null;
+    timeoutId = window.setTimeout(() => {
+      cancel();
+      setAuthPending((current) => {
+        if (current?.appId !== app.id) {
+          return current;
+        }
+
+        if (!current.keepMountedFrame) {
+          unmountIframeApp(current.appId);
+        }
+
+        return null;
+      });
+    }, AUTH_RECHECK_TIMEOUT_MS);
+
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+
+    authRedirectCleanupRef.current = cancel;
+  }, [cancelAuthRedirectFlow, refreshIframeApp, selectApp, unmountIframeApp]);
+
+  const handleOpenAuthPending = useCallback(() => {
+    if (!authPending) {
+      return;
+    }
+
+    const app = apps.find((item) => item.id === authPending.appId);
+    if (!app || app.open_mode !== "iframe") {
+      cancelAuthRedirectFlow();
+      return;
+    }
+
+    const tab = window.open(app.url, "_blank", "noopener,noreferrer");
+    armAuthRedirectWatcher(app, tab, authPending.keepMountedFrame);
+  }, [apps, armAuthRedirectWatcher, authPending, cancelAuthRedirectFlow]);
+
+  const handleDismissAuthPending = useCallback(() => {
+    cancelAuthRedirectFlow();
+  }, [cancelAuthRedirectFlow]);
 
   useEffect(() => {
     if (!editorOpen && !shortcutHelpOpen && !settingsOpen) {
@@ -170,11 +351,21 @@ export function useAppShellUi({
     setContextMenu(null);
     setSidebarOpen(false);
 
+    if (app.open_mode === "iframe" && mountedIframeApps.some((mountedApp) => mountedApp.id === app.id)) {
+      cancelAuthRedirectFlow();
+      selectApp(app.id);
+      return;
+    }
+
+    if (authPending?.appId === app.id) {
+      selectApp(app.id);
+      return;
+    }
+
+    cancelAuthRedirectFlow();
+
     if (app.open_mode === "external") {
-      const tab = window.open(app.url, "_blank", "noopener,noreferrer");
-      if (!tab) {
-        window.location.assign(app.url);
-      }
+      openNewTab(app.url);
       selectApp(app.id);
       return;
     }
@@ -187,53 +378,23 @@ export function useAppShellUi({
 
         if (!embedCheck.embeddable && embedCheck.openExternally) {
           if (embedCheck.reason === "auth_redirect") {
-            // Open the app in a new tab so the user can authenticate.
-            // We keep a reference (no noopener) to poll for tab close, then
-            // retry embed-check and load in iframe if auth resolved it.
-            const tab = window.open(app.url, "_blank");
-            if (!tab) {
-              window.location.assign(app.url);
-              return;
-            }
-            const startTime = Date.now();
-            const MAX_POLL_MS = 10 * 60 * 1000; // stop polling after 10 min
-            const timer = window.setInterval(() => {
-              const timedOut = Date.now() - startTime > MAX_POLL_MS;
-              if (tab.closed || timedOut) {
-                window.clearInterval(timer);
-                if (!tab.closed) return; // timed out, user still has tab open
-                void (async () => {
-                  try {
-                    const recheck = await apiFetch<AppEmbedCheckResponse>(
-                      `/api/apps/${app.id}/embed-check`,
-                      { method: "GET" },
-                    );
-                    if (recheck.embeddable) {
-                      selectApp(app.id);
-                    }
-                  } catch {
-                    // ignore — user can click the app again manually
-                  }
-                })();
-              }
-            }, 500);
+            selectApp(app.id);
+            startAuthPromptFlow(app, true);
           } else {
             // Permanently blocked (X-Frame-Options / CSP) — open externally.
             const launchUrl = embedCheck.externalUrl ?? app.url;
-            const tab = window.open(launchUrl, "_blank", "noopener,noreferrer");
-            if (!tab) {
-              window.location.assign(launchUrl);
-            }
+            openNewTab(launchUrl);
           }
           return;
         }
       } catch {
         // Fallback to standard iframe behavior when embed inspection fails.
+        cancelAuthRedirectFlow();
       }
 
       selectApp(app.id);
     })();
-  }, [selectApp, setSidebarOpen]);
+  }, [authPending, cancelAuthRedirectFlow, mountedIframeApps, selectApp, setSidebarOpen, startAuthPromptFlow]);
 
   const openEditEditorFromUi = useCallback((app: WebAppEntry) => {
     if (!canManageApps) {
@@ -428,6 +589,7 @@ export function useAppShellUi({
   const draggedApp = draggingAppId === null ? null : apps.find((item) => item.id === draggingAppId) ?? null;
 
   return {
+    authPending,
     contextMenu,
     draggingAppId,
     dragOutProgress,
@@ -440,6 +602,8 @@ export function useAppShellUi({
     openEditEditorFromUi,
     openContextMenu,
     openSidebarContextMenu,
+    handleOpenAuthPending,
+    handleDismissAuthPending,
     handleSelectApp,
     handleDragStart,
     handleDragMove,

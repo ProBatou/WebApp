@@ -16,7 +16,9 @@ export type AuthenticatedShellControllerArgs = {
   setSidebarMode: AppShellLayoutProps["sidebarProps"]["setSidebarMode"];
   apps: AppShellLayoutProps["sidebarProps"]["apps"];
   groups: AppShellLayoutProps["sidebarProps"]["groups"];
+  mountedIframeApps: WebAppEntry[];
   refreshIframeApp: (app: WebAppEntry) => void;
+  unmountIframeApp: (appId: number) => void;
   reloadUsers: () => Promise<void>;
   reloadGroups: () => Promise<unknown>;
   deleteApp: (appId: number) => Promise<void>;
@@ -73,7 +75,9 @@ export function useAuthenticatedShellController({
   setSidebarMode,
   apps,
   groups,
+  mountedIframeApps,
   refreshIframeApp,
+  unmountIframeApp,
   reloadUsers,
   reloadGroups,
   deleteApp,
@@ -112,6 +116,7 @@ export function useAuthenticatedShellController({
   const canManageApps = user?.role === "admin";
 
   const {
+    authPending,
     contextMenu,
     draggingAppId,
     dragOutProgress,
@@ -124,6 +129,8 @@ export function useAuthenticatedShellController({
     openEditEditorFromUi,
     openContextMenu,
     openSidebarContextMenu,
+    handleOpenAuthPending,
+    handleDismissAuthPending,
     handleSelectApp,
     handleDragStart,
     handleDragMove,
@@ -146,6 +153,7 @@ export function useAuthenticatedShellController({
     settingsOpen,
     apps,
     groups,
+    mountedIframeApps,
     sidebarRef,
     closeEditor,
     closeSettings,
@@ -160,6 +168,7 @@ export function useAuthenticatedShellController({
     resetImport,
     reloadUsers,
     refreshIframeApp,
+    unmountIframeApp,
     selectApp,
     setSidebarOpen,
     setSidebarMode,
@@ -205,6 +214,7 @@ export function useAuthenticatedShellController({
 
   return {
     canManageApps,
+    authPending,
     contextMenu,
     draggingAppId,
     dragOutProgress,
@@ -216,6 +226,8 @@ export function useAuthenticatedShellController({
     openEditEditorFromUi,
     openContextMenu,
     openSidebarContextMenu,
+    handleOpenAuthPending,
+    handleDismissAuthPending,
     handleSelectApp,
     handleDragStart,
     handleDragMove,

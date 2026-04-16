@@ -8,6 +8,8 @@ type BuildAuthenticatedShellHandlersArgs = {
   handleToggleReorderApps: () => void;
   toggleThemeMode: () => void;
   handleSelectApp: BuildAppShellLayoutPropsArgs["onSelectApp"];
+  handleOpenAuthPending: BuildAppShellLayoutPropsArgs["onOpenAuthPending"];
+  handleDismissAuthPending: BuildAppShellLayoutPropsArgs["onDismissAuthPending"];
   openEditEditorFromUi: BuildAppShellLayoutPropsArgs["onEditApp"];
   openContextMenu: BuildAppShellLayoutPropsArgs["onOpenContextMenu"];
   handleReorderGroups: BuildAppShellLayoutPropsArgs["onReorderGroups"];
@@ -58,6 +60,8 @@ export function buildAuthenticatedShellHandlers({
   handleToggleReorderApps,
   toggleThemeMode,
   handleSelectApp,
+  handleOpenAuthPending,
+  handleDismissAuthPending,
   openEditEditorFromUi,
   openContextMenu,
   handleReorderGroups,
@@ -108,6 +112,8 @@ export function buildAuthenticatedShellHandlers({
     | "onToggleReorderApps"
     | "onToggleTheme"
     | "onSelectApp"
+    | "onOpenAuthPending"
+    | "onDismissAuthPending"
     | "onEditApp"
     | "onOpenContextMenu"
     | "onReorderGroups"
@@ -134,6 +140,8 @@ export function buildAuthenticatedShellHandlers({
     onToggleReorderApps: handleToggleReorderApps,
     onToggleTheme: toggleThemeMode,
     onSelectApp: handleSelectApp,
+    onOpenAuthPending: handleOpenAuthPending,
+    onDismissAuthPending: handleDismissAuthPending,
     onEditApp: openEditEditorFromUi,
     onOpenContextMenu: openContextMenu,
     onReorderGroups: handleReorderGroups,

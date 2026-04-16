@@ -10,6 +10,7 @@ import {
 import { SortableContext, useSortable, verticalListSortingStrategy, arrayMove } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { AppIcon } from "./AppIcon";
+import { ColorPickerField } from "./ColorPickerField";
 import { Dropdown } from "./Dropdown";
 import { jsonImportExample } from "../lib/app-utils";
 import type { AuthProvider, DashboardIconsMetadataMap, GroupEntry, JsonImportMode, OidcAdminConfig, OidcConfigSavePayload, SettingsTab, ThemeMode, UserEntry, UserPreferences, WebAppEntry } from "../types";
@@ -459,8 +460,10 @@ const colorDefs = [
     lightKey: "sidebarColor" as keyof UserPreferences,
     darkKey: "sidebarColorDark" as keyof UserPreferences,
     labelKey: "settings.sidebarColor" as const,
-    fallbackLight: "#f7efe2",
-    fallbackDark: "#181411",
+    fallbackLight: "#FFF8EE",
+    fallbackDark: "#211B17",
+    presetsLight: ["#FFF8EE", "#FAF0E1", "#F0DEC7", "#DBC0A0", "#B1855C", "#21160E"],
+    presetsDark: ["#211B17", "#2A221D", "#332923", "#45362D", "#674F41", "#F4EDE4"],
   },
   {
     lightKey: "accentColor" as keyof UserPreferences,
@@ -468,6 +471,8 @@ const colorDefs = [
     labelKey: "settings.accentColor" as const,
     fallbackLight: "#c65c31",
     fallbackDark: "#df7a42",
+    presetsLight: ["#C65C31", "#D96D3F", "#E58C54", "#C69055", "#9E4A32", "#7C5A44"],
+    presetsDark: ["#DF7A42", "#EE8F51", "#F0A467", "#C9683B", "#B65A34", "#F4EDE4"],
   },
   {
     lightKey: "textColor" as keyof UserPreferences,
@@ -475,6 +480,8 @@ const colorDefs = [
     labelKey: "settings.textColor" as const,
     fallbackLight: "#21160e",
     fallbackDark: "#f4ede4",
+    presetsLight: ["#21160E", "#38261B", "#5A4031", "#7A5A44", "#A67A5B", "#FFF8EE"],
+    presetsDark: ["#F4EDE4", "#E6D8C8", "#D4C2AF", "#C2AA95", "#DF7A42", "#211B17"],
   },
 ];
 
@@ -628,21 +635,28 @@ function PersonalizationTabContent({
         </div>
 
         <div className="personalization-colors">
-          {colorDefs.map(({ lightKey, darkKey, labelKey, fallbackLight, fallbackDark }) => {
+          {colorDefs.map(({ lightKey, darkKey, labelKey, fallbackLight, fallbackDark, presetsLight, presetsDark }) => {
             const activeKey = colorMode === "light" ? lightKey : darkKey;
             const fallback = colorMode === "light" ? fallbackLight : fallbackDark;
+            const colorValue = ((preferences[activeKey] as string | null) ?? fallback).toUpperCase();
+            const presets = colorMode === "light" ? presetsLight : presetsDark;
             return (
               <div key={String(activeKey)} className="personalization-color-row">
                 <label className="personalization-label">{t(labelKey)}</label>
                 <div className="personalization-color-field">
-                  <input
-                    type="color"
-                    value={(preferences[activeKey] as string | null) ?? fallback}
-                    onChange={(e) => onUpdatePreferences({ [activeKey]: e.target.value })}
+                  <ColorPickerField
+                    label={t(labelKey)}
+                    value={colorValue}
+                    presets={presets}
+                    onChange={(nextValue) => onUpdatePreferences({ [activeKey]: nextValue })}
                   />
                   {preferences[activeKey] && (
-                    <button type="button" className="personalization-reset-color" onClick={() => onUpdatePreferences({ [activeKey]: null })}>
-                      ×
+                    <button
+                      type="button"
+                      className="secondary-button personalization-reset-color"
+                      onClick={() => onUpdatePreferences({ [activeKey]: null })}
+                    >
+                      {t("common.reset")}
                     </button>
                   )}
                 </div>
@@ -888,11 +902,12 @@ function OidcTabContent({
             disabled={busy}
           />
         </div>
-        <div className="personalization-row">
+        <div className="personalization-row personalization-row--checkbox">
           <label className="personalization-label" htmlFor="oidc-disable-password-login">{t("oidc.disablePasswordLogin")}</label>
           <input
             id="oidc-disable-password-login"
             type="checkbox"
+            className="settings-checkbox"
             checked={disablePasswordLogin}
             onChange={(e) => setDisablePasswordLogin(e.target.checked)}
             disabled={busy}

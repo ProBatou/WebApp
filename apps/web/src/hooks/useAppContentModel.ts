@@ -105,7 +105,7 @@ export function useAppContentModel() {
 
   const selectedApp = apps.find((item) => item.id === selectedAppId) ?? null;
 
-  const { mountedIframeIds, iframeReloadTokens, refreshIframeApp, resetIframes } = useIframes({
+  const { mountedIframeIds, iframeReloadTokens, refreshIframeApp, unmountIframeApp, resetIframes } = useIframes({
     apps,
     selectedApp,
   });
@@ -291,6 +291,7 @@ export function useAppContentModel() {
     mountedIframeApps,
     iframeReloadTokens,
     refreshIframeApp,
+    unmountIframeApp,
     reloadUsers,
     reloadGroups,
     deleteApp,
